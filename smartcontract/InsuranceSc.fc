@@ -1,0 +1,33 @@
+#include "imports/stdlib.fc";
+
+
+
+() recv_internal(int my_balance, int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    slice cs = in_msg_full;
+
+    int flags = cs~load_uint(4);
+    if (flags & 1) {
+        return ();
+    }
+    slice sender_addres = cs~load_msg_addr();
+
+    int op = in_msg_body~load_uint(32);
+
+    if (op == "deposit"c) {
+
+    }
+}
+
+
+() recv_external(slice in_msg) impure {
+    var signature = in_msg~load_bits(512); ;; get signature from the message body
+    var cs = in_msg;
+    var (subwallet_id, valid_until, msg_seqno) = (cs~load_uint(32), cs~load_uint(32), cs~load_uint(32));  ;; get rest values from the message body
+    throw_if(35, valid_until <= now()); ;; check the relevance of the message
+    var ds = get_data().begin_parse(); ;; get data from storage and convert it into a slice to be able to read values
+    var (stored_seqno, stored_subwallet, public_key) = (ds~load_uint(32), ds~load_uint(32), ds~load_uint(256)); ;; read values from storage
+    ds.end_parse(); ;; make sure we do not have anything in ds variable
+    throw_unless(33, msg_seqno == stored_seqno);
+    throw_unless(34, subwallet_id == stored_subwallet);
+    throw_unless(35, check_signature(slice_hash(in_msg), signature, public_key));
+    accept_message();
