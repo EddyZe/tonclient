@@ -25,7 +25,7 @@ func (r *PoolRepository) Save(pool *models.Pool) error {
 	tx := r.db.MustBegin()
 
 	query, args, err := tx.BindNamed(
-		"insert into pool(owner_id, reserve, jetton_wallet, reward, period, is_active) values (:owner_id, :reserve, :jetton_wallet, :reward, :period, :is_active) returning id)",
+		"insert into pool(owner_id, reserve, jetton_wallet, reward, period, is_active) values (:owner_id, :reserve, :jetton_wallet, :reward, :period, :is_active) returning id",
 		pool,
 	)
 
