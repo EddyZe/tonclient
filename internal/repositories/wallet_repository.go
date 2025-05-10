@@ -158,3 +158,24 @@ func (r *WalletTonRepository) FindByUserId(userId int) *models.WalletTon {
 
 	return &wallet
 }
+
+func (r *WalletTonRepository) FindByAddr(addr string) *models.WalletTon {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	var wallet models.WalletTon
+
+	tx := r.db.MustBegin()
+	if err := tx.GetContext(ctx, &wallet, "select * from wallet_ton where addr = $1", addr); err != nil {
+		log.Error("Failed to find wallet: ", err)
+		return nil
+	}
+	if err := tx.Commit(); err != nil {
+		if er := tx.Rollback(); er != nil {
+			log.Error("Transaction rollback failed: ", er)
+		}
+		log.Error("Failed to find wallet: ", err)
+		return nil
+	}
+
+	return &wallet
+}
