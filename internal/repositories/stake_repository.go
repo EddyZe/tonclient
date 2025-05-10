@@ -67,7 +67,7 @@ func (r *StakeRepository) Update(stake *models.Stake) error {
 	tx := r.db.MustBegin()
 	if _, err := tx.NamedExecContext(
 		ctx,
-		"update stake set user_id = :user_id, pool_id = :pool_id, amount = :amount",
+		"update stake set user_id = :user_id, pool_id = :pool_id, amount = :amount where id=:id",
 		stake,
 	); err != nil {
 		log.Error("Failed to update stake: ", err)
