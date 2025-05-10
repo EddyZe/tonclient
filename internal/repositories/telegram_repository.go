@@ -29,7 +29,7 @@ func (r *TelegramRepository) Save(telegram *models.Telegram) error {
 	)
 
 	if err != nil {
-		log.Fatal("Failed to create new query: ", err)
+		log.Error("Failed to create new query: ", err)
 		er := tx.Rollback()
 		if er != nil {
 			log.Error("Failed to rollback transaction: ", err)
@@ -96,6 +96,10 @@ func (r *TelegramRepository) DeleteById(id int) error {
 	tx := r.db.MustBegin()
 	tx.MustExecContext(ctx, "delete from telegram where id=$1", id)
 	if err := tx.Commit(); err != nil {
+		if er := tx.Rollback(); er != nil {
+			log.Error("Failed to rollback transaction: ", err)
+			return er
+		}
 		log.Error("Failed to commit transaction: ", err)
 		return err
 	}
