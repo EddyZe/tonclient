@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -13,6 +14,8 @@ const (
 )
 
 var WALLET_SEED []string
+var JETTON_WALLET_MAIN_COIN string
+var COMMISSION_AMOUNT float64
 
 var log = InitLogger()
 
@@ -28,10 +31,16 @@ func InitConfig() error {
 	err := godotenv.Load()
 	if err != nil {
 		log.Error("Error loading .env file")
-		return err
 	}
 
 	WALLET_SEED = strings.Split(os.Getenv("WALLET_SEED"), " ")
+	COMMISSION_AMOUNT, err = strconv.ParseFloat(os.Getenv("COMMISSION_AMOUNT"), 64)
+	if err != nil {
+		log.Error("Error parsing COMMISSION_AMOUNT")
+		COMMISSION_AMOUNT = 5
+	}
+
+	JETTON_WALLET_MAIN_COIN = os.Getenv("JETTON_WALLET_MAIN_COIN")
 
 	return nil
 }

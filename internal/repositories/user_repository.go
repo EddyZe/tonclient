@@ -95,7 +95,7 @@ func (u *UserRepository) Update(user *models.User) error {
 	return nil
 }
 
-func (u *UserRepository) FindById(id int64) *models.User {
+func (u *UserRepository) FindById(id uint64) *models.User {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 

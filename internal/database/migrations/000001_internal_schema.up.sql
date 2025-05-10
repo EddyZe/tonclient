@@ -23,7 +23,7 @@ create table if not exists pool (
     owner_id bigint references usr(id) on delete cascade ,
     reserve numeric(19, 9) check ( reserve > 0 )not null ,
     jetton_wallet varchar(256) not null ,
-    reward int check ( reward > 0 ) not null,
+    reward numeric(19, 9) check ( reward > 0 ) not null,
     period int check (period > 0) not null,
     is_active bool default false
 );
@@ -32,5 +32,7 @@ create table if not exists stake (
     id bigserial primary key ,
     user_id bigint references usr(id) on delete cascade not null,
     pool_id bigint references pool(id) on delete cascade not null ,
-    amount numeric(19, 9) not null check ( amount > 0 )
+    amount numeric(19, 9) not null check ( amount > 0 ),
+    start_date timestamp default now(),
+    is_active bool default true
 )

@@ -22,10 +22,12 @@ type Pool struct {
 }
 
 type Stake struct {
-	Id     sql.NullInt64 `db:"id" json:"id"`
-	UserId uint64        `db:"user_id" json:"user_id"`
-	PoolId uint64        `db:"pool_id" json:"pool_id"`
-	Amount float64       `db:"amount" json:"amount"`
+	Id        sql.NullInt64 `db:"id" json:"id"`
+	UserId    uint64        `db:"user_id" json:"user_id"`
+	PoolId    uint64        `db:"pool_id" json:"pool_id"`
+	Amount    float64       `db:"amount" json:"amount"`
+	StartDate time.Time     `db:"start_date" json:"start_date"`
+	IsActive  bool          `db:"is_active" json:"is_active"`
 }
 
 type Telegram struct {

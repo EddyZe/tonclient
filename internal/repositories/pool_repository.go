@@ -76,7 +76,7 @@ func (r *PoolRepository) Update(pool *models.Pool) error {
 	return nil
 }
 
-func (r *PoolRepository) DeleteById(id int) error {
+func (r *PoolRepository) DeleteById(id uint64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -94,7 +94,7 @@ func (r *PoolRepository) DeleteById(id int) error {
 	return nil
 }
 
-func (r *PoolRepository) FindById(id int) *models.Pool {
+func (r *PoolRepository) FindById(id uint64) *models.Pool {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 

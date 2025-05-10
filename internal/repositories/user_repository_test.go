@@ -32,10 +32,7 @@ func TestRepCRUD(t *testing.T) {
 		log.Fatal("Failed update user: ", err)
 	}
 
-	user2, err := repo.FindById(user.Id.Int64)
-	if err != nil {
-		log.Fatal("Failed find user by id: ", err)
-	}
+	user2 := repo.FindById(uint64(user.Id.Int64))
 
 	if user2.Username != "editName" {
 		log.Fatal("Failed update name ", err)

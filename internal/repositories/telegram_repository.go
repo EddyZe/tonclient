@@ -107,7 +107,7 @@ func (r *TelegramRepository) DeleteById(id int) error {
 	return nil
 }
 
-func (r *TelegramRepository) FindById(id int) *models.Telegram {
+func (r *TelegramRepository) FindById(id uint64) *models.Telegram {
 	var telegram models.Telegram
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -163,4 +163,35 @@ func (r *TelegramRepository) FindAllLimit(offset, limit int) *[]models.Telegram 
 	}
 
 	return &telegrams
+}
+
+func (r *TelegramRepository) FindByUserId(userId uint64) *models.Telegram {
+	var telegram models.Telegram
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	tx := r.db.MustBegin()
+	if err := tx.GetContext(
+		ctx,
+		&telegram,
+		"select * from telegram as t join usr as u on t.user_id = u.id where u.id = $1",
+		userId); err != nil {
+		if er := tx.Rollback(); er != nil {
+			log.Error("Failed RollBack transaction", er)
+			return nil
+		}
+		log.Error("Failed find telegram", err)
+		return nil
+	}
+
+	if err := tx.Commit(); err != nil {
+		if er := tx.Rollback(); er != nil {
+			log.Error("Failed rollback transaction", er)
+			return nil
+		}
+		log.Error("Failed commiting transaction", err)
+		return nil
+	}
+
+	return &telegram
 }

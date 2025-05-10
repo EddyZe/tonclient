@@ -25,7 +25,7 @@ func (r *StakeRepository) Save(stake *models.Stake) error {
 	tx := r.db.MustBegin()
 
 	query, args, err := tx.BindNamed(
-		"insert into stake(user_id, pool_id, amount) values (:user_id, :pool_id, :amount) returning id",
+		"insert into stake(user_id, pool_id, amount, start_date, is_active) values (:user_id, :pool_id, :amount, :start_date, :is_active) returning id",
 		stake,
 	)
 
@@ -67,7 +67,7 @@ func (r *StakeRepository) Update(stake *models.Stake) error {
 	tx := r.db.MustBegin()
 	if _, err := tx.NamedExecContext(
 		ctx,
-		"update stake set user_id = :user_id, pool_id = :pool_id, amount = :amount where id=:id",
+		"update stake set user_id = :user_id, pool_id = :pool_id, amount = :amount, start_date=:start_date, is_active = :is_active where id=:id",
 		stake,
 	); err != nil {
 		log.Error("Failed to update stake: ", err)
@@ -240,6 +240,33 @@ func (r *StakeRepository) GetUserStakesLimit(offset, limit int, userId int64) *[
 			log.Error("Failed to rollback transaction: ", err)
 			return nil
 		}
+		return nil
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.Error("Failed to commit transaction: ", err)
+		if er := tx.Rollback(); er != nil {
+			log.Error("Failed to rollback transaction: ", er)
+			return nil
+		}
+		return nil
+	}
+
+	return &stakes
+}
+
+func (r *StakeRepository) FindStakesByPoolId(poolId int64) *[]models.Stake {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	var stakes []models.Stake
+
+	tx := r.db.MustBegin()
+	if err := tx.SelectContext(
+		ctx,
+		stakes,
+		"select * from stake as s join pool as p on s.pool_id = p.id where p.id=$1",
+		poolId); err != nil {
+		log.Error("Failed to get stake: ", err)
 		return nil
 	}
 
