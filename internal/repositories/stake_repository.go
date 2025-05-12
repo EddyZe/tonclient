@@ -200,7 +200,7 @@ func (r *StakeRepository) GetUserStakes(userId int64) *[]models.Stake {
 	if err := tx.SelectContext(
 		ctx,
 		&stakes,
-		"select * from stake as s join usr as u on s.user_id = u.id where u.id=$1", userId); err != nil {
+		"select s.id, s.user_id, s.pool_id, s.amount, s.start_date, s.is_active from stake as s join usr as u on s.user_id = u.id where u.id=$1", userId); err != nil {
 		log.Error("Failed to get stake: ", err)
 		if er := tx.Rollback(); er != nil {
 			log.Error("Failed to rollback transaction: ", err)
@@ -231,7 +231,7 @@ func (r *StakeRepository) GetUserStakesLimit(offset, limit int, userId int64) *[
 	if err := tx.SelectContext(
 		ctx,
 		&stakes,
-		"select * from stake as s join usr as u on s.user_id = u.id where u.id=$1 offset $2 limit $3",
+		"select s.id, s.user_id, s.pool_id, s.amount, s.start_date, s.is_active from stake as s join usr as u on s.user_id = u.id where u.id=$1 offset $2 limit $3",
 		userId,
 		offset,
 		limit); err != nil {
@@ -264,7 +264,7 @@ func (r *StakeRepository) FindStakesByPoolId(poolId int64) *[]models.Stake {
 	if err := tx.SelectContext(
 		ctx,
 		stakes,
-		"select * from stake as s join pool as p on s.pool_id = p.id where p.id=$1",
+		"select s.id, s.user_id, s.pool_id, s.amount, s.start_date, s.is_active from stake as s join pool as p on s.pool_id = p.id where p.id=$1",
 		poolId); err != nil {
 		log.Error("Failed to get stake: ", err)
 		return nil

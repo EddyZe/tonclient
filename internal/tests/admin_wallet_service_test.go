@@ -1,0 +1,77 @@
+package tests
+
+import (
+	"log"
+	"strings"
+	"testing"
+	"tonclient/internal/config"
+	"tonclient/internal/database"
+	"tonclient/internal/repositories"
+	"tonclient/internal/services"
+	"tonclient/internal/tonbot"
+)
+
+func TestAdminWalletService_StartSubscribeTransaction(t *testing.T) {
+	s := InitAdminService()
+	s.StartSubscribeTransaction()
+
+}
+
+func TestGetData_GetDataJetton(t *testing.T) {
+
+	s := InitAdminService()
+
+	s.DataJetton("EQAJKTfw3qP0OFUba-1l7rtA7_TzXd9Cbm4DjNCaioCdofF_")
+}
+
+func InitDBDefault() (*database.Postgres, error) {
+	return database.NewPostgres(&config.PostgresConfig{
+		Host:     "localhost",
+		Port:     "5432",
+		User:     "postgres",
+		Password: "admin",
+		DBName:   "toninsurancebot",
+	})
+}
+
+func InitAdminService() *services.AdminWalletService {
+	seeds := strings.Split("coin often elevator dust photo welcome assault trim bar when fit usage danger candy doctor cage input general start concert vocal dove smile brush", " ")
+
+	db, err := InitDBDefault()
+	if err != nil {
+		log.Fatal("Failed connect to database: ", err)
+	}
+
+	ur := repositories.NewUserRepository(db.Db)
+	pr := repositories.NewPoolRepository(db.Db)
+	us := services.NewUserService(ur)
+	ps := services.NewPoolService(pr, us)
+	tr := repositories.NewTelegramRepository(db.Db)
+	ts := services.NewTelegramService(tr, us)
+	stS := repositories.NewStakeRepository(db.Db)
+	ss := services.NewStakeService(stS, us, ps)
+	bot := tonbot.NewTgBot("8112143412:AAE1EZ3rEmqNx4O41UYch1MtD7NLIxb6-i0")
+
+	s, err := services.NewAdminWalletService(&config.TonClientConfig{
+		Seed:                seeds,
+		WalletAddr:          "UQD6A01mB8tAKJVekRrMjoA3l188LSCF2zrIHoH94tWhZGAO",
+		JettonAddr:          "EQDpOMdV41bpJn6UItHl8P-TGo6bjNLRjUF4lMA6WzQc66ol",
+		JettonAdminContract: "EQAJKTfw3qP0OFUba-1l7rtA7_TzXd9Cbm4DjNCaioCdofF_",
+	},
+		ps,
+		ts,
+		ss,
+		bot,
+	)
+	if err != nil {
+		log.Fatal("Failed connect to database: ", err)
+	}
+	go func() {
+		err := bot.StartBot()
+		if err != nil {
+			return
+		}
+	}()
+
+	return s
+}

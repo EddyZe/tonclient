@@ -6,10 +6,12 @@ import (
 	"encoding/base32"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"time"
 	"tonclient/internal/config"
 	"tonclient/internal/database"
+	"tonclient/internal/tonbot"
 
 	"github.com/cameo-engineering/tonconnect"
 	"github.com/xssnick/tonutils-go/address"
@@ -24,19 +26,28 @@ import (
 const TON_MANIFEST_URL = "https://raw.githubusercontent.com/cameo-engineering/tonconnect/master/tonconnect-manifest.json"
 
 func main() {
-	run()
+	run3()
 }
 
 func run3() {
-	log := config.InitLogger()
+	logger := config.InitLogger()
 	if err := config.InitConfig(); err != nil {
-		panic(err)
+		logger.Fatalf("Failed to init config: %v", err)
 	}
 
-	log.Infoln("Config initialized")
+	logger.Infoln("Config initialized")
 
 	connectPostgres()
-	log.Infoln("Database initialized")
+	logger.Infoln("Database initialized")
+
+	tokenBot := os.Getenv("TELEGRAM_BOT_TOKEN")
+
+	logger.Infoln("Telegram bot starting:", tokenBot)
+	err := tonbot.StartBot(tokenBot)
+	if err != nil {
+		log.Fatal("Failed to start bot: ", err)
+	}
+
 }
 
 func connectPostgres() *database.Postgres {

@@ -24,14 +24,15 @@ create table if not exists wallet_ton
 
 create table if not exists pool
 (
-    id                bigserial primary key,
-    owner_id          bigint references usr (id) on delete cascade,
-    reserve           numeric(19, 9) check ( reserve > 0 ) not null,
-    jetton_wallet     varchar(256)                         not null,
-    reward            int check ( reward > 0 )  not null,
-    period            int check (period > 0)               not null,
-    insurance_coating int check ( insurance_coating > 0 )  not null,
-    is_active         bool default false,
+    id                 bigserial primary key,
+    owner_id           bigint references usr (id) on delete cascade,
+    reserve            numeric(19, 9) check ( reserve > 0 ) not null,
+    jetton_wallet      varchar(256)                         not null,
+    jetton_master      varchar(256)                         not null,
+    reward             int check ( reward > 0 )             not null,
+    period             int check (period > 0)               not null,
+    insurance_coating  int check ( insurance_coating > 0 )  not null,
+    is_active          bool default false,
     is_commission_paid bool default false
 );
 

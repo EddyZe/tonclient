@@ -149,7 +149,7 @@ func (r *WalletTonRepository) FindByUserId(userId int) *models.WalletTon {
 	if err := r.db.GetContext(
 		ctx,
 		&wallet,
-		"select * from wallet_ton as w join usr as u on w.user_id = u.id where u.id=$1",
+		"select w.id, w.name, w.addr, w.user_id from wallet_ton as w join usr as u on w.user_id = u.id where u.id=$1",
 		userId,
 	); err != nil {
 		log.Error("Failed to find wallet: ", err)

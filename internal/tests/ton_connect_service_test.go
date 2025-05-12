@@ -1,4 +1,4 @@
-package services
+package tests
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"testing"
 	"tonclient/internal/models"
+	"tonclient/internal/services"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/xssnick/tonutils-go/tvm/cell"
@@ -23,10 +24,11 @@ func redisInit() *redis.Client {
 func TestTonConnectService_CreateSession(t *testing.T) {
 	rdb := redisInit()
 	err := rdb.Ping(context.Background()).Err()
+	ss := InitAdminService()
 	if err != nil {
 		t.Fatal(err)
 	}
-	tcs := NewTonConnectService(rdb)
+	tcs := services.NewTonConnectService(rdb, ss)
 	s, err := tcs.CreateSession()
 	if err != nil {
 		t.Fatal(err)
@@ -37,7 +39,8 @@ func TestTonConnectService_CreateSession(t *testing.T) {
 
 func TestTonConnectService_SaveSession(t *testing.T) {
 	rdb := redisInit()
-	tcs := NewTonConnectService(rdb)
+
+	tcs := services.NewTonConnectService(rdb, InitAdminService())
 	s, err := tcs.CreateSession()
 	if err != nil {
 		t.Fatal(err)
@@ -51,7 +54,7 @@ func TestTonConnectService_SaveSession(t *testing.T) {
 
 func TestTonConnectServiceAndConncect_GenerateConnectUrls(t *testing.T) {
 	rdb := redisInit()
-	tcs := NewTonConnectService(rdb)
+	tcs := services.NewTonConnectService(rdb, InitAdminService())
 	s, err := tcs.CreateSession()
 	if err != nil {
 		t.Fatal(err)
@@ -79,7 +82,7 @@ func TestTonConnectServiceAndConncect_GenerateConnectUrls(t *testing.T) {
 
 func TestTonConnectService_GetSession(t *testing.T) {
 	rdb := redisInit()
-	tcs := NewTonConnectService(rdb)
+	tcs := services.NewTonConnectService(rdb, InitAdminService())
 	s, err := tcs.LoadSession("TEST")
 	if err != nil {
 		t.Fatal(err)
@@ -90,7 +93,7 @@ func TestTonConnectService_GetSession(t *testing.T) {
 
 func TestTonConnectService_SendTransaction(t *testing.T) {
 	rdb := redisInit()
-	tcs := NewTonConnectService(rdb)
+	tcs := services.NewTonConnectService(rdb, InitAdminService())
 	s, err := tcs.LoadSession("TEST")
 	if err != nil {
 		t.Fatal(err)
@@ -108,6 +111,8 @@ func TestTonConnectService_SendTransaction(t *testing.T) {
 		Period:           30,
 		InsuranceCoating: 10,
 		IsActive:         false,
+		IsCommissionPaid: false,
+		JettonMaster:     "EQAJKTfw3qP0OFUba-1l7rtA7_TzXd9Cbm4DjNCaioCdofF_",
 	}
 
 	data, err := json.Marshal(p)
@@ -122,6 +127,7 @@ func TestTonConnectService_SendTransaction(t *testing.T) {
 		fmt.Sprint(p.Reserve),
 		&models.Payload{
 			OperationType: models.OP_ADMIN_CREATE_POOL,
+			JettonMaster:  p.JettonMaster,
 			Payload:       string(data),
 		},
 		s,

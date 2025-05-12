@@ -17,6 +17,7 @@ type Pool struct {
 	OwnerId          uint64        `db:"owner_id" json:"owner_id"`
 	Reserve          float64       `db:"reserve" json:"reserve"`
 	JettonWallet     string        `db:"jetton_wallet" json:"jetton_wallet"`
+	JettonMaster     string        `db:"jetton_master" json:"jetton_master"`
 	Reward           uint          `db:"reward" json:"reward"`
 	Period           uint          `db:"period" json:"period"`
 	InsuranceCoating uint          `db:"insurance_coating" json:"insurance_coating"`

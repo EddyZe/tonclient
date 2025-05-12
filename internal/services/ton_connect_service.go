@@ -6,6 +6,7 @@ import (
 	"encoding/base32"
 	"encoding/base64"
 	"errors"
+	"math"
 	"strconv"
 	"time"
 	"tonclient/internal/config"
@@ -23,12 +24,14 @@ var log = config.InitLogger()
 const TON_MANIFEST_URL = "https://raw.githubusercontent.com/cameo-engineering/tonconnect/master/tonconnect-manifest.json"
 
 type TonConnectService struct {
-	redisCli *redis.Client
+	redisCli        *redis.Client
+	adminWalletServ *AdminWalletService
 }
 
-func NewTonConnectService(redis *redis.Client) *TonConnectService {
+func NewTonConnectService(redis *redis.Client, adminWalletServ *AdminWalletService) *TonConnectService {
 	return &TonConnectService{
-		redisCli: redis,
+		redisCli:        redis,
+		adminWalletServ: adminWalletServ,
 	}
 }
 
@@ -156,20 +159,23 @@ func (s *TonConnectService) SendJettonTransaction(jettonAddr, receiverAddr, send
 		MustStoreUInt(payload.OperationType, 32).
 		MustStoreStringSnake(base64.StdEncoding.EncodeToString([]byte(payload.Payload))).
 		EndCell()
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	jettonData := s.adminWalletServ.DataJetton(payload.JettonMaster)
+	log.Infoln(jettonData)
 
 	parsed, err := strconv.ParseFloat(amount, 64)
 
 	pld := cell.BeginCell().
-		MustStoreUInt(0x0f8a7ea5, 32).                      // opcode
-		MustStoreUInt(uint64(time.Now().Unix()), 64).       // query_id (UNIX timestamp)
-		MustStoreCoins(uint64(parsed) * 1e9).               // amount (с учетом decimals!)
-		MustStoreAddr(address.MustParseAddr(receiverAddr)). // destination
-		MustStoreAddr(address.MustParseAddr(senderAddr)).   // response_destination
-		MustStoreBoolBit(false).                            // custom_payload
-		MustStoreCoins(0.01 * 1e9).                         // forward_ton_amount (0.05 TON)
-		MustStoreMaybeRef(commentCell).                     // forward_payload
+		MustStoreUInt(0x0f8a7ea5, 32).                                            // opcode
+		MustStoreUInt(uint64(time.Now().Unix()), 64).                             // query_id (UNIX timestamp)
+		MustStoreCoins(uint64(parsed) * uint64(math.Pow10(jettonData.Decimals))). // amount (с учетом decimals!)
+		MustStoreAddr(address.MustParseAddr(receiverAddr)).                       // destination
+		MustStoreAddr(address.MustParseAddr(senderAddr)).                         // response_destination
+		MustStoreBoolBit(false).                                                  // custom_payload
+		MustStoreCoins(0.01 * 1e9).                                               // forward_ton_amount (0.05 TON)
+		MustStoreMaybeRef(commentCell).                                           // forward_payload
 		EndCell()
 
 	msg, err := tonconnect.NewMessage(

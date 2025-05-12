@@ -181,7 +181,7 @@ func (u *UserRepository) FindByTelegramChatId(telegramId uint64) *models.User {
 	err := u.db.GetContext(
 		ctx,
 		&user,
-		"select * from usr as u join telegram as t on t.user_id=u.id where t.telegram_id=$1",
+		"select u.id, u.username, u.created_at, u.referer_id from usr as u join telegram as t on t.user_id=u.id where t.telegram_id=$1",
 		telegramId,
 	)
 

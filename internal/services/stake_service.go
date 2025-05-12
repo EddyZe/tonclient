@@ -23,22 +23,15 @@ func NewStakeService(
 	}
 }
 
-func (s *StakeService) CreateStake(userId, poolId uint64, amount float64) (*models.Stake, error) {
-	if _, err := s.userService.GetById(userId); err != nil {
+func (s *StakeService) CreateStake(stake *models.Stake) (*models.Stake, error) {
+	if _, err := s.userService.GetById(stake.UserId); err != nil {
 		return nil, err
 	}
-	if _, err := s.poolService.GetId(poolId); err != nil {
+	if _, err := s.poolService.GetId(stake.PoolId); err != nil {
 		return nil, err
 	}
-	if amount < 1 {
+	if stake.Amount < 1 {
 		return nil, errors.New("amount must be greater than 0")
-	}
-
-	stake := &models.Stake{
-		UserId:   userId,
-		PoolId:   poolId,
-		Amount:   amount,
-		IsActive: true,
 	}
 
 	if err := s.stakeRepo.Save(stake); err != nil {

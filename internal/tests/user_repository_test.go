@@ -1,11 +1,11 @@
-package repositories
+package tests
 
 import (
+	"log"
 	"testing"
 	"time"
-	"tonclient/internal/config"
-	"tonclient/internal/database"
 	"tonclient/internal/models"
+	"tonclient/internal/repositories"
 )
 
 func TestRepCRUD(t *testing.T) {
@@ -48,21 +48,11 @@ func TestRepCRUD(t *testing.T) {
 	}
 }
 
-func initUserRepo() *UserRepository {
+func initUserRepo() *repositories.UserRepository {
 	db, err := InitDBDefault()
 	if err != nil {
 		log.Fatal("Failed connect to database: ", err)
 	}
-	repo := NewUserRepository(db.Db)
+	repo := repositories.NewUserRepository(db.Db)
 	return repo
-}
-
-func InitDBDefault() (*database.Postgres, error) {
-	return database.NewPostgres(&config.PostgresConfig{
-		Host:     "localhost",
-		Port:     "5432",
-		User:     "postgres",
-		Password: "admin",
-		DBName:   "toninsurancebot",
-	})
 }
