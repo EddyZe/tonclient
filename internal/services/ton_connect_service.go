@@ -162,7 +162,11 @@ func (s *TonConnectService) SendJettonTransaction(jettonAddr, receiverAddr, send
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	jettonData := s.adminWalletServ.DataJetton(payload.JettonMaster)
+	jettonData, err := s.adminWalletServ.DataJetton(payload.JettonMaster)
+	if err != nil {
+		log.Error("Error getting jetton data", err)
+		return nil, err
+	}
 	log.Infoln(jettonData)
 
 	parsed, err := strconv.ParseFloat(amount, 64)

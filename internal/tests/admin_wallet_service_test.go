@@ -21,7 +21,12 @@ func TestGetData_GetDataJetton(t *testing.T) {
 
 	s := InitAdminService()
 
-	s.DataJetton("EQAJKTfw3qP0OFUba-1l7rtA7_TzXd9Cbm4DjNCaioCdofF_")
+	info, err := s.DataJetton("EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs")
+	if err != nil {
+		log.Println("Error getting jetton data", err)
+		return
+	}
+	log.Println(info)
 }
 
 func InitDBDefault() (*database.Postgres, error) {

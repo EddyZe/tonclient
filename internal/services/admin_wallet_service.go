@@ -292,7 +292,7 @@ func (s *AdminWalletService) processOperation(op uint64, amount float64, payload
 	}
 }
 
-func (s *AdminWalletService) DataJetton(masterAddr string) *models.JettonData {
+func (s *AdminWalletService) DataJetton(masterAddr string) (*models.JettonData, error) {
 	tokenContract := address.MustParseAddr(masterAddr)
 	master := jetton.NewJettonMasterClient(s.api, tokenContract)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
@@ -300,23 +300,49 @@ func (s *AdminWalletService) DataJetton(masterAddr string) *models.JettonData {
 
 	data, err := master.GetJettonData(ctx)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
+	return getContent(data), nil
+}
+
+func getContent(any *jetton.Data) *models.JettonData {
 	decimals := 9
-	content := data.Content.(*nft.ContentOnchain)
-	totalSupply := data.TotalSupply.Uint64()
-	mintable := data.Mintable
-	adminAddr := data.AdminAddr
-	name := content.GetAttribute("name")
-	symbol := content.GetAttribute("symbol")
-	if content.GetAttribute("decimals") != "" {
-		decimals, err = strconv.Atoi(content.GetAttribute("decimals"))
-		if err != nil {
-			log.Fatal("invalid decimals")
+	totalSupply := any.TotalSupply.Uint64()
+	mintable := any.Mintable
+	adminAddr := any.AdminAddr
+	name := ""
+	description := ""
+	symbol := ""
+	content := any.Content
+	switch content.(type) {
+	case *nft.ContentOnchain:
+		c := content.(*nft.ContentOnchain)
+		name = c.GetAttribute("name")
+		symbol = c.GetAttribute("symbol")
+		if c.GetAttribute("decimals") != "" {
+			d, err := strconv.Atoi(c.GetAttribute("decimals"))
+			if err != nil {
+				return nil
+			}
+			decimals = d
 		}
+		description = c.GetAttribute("description")
+		break
+	case *nft.ContentSemichain:
+		c := content.(*nft.ContentSemichain)
+		name = c.GetAttribute("name")
+		symbol = c.GetAttribute("symbol")
+		if c.GetAttribute("decimals") != "" {
+			d, err := strconv.Atoi(c.GetAttribute("decimals"))
+			if err != nil {
+				return nil
+			}
+			decimals = d
+		}
+		description = c.GetAttribute("description")
+		break
 	}
-	description := content.GetAttribute("description")
 
 	return &models.JettonData{
 		TotalSupply: totalSupply,
