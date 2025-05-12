@@ -9,16 +9,19 @@ type User struct {
 	Id        sql.NullInt64 `db:"id" json:"id"`
 	Username  string        `db:"username" json:"username"`
 	CreatedAt time.Time     `db:"created_at" json:"created_at"`
+	RefererId sql.NullInt64 `db:"referer_id" json:"referer_id"`
 }
 
 type Pool struct {
-	Id           sql.NullInt64 `db:"id" json:"id"`
-	OwnerId      uint64        `db:"owner_id" json:"owner_id"`
-	Reserve      float64       `db:"reserve" json:"reserve"`
-	JettonWallet string        `db:"jetton_wallet" json:"jetton_wallet"`
-	Reward       uint          `db:"reward" json:"reward"`
-	Period       uint          `db:"period" json:"period"`
-	IsActive     bool          `db:"is_active" json:"is_active"`
+	Id               sql.NullInt64 `db:"id" json:"id"`
+	OwnerId          uint64        `db:"owner_id" json:"owner_id"`
+	Reserve          float64       `db:"reserve" json:"reserve"`
+	JettonWallet     string        `db:"jetton_wallet" json:"jetton_wallet"`
+	Reward           uint          `db:"reward" json:"reward"`
+	Period           uint          `db:"period" json:"period"`
+	InsuranceCoating uint          `db:"insurance_coating" json:"insurance_coating"`
+	IsActive         bool          `db:"is_active" json:"is_active"`
+	IsCommissionPaid bool          `db:"is_commission_paid" json:"is_commission_paid"`
 }
 
 type Stake struct {

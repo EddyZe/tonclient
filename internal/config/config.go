@@ -27,13 +27,19 @@ type PostgresConfig struct {
 	DBName   string
 }
 
+type TonClientConfig struct {
+	Seed                []string
+	WalletAddr          string
+	JettonAddr          string
+	JettonAdminContract string
+}
+
 func InitConfig() error {
 	err := godotenv.Load()
 	if err != nil {
 		log.Error("Error loading .env file")
 	}
 
-	WALLET_SEED = strings.Split(os.Getenv("WALLET_SEED"), " ")
 	COMMISSION_AMOUNT, err = strconv.ParseFloat(os.Getenv("COMMISSION_AMOUNT"), 64)
 	if err != nil {
 		log.Error("Error parsing COMMISSION_AMOUNT")
@@ -52,5 +58,19 @@ func LoadPostgresConfig() *PostgresConfig {
 		Host:     os.Getenv("DB_HOST"),
 		Port:     os.Getenv("DB_PORT"),
 		DBName:   os.Getenv("DB_NAME"),
+	}
+}
+
+func LoadTonConfig() *TonClientConfig {
+	seed := strings.Split(os.Getenv("WALLET_SEED"), " ")
+	walletAddr := os.Getenv("WALLET_ADDR")
+	jettonAddr := os.Getenv("JETTON_WALLET_MAIN_COIN")
+	contract := os.Getenv("JETTON_CONTRACT_ADMIN_JETTON")
+
+	return &TonClientConfig{
+		Seed:                seed,
+		WalletAddr:          walletAddr,
+		JettonAddr:          jettonAddr,
+		JettonAdminContract: contract,
 	}
 }

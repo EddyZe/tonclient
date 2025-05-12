@@ -4,10 +4,12 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base32"
+	"encoding/base64"
 	"errors"
 	"strconv"
 	"time"
 	"tonclient/internal/config"
+	"tonclient/internal/models"
 
 	"github.com/cameo-engineering/tonconnect"
 	"github.com/redis/go-redis/v9"
@@ -148,19 +150,18 @@ func (s *TonConnectService) CreateSession() (*tonconnect.Session, error) {
 	return tonconnect.NewSession()
 }
 
-func (s *TonConnectService) SendJettonTransaction(jettonAddr, receiverAddr, senderAddr, amount, comment string, session *tonconnect.Session) ([]byte, error) {
+func (s *TonConnectService) SendJettonTransaction(jettonAddr, receiverAddr, senderAddr, amount string, payload *models.Payload, session *tonconnect.Session) ([]byte, error) {
 
-	commentCell, err := wallet.CreateCommentCell(comment)
-	if err != nil {
-		log.Error("Error creating commentCell", err)
-		return nil, err
-	}
+	commentCell := cell.BeginCell().
+		MustStoreUInt(payload.OperationType, 32).
+		MustStoreStringSnake(base64.StdEncoding.EncodeToString([]byte(payload.Payload))).
+		EndCell()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
 	parsed, err := strconv.ParseFloat(amount, 64)
 
-	payload := cell.BeginCell().
+	pld := cell.BeginCell().
 		MustStoreUInt(0x0f8a7ea5, 32).                      // opcode
 		MustStoreUInt(uint64(time.Now().Unix()), 64).       // query_id (UNIX timestamp)
 		MustStoreCoins(uint64(parsed) * 1e9).               // amount (с учетом decimals!)
@@ -174,7 +175,7 @@ func (s *TonConnectService) SendJettonTransaction(jettonAddr, receiverAddr, send
 	msg, err := tonconnect.NewMessage(
 		jettonAddr,
 		strconv.FormatUint(0.05*1e9, 10),
-		tonconnect.WithPayload(payload.ToBOC()),
+		tonconnect.WithPayload(pld.ToBOC()),
 	)
 	if err != nil {
 		log.Error("Error creating transaction", err)

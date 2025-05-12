@@ -1,6 +1,7 @@
 package services
 
 import (
+	"database/sql"
 	"errors"
 	"time"
 	"tonclient/internal/models"
@@ -17,7 +18,7 @@ func NewUserService(userRepo *repositories.UserRepository) *UserService {
 	}
 }
 
-func (s *UserService) CreateUser(username string) (*models.User, error) {
+func (s *UserService) CreateUser(username string, refererId sql.NullInt64) (*models.User, error) {
 	user := s.userRepo.FindByUsername(username)
 	if user != nil {
 		return nil, errors.New("user already exists")
@@ -26,6 +27,7 @@ func (s *UserService) CreateUser(username string) (*models.User, error) {
 	user = &models.User{
 		Username:  username,
 		CreatedAt: time.Now(),
+		RefererId: refererId,
 	}
 
 	if err := s.userRepo.Save(user); err != nil {
@@ -33,6 +35,10 @@ func (s *UserService) CreateUser(username string) (*models.User, error) {
 	}
 
 	return user, nil
+}
+
+func (s *UserService) GetUserReferal(userId uint64) *[]models.User {
+	return s.GetUserReferal(userId)
 }
 
 func (s *UserService) GetById(id uint64) (*models.User, error) {

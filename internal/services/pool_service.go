@@ -14,49 +14,41 @@ type PoolService struct {
 
 func NewPoolService(
 	poolRepository *repositories.PoolRepository,
-	userService UserService,
+	userService *UserService,
 ) *PoolService {
 
 	return &PoolService{
 		poolRepository: poolRepository,
-		UserService:    &userService,
+		UserService:    userService,
 	}
 }
 
-func (s *PoolService) CreatePool(ownerId uint64, reserve float64, jettonWallet string, reward uint, period uint) (*models.Pool, error) {
-	user, err := s.UserService.GetById(ownerId)
+func (s *PoolService) CreatePool(pool *models.Pool) (*models.Pool, error) {
+	user, err := s.UserService.GetById(pool.OwnerId)
 	if user == nil {
 		return nil, err
 	}
 
-	if reserve < 1 {
+	if pool.Reserve < 1 {
 		return nil, errors.New("reserve must be greater than zero")
 	}
 
-	if jettonWallet == "" {
+	if pool.JettonWallet == "" {
 		return nil, errors.New("jettonWallet must be set")
 	}
 
-	if reward < 1 {
+	if pool.Reward < 1 {
 		return nil, errors.New("reward must be greater than zero")
 	}
 
-	if reward > 30 {
-		return nil, errors.New("reward must be less than 30")
-	}
-
-	if period < 1 {
+	if pool.Period < 1 {
 		return nil, errors.New("period must be greater than zero")
 	}
 
-	pool := &models.Pool{
-		OwnerId:      ownerId,
-		Reserve:      reserve,
-		JettonWallet: jettonWallet,
-		Reward:       reward,
-		Period:       period,
-		IsActive:     false,
+	if pool.InsuranceCoating < 1 {
+		return nil, errors.New("insurance_coating must be greater than zero")
 	}
+
 	if err := s.poolRepository.Save(pool); err != nil {
 		return nil, err
 	}
@@ -87,6 +79,16 @@ func (s *PoolService) AddReserve(poolId uint64, reserve float64) (newReserve flo
 	}
 
 	return currentReserve, nil
+}
+
+func (s *PoolService) SetCommissionPaid(poolId uint64, b bool) error {
+	pool := s.poolRepository.FindById(poolId)
+	if pool == nil {
+		return errors.New("pool not found")
+	}
+
+	pool.IsCommissionPaid = b
+	return s.poolRepository.Update(pool)
 }
 
 func (s *PoolService) Delete(poolId uint64) error {

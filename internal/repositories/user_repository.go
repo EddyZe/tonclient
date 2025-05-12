@@ -27,7 +27,7 @@ func (u *UserRepository) Save(user *models.User) error {
 
 	tx := u.db.MustBegin()
 	query, args, err := tx.BindNamed(
-		"INSERT into usr (username, created_at) values (:username, :created_at) returning id",
+		"INSERT into usr (username, created_at, referer_id) values (:username, :created_at, :referer_id) returning id",
 		user,
 	)
 	if err != nil {
@@ -93,6 +93,20 @@ func (u *UserRepository) Update(user *models.User) error {
 	}
 
 	return nil
+}
+
+func (u *UserRepository) FindUserReferal(refererId uint64) *[]models.User {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	var users []models.User
+
+	if err := u.db.SelectContext(ctx, &users, "select * from usr where referer_id = $1", refererId); err != nil {
+		log.Error("Failed find user ", err)
+		return nil
+	}
+
+	return &users
 }
 
 func (u *UserRepository) FindById(id uint64) *models.User {

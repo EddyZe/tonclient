@@ -24,7 +24,7 @@ import (
 const TON_MANIFEST_URL = "https://raw.githubusercontent.com/cameo-engineering/tonconnect/master/tonconnect-manifest.json"
 
 func main() {
-	run3()
+	run()
 }
 
 func run3() {

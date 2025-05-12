@@ -25,7 +25,7 @@ func (r *PoolRepository) Save(pool *models.Pool) error {
 	tx := r.db.MustBegin()
 
 	query, args, err := tx.BindNamed(
-		"insert into pool(owner_id, reserve, jetton_wallet, reward, period, is_active) values (:owner_id, :reserve, :jetton_wallet, :reward, :period, :is_active) returning id",
+		"insert into pool(owner_id, reserve, jetton_wallet, reward, period, is_active, insurance_coating, is_commission_paid) values (:owner_id, :reserve, :jetton_wallet, :reward, :period, :is_active, :insurance_coating, :is_commission_paid) returning id",
 		pool,
 	)
 
@@ -61,7 +61,7 @@ func (r *PoolRepository) Update(pool *models.Pool) error {
 	tx := r.db.MustBegin()
 	if _, err := tx.NamedExecContext(
 		ctx,
-		"update pool set owner_id = :owner_id, reserve = :reserve, jetton_wallet = :jetton_wallet, reward = :reward, period = :period, is_active = :is_active where id = :id",
+		"update pool set owner_id = :owner_id, reserve = :reserve, jetton_wallet = :jetton_wallet, reward = :reward, period = :period, is_active = :is_active, is_commission_paid = :is_commission_paid where id = :id",
 		pool); err != nil {
 		log.Error("Error while updating pool: ", err)
 		if er := tx.Rollback(); er != nil {

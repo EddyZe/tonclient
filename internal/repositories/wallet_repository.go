@@ -84,7 +84,7 @@ func (r *WalletTonRepository) Update(ton *models.WalletTon) error {
 	return nil
 }
 
-func (r *WalletTonRepository) DeleteById(id int) error {
+func (r *WalletTonRepository) DeleteById(id uint64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -127,7 +127,7 @@ func (r *WalletTonRepository) FindAllLimit(offset, limit int) *[]models.WalletTo
 	return &wallets
 }
 
-func (r *WalletTonRepository) FindById(id int) *models.WalletTon {
+func (r *WalletTonRepository) FindById(id uint64) *models.WalletTon {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
