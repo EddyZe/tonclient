@@ -43,9 +43,9 @@ func run3() {
 	tokenBot := os.Getenv("TELEGRAM_BOT_TOKEN")
 
 	logger.Infoln("Telegram bot starting:", tokenBot)
-	err := tonbot.StartBot(tokenBot)
-	if err != nil {
-		log.Fatal("Failed to start bot: ", err)
+	tgbot := tonbot.NewTgBot(tokenBot)
+	if err := tgbot.StartBot(); err != nil {
+		logger.Fatalf("Failed to start bot: %v", err)
 	}
 
 }
