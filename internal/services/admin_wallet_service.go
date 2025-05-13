@@ -25,6 +25,7 @@ type AdminWalletService struct {
 	poolServ        *PoolService
 	tgServ          *TelegramService
 	stakeServ       *StakeService
+	wallServ        *WalletTonService
 	tgbot           *tonbot.TgBot
 	api             *ton.APIClient
 	master          *ton.BlockIDExt
@@ -34,7 +35,7 @@ type AdminWalletService struct {
 	treasuryAddress *address.Address
 }
 
-func NewAdminWalletService(config *config.TonClientConfig, ps *PoolService, ts *TelegramService, ss *StakeService, tgbot *tonbot.TgBot) (*AdminWalletService, error) {
+func NewAdminWalletService(config *config.TonClientConfig, ps *PoolService, ts *TelegramService, ss *StakeService, ws *WalletTonService, tgbot *tonbot.TgBot) (*AdminWalletService, error) {
 	ctx := context.Background()
 	api, err := initApi(ctx)
 	if err != nil {
@@ -42,7 +43,7 @@ func NewAdminWalletService(config *config.TonClientConfig, ps *PoolService, ts *
 		return nil, err
 	}
 
-	master, err := api.CurrentMasterchainInfo(ctx) // we fetch block just to trigger chain proof check
+	master, err := api.CurrentMasterchainInfo(ctx)
 	if err != nil {
 		log.Fatalln("get masterchain info err: ", err.Error())
 		return nil, err
@@ -71,6 +72,7 @@ func NewAdminWalletService(config *config.TonClientConfig, ps *PoolService, ts *
 		poolServ:        ps,
 		tgServ:          ts,
 		stakeServ:       ss,
+		wallServ:        ws,
 		tgbot:           tgbot,
 		api:             api,
 		master:          master,
@@ -203,9 +205,24 @@ func (s *AdminWalletService) processOperation(op uint64, amount float64, payload
 
 		log.Infoln(pool)
 
-		_, err := s.poolServ.CreatePool(&pool)
+		ownerAddr, err := s.wallServ.GetById(pool.OwnerId)
+		infoJetton, err := s.DataJetton(pool.JettonMaster)
+		if err != nil {
+			log.Error("Failed to get owner address:", err)
+			err := s.SendJetton(pool.JettonMaster, ownerAddr.Addr, "Возврат средств", amount, infoJetton.Decimals)
+			if err != nil {
+				return
+			}
+			return
+		}
+		_, err = s.poolServ.CreatePool(&pool)
+
 		if err != nil {
 			log.Errorf("Failed to create pool: %v", err)
+			err := s.SendJetton(pool.JettonMaster, ownerAddr.Addr, "Возврат средств", amount, infoJetton.Decimals)
+			if err != nil {
+				return
+			}
 			return
 		}
 
@@ -227,21 +244,28 @@ func (s *AdminWalletService) processOperation(op uint64, amount float64, payload
 			return
 		}
 
-		newReserve, err := s.poolServ.AddReserve(addReserve.PoolId, addReserve.Amount)
-		if err != nil {
-			log.Errorf("Failed to add reserve: %v", err)
-			return
-		}
-
 		pool, err := s.poolServ.GetId(addReserve.PoolId)
 		if err != nil {
 			log.Errorf("Failed to get pool id: %v", err)
 			return
 		}
 
+		ownerAddr, err := s.wallServ.GetById(pool.OwnerId)
+		infoJetton, err := s.DataJetton(pool.JettonMaster)
+
 		tg, err := s.tgServ.GetByUserId(pool.OwnerId)
 		if err != nil {
 			log.Errorf("Failed to get telegram: %v", err)
+			return
+		}
+
+		newReserve, err := s.poolServ.AddReserve(addReserve.PoolId, addReserve.Amount)
+		if err != nil {
+			log.Errorf("Failed to add reserve: %v", err)
+			err := s.SendJetton(pool.JettonMaster, ownerAddr.Addr, "Возврат средств", amount, infoJetton.Decimals)
+			if err != nil {
+				return
+			}
 			return
 		}
 
@@ -284,12 +308,46 @@ func (s *AdminWalletService) processOperation(op uint64, amount float64, payload
 			return
 		}
 
-		util.SendMessage(tg.TelegramId, "Комиссия оплачена")
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		s.tgbot.SendMessage(ctx, "Комиссия оплачена. Пул активирован!", tg.TelegramId)
 
 		break
 	default:
 		return
 	}
+}
+
+func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment string, amount float64, decimal int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	defer cancel()
+	tokenContract := address.MustParseAddr(jettonMaster)
+	token := jetton.NewJettonMasterClient(s.api, tokenContract)
+	tokenWallet, err := token.GetJettonWallet(ctx, s.wallet.WalletAddress())
+	if err != nil {
+		log.Errorf("Failed to get jetton token: %v", err)
+		return err
+	}
+
+	amountTok := tlb.MustFromDecimal(fmt.Sprint(amount), decimal)
+	c, err := wallet.CreateCommentCell(comment)
+	to := address.MustParseAddr(receiverAddr)
+	transferPayload, err := tokenWallet.BuildTransferPayloadV2(to, to, amountTok, tlb.ZeroCoins, c, nil)
+	if err != nil {
+		log.Errorf("Failed to build transfer payload: %v", err)
+		return err
+	}
+
+	msg := wallet.SimpleMessage(tokenWallet.Address(), tlb.MustFromTON("0.05"), transferPayload)
+
+	log.Infoln("sending transaction...")
+	tx, _, err := s.wallet.SendWaitTransaction(ctx, msg)
+	if err != nil {
+		log.Errorf("Failed to send transaction: %v", err)
+		return err
+	}
+	log.Infoln("transaction confirmed, hash:", base64.StdEncoding.EncodeToString(tx.Hash))
+	return nil
 }
 
 func (s *AdminWalletService) DataJetton(masterAddr string) (*models.JettonData, error) {

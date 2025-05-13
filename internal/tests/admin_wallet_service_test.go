@@ -29,6 +29,15 @@ func TestGetData_GetDataJetton(t *testing.T) {
 	log.Println(info)
 }
 
+func TestSendJetton(t *testing.T) {
+	s := InitAdminService()
+	err := s.SendJetton("EQAJKTfw3qP0OFUba-1l7rtA7_TzXd9Cbm4DjNCaioCdofF_", "UQAdpNJR-hZ72cPb70eFuQU3VDx8EcLsOEgm7K0Puh9cHA1d", "test", 5, 9)
+	if err != nil {
+		log.Fatalln("Error getting jetton data", err)
+		return
+	}
+}
+
 func InitDBDefault() (*database.Postgres, error) {
 	return database.NewPostgres(&config.PostgresConfig{
 		Host:     "localhost",
@@ -56,16 +65,18 @@ func InitAdminService() *services.AdminWalletService {
 	stS := repositories.NewStakeRepository(db.Db)
 	ss := services.NewStakeService(stS, us, ps)
 	bot := tonbot.NewTgBot("8112143412:AAE1EZ3rEmqNx4O41UYch1MtD7NLIxb6-i0")
-
+	wr := repositories.NewWalletRepository(db.Db)
+	ws := services.NewWalletTonService(us, wr)
 	s, err := services.NewAdminWalletService(&config.TonClientConfig{
 		Seed:                seeds,
 		WalletAddr:          "UQD6A01mB8tAKJVekRrMjoA3l188LSCF2zrIHoH94tWhZGAO",
-		JettonAddr:          "EQDpOMdV41bpJn6UItHl8P-TGo6bjNLRjUF4lMA6WzQc66ol",
+		JettonAddr:          "EQAPVdCkLAHYk0RXty5ucMNZhgX-wKe2mLBXp8A6YHm5z_os",
 		JettonAdminContract: "EQAJKTfw3qP0OFUba-1l7rtA7_TzXd9Cbm4DjNCaioCdofF_",
 	},
 		ps,
 		ts,
 		ss,
+		ws,
 		bot,
 	)
 	if err != nil {
