@@ -24,24 +24,27 @@ create table if not exists wallet_ton
 
 create table if not exists pool
 (
-    id                 bigserial primary key,
-    owner_id           bigint references usr (id) on delete cascade,
-    reserve            numeric(19, 9) check ( reserve > 0 ) not null,
-    jetton_wallet      varchar(256)                         not null,
-    jetton_master      varchar(256)                         not null,
-    reward             int check ( reward > 0 )             not null,
-    period             int check (period > 0)               not null,
-    insurance_coating  int check ( insurance_coating > 0 )  not null,
-    is_active          bool default false,
-    is_commission_paid bool default false
+    id                       bigserial primary key,
+    owner_id                 bigint references usr (id) on delete cascade,
+    reserve                  numeric(19, 9) check ( reserve > 0 )       not null,
+    jetton_wallet            varchar(256)                               not null,
+    jetton_master            varchar(256)                               not null,
+    reward                   int check ( reward > 0 )                   not null,
+    period                   int check (period > 0)                     not null,
+    insurance_coating        int check ( insurance_coating > 0 )        not null,
+    max_compensation_percent int check ( max_compensation_percent < 30) not null,
+    created_at               timestamp default now(),
+    is_active                bool      default false,
+    is_commission_paid       bool      default false
 );
 
 create table if not exists stake
 (
-    id         bigserial primary key,
-    user_id    bigint references usr (id) on delete cascade  not null,
-    pool_id    bigint references pool (id) on delete cascade not null,
-    amount     numeric(19, 9)                                not null check ( amount > 0 ),
-    start_date timestamp default now(),
-    is_active  bool      default true
+    id                     bigserial primary key,
+    user_id                bigint references usr (id) on delete cascade  not null,
+    pool_id                bigint references pool (id) on delete cascade not null,
+    amount                 numeric(19, 9)                                not null check ( amount > 0 ),
+    deposit_creation_price numeric(19, 9)                                not null check ( deposit_creation_price > 0 ),
+    start_date             timestamp default now(),
+    is_active              bool      default true
 )

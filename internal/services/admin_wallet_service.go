@@ -321,9 +321,7 @@ func (s *AdminWalletService) processOperation(op uint64, amount float64, payload
 func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment string, amount float64, decimal int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
-	tokenContract := address.MustParseAddr(jettonMaster)
-	token := jetton.NewJettonMasterClient(s.api, tokenContract)
-	tokenWallet, err := token.GetJettonWallet(ctx, s.wallet.WalletAddress())
+	tokenWallet, err := s.TokenWalletAddress(ctx, jettonMaster)
 	if err != nil {
 		log.Errorf("Failed to get jetton token: %v", err)
 		return err
@@ -348,6 +346,18 @@ func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment stri
 	}
 	log.Infoln("transaction confirmed, hash:", base64.StdEncoding.EncodeToString(tx.Hash))
 	return nil
+}
+
+func (s *AdminWalletService) TokenWalletAddress(ctx context.Context, jettonMaster string) (*jetton.WalletClient, error) {
+	tokenContract := address.MustParseAddr(jettonMaster)
+	token := jetton.NewJettonMasterClient(s.api, tokenContract)
+	tokenWallet, err := token.GetJettonWallet(ctx, s.wallet.WalletAddress())
+	if err != nil {
+		log.Errorf("Failed to get jetton token: %v", err)
+		return nil, err
+	}
+
+	return tokenWallet, nil
 }
 
 func (s *AdminWalletService) DataJetton(masterAddr string) (*models.JettonData, error) {
@@ -430,5 +440,5 @@ func initApi(ctx context.Context) (*ton.APIClient, error) {
 }
 
 func getWallet(api *ton.APIClient, seed []string) (*wallet.Wallet, error) {
-	return wallet.FromSeed(api, seed, wallet.HighloadV2Verified)
+	return wallet.FromSeed(api, seed, wallet.HighloadV3)
 }

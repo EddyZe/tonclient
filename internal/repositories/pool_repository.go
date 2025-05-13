@@ -25,7 +25,10 @@ func (r *PoolRepository) Save(pool *models.Pool) error {
 	tx := r.db.MustBegin()
 
 	query, args, err := tx.BindNamed(
-		"insert into pool(owner_id, reserve, jetton_wallet, reward, period, is_active, insurance_coating, is_commission_paid, jetton_master) values (:owner_id, :reserve, :jetton_wallet, :reward, :period, :is_active, :insurance_coating, :is_commission_paid, :jetton_master) returning id",
+		`insert into
+pool(owner_id, reserve, jetton_wallet, reward, period, is_active, insurance_coating, is_commission_paid, jetton_master, max_compensation_percent, created_at)
+values (:owner_id, :reserve, :jetton_wallet, :reward, :period, :is_active, :insurance_coating, :is_commission_paid, :jetton_master, :max_compensation_percent, :created_at)
+returning id`,
 		pool,
 	)
 
@@ -61,7 +64,7 @@ func (r *PoolRepository) Update(pool *models.Pool) error {
 	tx := r.db.MustBegin()
 	if _, err := tx.NamedExecContext(
 		ctx,
-		"update pool set owner_id = :owner_id, reserve = :reserve, jetton_wallet = :jetton_wallet, reward = :reward, period = :period, is_active = :is_active, is_commission_paid = :is_commission_paid, jetton_master = :jetton_master where id = :id",
+		"update pool set owner_id = :owner_id, reserve = :reserve, jetton_wallet = :jetton_wallet, reward = :reward, period = :period, is_active = :is_active, is_commission_paid = :is_commission_paid, jetton_master = :jetton_master, max_compensation_percent = :max_compensation_percent, created_at = :created_at where id = :id",
 		pool); err != nil {
 		log.Error("Error while updating pool: ", err)
 		if er := tx.Rollback(); er != nil {
@@ -152,7 +155,7 @@ func (r *PoolRepository) FindByOwnerId(ownerId int) *[]models.Pool {
 
 	var pools []models.Pool
 	tx := r.db.MustBegin()
-	if err := tx.SelectContext(ctx, &pools, "select p.id, p.owner_id, p.reserve, p.jetton_wallet, p.reward, p.period, p.insurance_coating, p.is_active, p.is_commission_paid, p.jetton_master from pool as p join usr as u on p.owner_id = u.id where u.id = $1", ownerId); err != nil {
+	if err := tx.SelectContext(ctx, &pools, "select p.id, p.owner_id, p.reserve, p.jetton_wallet, p.reward, p.period, p.insurance_coating, p.is_active, p.is_commission_paid, p.jetton_master, p.max_compensation_percent, p.created_at from pool as p join usr as u on p.owner_id = u.id where u.id = $1", ownerId); err != nil {
 		log.Error("Error while getting pool: ", err)
 		if er := tx.Rollback(); er != nil {
 			log.Error("Error while rolling back transaction: ", er)
@@ -169,7 +172,7 @@ func (r *PoolRepository) FindByOwnerIdLimit(ownerId, offset, limit int) *[]model
 
 	var pools []models.Pool
 	tx := r.db.MustBegin()
-	if err := tx.SelectContext(ctx, &pools, "select p.id, p.owner_id, p.reserve, p.jetton_wallet, p.reward, p.period, p.insurance_coating, p.is_active, p.is_commission_paid, p.jetton_master from pool as p join usr as u on p.owner_id = u.id where u.id = $1 offset $2 limit $3", ownerId, offset, limit); err != nil {
+	if err := tx.SelectContext(ctx, &pools, "select p.id, p.owner_id, p.reserve, p.jetton_wallet, p.reward, p.period, p.insurance_coating, p.is_active, p.is_commission_paid, p.jetton_master, p.max_compensation_percent, p.created_at from pool as p join usr as u on p.owner_id = u.id where u.id = $1 offset $2 limit $3", ownerId, offset, limit); err != nil {
 		log.Error("Error while getting pool: ", err)
 		if er := tx.Rollback(); er != nil {
 			log.Error("Error while rolling back transaction: ", er)
