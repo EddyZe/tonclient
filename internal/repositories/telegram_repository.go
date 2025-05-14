@@ -174,7 +174,7 @@ func (r *TelegramRepository) FindByUserId(userId uint64) *models.Telegram {
 	if err := tx.GetContext(
 		ctx,
 		&telegram,
-		"select t.id, t.username, t.telegram_id, t.user_id from telegram as t join usr as u on t.user_id = u.id where u.id = $1",
+		"select t.* from telegram as t join usr as u on t.user_id = u.id where u.id = $1",
 		userId); err != nil {
 		if er := tx.Rollback(); er != nil {
 			log.Error("Failed RollBack transaction", er)

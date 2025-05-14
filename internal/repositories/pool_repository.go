@@ -155,7 +155,7 @@ func (r *PoolRepository) FindByOwnerId(ownerId int) *[]models.Pool {
 
 	var pools []models.Pool
 	tx := r.db.MustBegin()
-	if err := tx.SelectContext(ctx, &pools, "select p.id, p.owner_id, p.reserve, p.jetton_wallet, p.reward, p.period, p.insurance_coating, p.is_active, p.is_commission_paid, p.jetton_master, p.max_compensation_percent, p.created_at from pool as p join usr as u on p.owner_id = u.id where u.id = $1", ownerId); err != nil {
+	if err := tx.SelectContext(ctx, &pools, "select p.* from pool as p join usr as u on p.owner_id = u.id where u.id = $1", ownerId); err != nil {
 		log.Error("Error while getting pool: ", err)
 		if er := tx.Rollback(); er != nil {
 			log.Error("Error while rolling back transaction: ", er)
@@ -172,7 +172,7 @@ func (r *PoolRepository) FindByOwnerIdLimit(ownerId, offset, limit int) *[]model
 
 	var pools []models.Pool
 	tx := r.db.MustBegin()
-	if err := tx.SelectContext(ctx, &pools, "select p.id, p.owner_id, p.reserve, p.jetton_wallet, p.reward, p.period, p.insurance_coating, p.is_active, p.is_commission_paid, p.jetton_master, p.max_compensation_percent, p.created_at from pool as p join usr as u on p.owner_id = u.id where u.id = $1 offset $2 limit $3", ownerId, offset, limit); err != nil {
+	if err := tx.SelectContext(ctx, &pools, "select p.* from pool as p join usr as u on p.owner_id = u.id where u.id = $1 offset $2 limit $3", ownerId, offset, limit); err != nil {
 		log.Error("Error while getting pool: ", err)
 		if er := tx.Rollback(); er != nil {
 			log.Error("Error while rolling back transaction: ", er)
