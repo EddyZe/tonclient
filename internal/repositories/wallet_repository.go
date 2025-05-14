@@ -37,7 +37,7 @@ func (r *WalletTonRepository) Save(ton *models.WalletTon) error {
 		return err
 	}
 
-	if err := tx.QueryRowxContext(ctx, query, args).Scan(ton.Id); err != nil {
+	if err := tx.QueryRowxContext(ctx, query, args).Scan(&ton.Id); err != nil {
 		if er := tx.Rollback(); er != nil {
 			log.Error("Transaction rollback failed: ", er)
 			return er

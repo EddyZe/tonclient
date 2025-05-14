@@ -1,9 +1,7 @@
 package services
 
 import (
-	"database/sql"
 	"errors"
-	"time"
 	"tonclient/internal/models"
 	"tonclient/internal/repositories"
 )
@@ -18,16 +16,10 @@ func NewUserService(userRepo *repositories.UserRepository) *UserService {
 	}
 }
 
-func (s *UserService) CreateUser(username string, refererId sql.NullInt64) (*models.User, error) {
-	user := s.userRepo.FindByUsername(username)
-	if user != nil {
+func (s *UserService) CreateUser(user *models.User) (*models.User, error) {
+	u := s.userRepo.FindByUsername(user.Username)
+	if u != nil {
 		return nil, errors.New("user already exists")
-	}
-
-	user = &models.User{
-		Username:  username,
-		CreatedAt: time.Now(),
-		RefererId: refererId,
 	}
 
 	if err := s.userRepo.Save(user); err != nil {
@@ -56,4 +48,27 @@ func (s *UserService) GetByUsername(username string) (*models.User, error) {
 		return nil, errors.New("user not found")
 	}
 	return user, nil
+}
+
+func (s *UserService) GetByTelegramChatId(telegramChatId uint64) (*models.User, error) {
+	user := s.userRepo.FindByTelegramChatId(telegramChatId)
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
+
+	return user, nil
+}
+
+func (s *UserService) DeleteById(id uint64) error {
+	user := s.userRepo.FindById(id)
+	if user == nil {
+		return errors.New("user not found")
+	}
+
+	err := s.userRepo.DeleteById(id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

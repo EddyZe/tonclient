@@ -27,6 +27,7 @@ func (s *TelegramService) CreateTelegram(userId uint64, tgUsername string, tgId 
 	tg := &models.Telegram{
 		Username:   tgUsername,
 		TelegramId: tgId,
+		UserId:     userId,
 	}
 
 	if err := s.telegramRepo.Save(tg); err != nil {

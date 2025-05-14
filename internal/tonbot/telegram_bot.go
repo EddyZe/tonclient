@@ -2,22 +2,30 @@ package tonbot
 
 import (
 	"context"
-	"log"
 	"os"
 	"os/signal"
+	"strings"
+	"tonclient/internal/config"
+	"tonclient/internal/services"
+	"tonclient/internal/tonbot/command"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
 
+var log = config.InitLogger()
+
 type TgBot struct {
 	token string
-	*bot.Bot
+	us    *services.UserService
+	ts    *services.TelegramService
 }
 
-func NewTgBot(token string) *TgBot {
+func NewTgBot(token string, us *services.UserService, ts *services.TelegramService) *TgBot {
 	return &TgBot{
 		token: token,
+		us:    us,
+		ts:    ts,
 	}
 }
 
@@ -35,26 +43,46 @@ func (t *TgBot) StartBot() error {
 		return err
 	}
 
-	t.Bot = tgbot
-
-	t.Start(ctx)
+	tgbot.Start(ctx)
 
 	return nil
 }
 
 func (t *TgBot) handler(ctx context.Context, b *bot.Bot, update *models.Update) {
-	t.Bot.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: update.Message.Chat.ID,
-		Text:   update.Message.Text,
-	})
+	if update == nil {
+		return
+	}
+
+	if update.Message != nil {
+		msg := update.Message
+		t.handleMessage(ctx, b, msg)
+	}
+
+	if update.CallbackQuery != nil {
+		callback := update.CallbackQuery
+
+		t.handleCallback(ctx, b, callback)
+
+		if _, err := b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
+			CallbackQueryID: callback.ID,
+		}); err != nil {
+			log.Error("AnswerCallbackQuery: ", err)
+		}
+	}
 }
 
-func (t *TgBot) SendMessage(ctx context.Context, text string, chatID uint64) {
-	if _, err := t.Bot.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID:    chatID,
-		Text:      text,
-		ParseMode: "HTML",
-	}); err != nil {
-		log.Println("Failed to send message: ", err)
+func (t *TgBot) handleMessage(ctx context.Context, b *bot.Bot, msg *models.Message) {
+	if msg.Chat.Type == models.ChatTypePrivate {
+		text := msg.Text
+
+		if strings.HasPrefix(text, "/start") {
+			cmd := command.NewStartCommand(b, t.us, t.ts)
+			cmd.Execute(ctx, msg)
+			return
+		}
 	}
+}
+
+func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models.CallbackQuery) {
+
 }

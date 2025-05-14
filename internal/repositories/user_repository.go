@@ -129,7 +129,7 @@ func (u *UserRepository) FindById(id uint64) *models.User {
 	return &user
 }
 
-func (u *UserRepository) DeleteById(id int64) error {
+func (u *UserRepository) DeleteById(id uint64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	tx := u.db.MustBegin()

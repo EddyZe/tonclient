@@ -11,6 +11,8 @@ import (
 	"time"
 	"tonclient/internal/config"
 	"tonclient/internal/database"
+	"tonclient/internal/repositories"
+	"tonclient/internal/services"
 	"tonclient/internal/tonbot"
 
 	"github.com/cameo-engineering/tonconnect"
@@ -37,13 +39,36 @@ func run3() {
 
 	logger.Infoln("Config initialized")
 
-	connectPostgres()
+	db := connectPostgres()
+	defer func(db *database.Postgres) {
+		err := db.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(db)
 	logger.Infoln("Database initialized")
+
+	log.Println("Init repositories:")
+	ur := repositories.NewUserRepository(db.Db)
+	log.Println("User repository initialized")
+	tr := repositories.NewTelegramRepository(db.Db)
+	log.Println("Telegram repository initialized")
+
+	log.Println("Repository initialized")
+
+	log.Println("Init services: ")
+	us := services.NewUserService(ur)
+	log.Println("User service initialized")
+	ts := services.NewTelegramService(tr, us)
+	log.Println("Telegram service initialized")
+
+	log.Println("Service initialized")
 
 	tokenBot := os.Getenv("TELEGRAM_BOT_TOKEN")
 
 	logger.Infoln("Telegram bot starting:", tokenBot)
-	tgbot := tonbot.NewTgBot(tokenBot)
+	tgbot := tonbot.NewTgBot(tokenBot, us, ts)
+
 	if err := tgbot.StartBot(); err != nil {
 		logger.Fatalf("Failed to start bot: %v", err)
 	}
@@ -56,13 +81,6 @@ func connectPostgres() *database.Postgres {
 	if err != nil {
 		log.Fatal("Failed to connect to database")
 	}
-	defer func(db *database.Postgres) {
-		err := db.Close()
-		if err != nil {
-			log.Fatal("Failed to close database")
-		}
-	}(psql)
-
 	if err := psql.Ping(); err != nil {
 		log.Fatal("Failed to ping database")
 	}

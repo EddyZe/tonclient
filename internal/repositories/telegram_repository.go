@@ -42,7 +42,7 @@ func (r *TelegramRepository) Save(telegram *models.Telegram) error {
 		ctx,
 		query,
 		args...,
-	).Scan(telegram.Id)
+	).Scan(&telegram.Id)
 	if err != nil {
 		log.Error("Failed to get result: ", err)
 		er := tx.Rollback()

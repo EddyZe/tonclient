@@ -47,14 +47,14 @@ create table if not exists stake
     deposit_creation_price numeric(19, 9)                                not null check ( deposit_creation_price > 0 ),
     start_date             timestamp default now(),
     is_active              bool      default true
-)
+);
 
 create table if not exists referral
 (
-    id bigserial primary key ,
-    referrer_user_id bigint references usr(id) on delete set null ,
-    referral_user_id bigint references usr(id) on delete set null ,
-    first_stake_id bigint references stake(id) on delete set null ,
-    reward_given bool default false,
-    reward_amount numeric(19, 9) default 0
+    id               bigserial primary key,
+    referrer_user_id bigint references usr (id) on delete set null,
+    referral_user_id bigint references usr (id) on delete set null,
+    first_stake_id   bigint references stake (id) on delete set null,
+    reward_given     bool           default false,
+    reward_amount    numeric(19, 9) default 0
 )

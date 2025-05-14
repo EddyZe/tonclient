@@ -9,9 +9,8 @@ import (
 	"time"
 	"tonclient/internal/config"
 	"tonclient/internal/models"
-	"tonclient/internal/tonbot"
-	"tonclient/internal/util"
 
+	"github.com/go-telegram/bot"
 	"github.com/xssnick/tonutils-go/address"
 	"github.com/xssnick/tonutils-go/liteclient"
 	"github.com/xssnick/tonutils-go/tlb"
@@ -26,7 +25,7 @@ type AdminWalletService struct {
 	tgServ          *TelegramService
 	stakeServ       *StakeService
 	wallServ        *WalletTonService
-	tgbot           *tonbot.TgBot
+	tgbot           *bot.Bot
 	api             *ton.APIClient
 	master          *ton.BlockIDExt
 	wallet          *wallet.Wallet
@@ -35,7 +34,7 @@ type AdminWalletService struct {
 	treasuryAddress *address.Address
 }
 
-func NewAdminWalletService(config *config.TonClientConfig, ps *PoolService, ts *TelegramService, ss *StakeService, ws *WalletTonService, tgbot *tonbot.TgBot) (*AdminWalletService, error) {
+func NewAdminWalletService(config *config.TonClientConfig, ps *PoolService, ts *TelegramService, ss *StakeService, ws *WalletTonService) (*AdminWalletService, error) {
 	ctx := context.Background()
 	api, err := initApi(ctx)
 	if err != nil {
@@ -73,7 +72,6 @@ func NewAdminWalletService(config *config.TonClientConfig, ps *PoolService, ts *
 		tgServ:          ts,
 		stakeServ:       ss,
 		wallServ:        ws,
-		tgbot:           tgbot,
 		api:             api,
 		master:          master,
 		wallet:          wall,
@@ -86,14 +84,6 @@ func NewAdminWalletService(config *config.TonClientConfig, ps *PoolService, ts *
 func (s *AdminWalletService) StartSubscribeTransaction() {
 
 	log.Infoln("waiting for transfers...")
-
-	//netstrah := jetton.NewJettonMasterClient(api, address.MustParseAddr(s.cfg.JettonAdminContract))
-
-	//treasuryJettonWallet, err := netstrah.GetJettonWalletAtBlock(context.Background(), treasuryAddress, master)
-	//if err != nil {
-	//	log.Fatalln("get jetton wallet address err: ", err.Error())
-	//	return
-	//}
 
 	for tx := range s.transaction {
 		if tx.IO.In != nil && tx.IO.In.MsgType == tlb.MsgTypeInternal {
@@ -189,7 +179,7 @@ func (s *AdminWalletService) processOperation(op uint64, amount float64, payload
 			return
 		}
 
-		util.SendMessage(tg.TelegramId, "Стейк создан")
+		log.Infoln(tg)
 
 		break
 	case models.OP_CLAIM:
@@ -231,10 +221,8 @@ func (s *AdminWalletService) processOperation(op uint64, amount float64, payload
 			log.Errorf("Failed to get telegram: %v", err)
 			return
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
 
-		s.tgbot.SendMessage(ctx, "Пул создан, чтобы активировать пул оплатите комиссию.", telegram.TelegramId)
+		log.Infoln(telegram)
 
 		break
 	case models.OP_ADMIN_ADD_RESERVE:
@@ -269,10 +257,8 @@ func (s *AdminWalletService) processOperation(op uint64, amount float64, payload
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
-		s.tgbot.SendMessage(ctx, fmt.Sprintf("Резерв пополнен. Объем нового резерва: %v", newReserve), tg.TelegramId)
+		log.Infoln(newReserve)
+		log.Infoln(tg)
 
 		break
 	case models.OP_ADMIN_CLOSE_POOL:
@@ -308,9 +294,7 @@ func (s *AdminWalletService) processOperation(op uint64, amount float64, payload
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		s.tgbot.SendMessage(ctx, "Комиссия оплачена. Пул активирован!", tg.TelegramId)
+		log.Infoln(tg)
 
 		break
 	default:

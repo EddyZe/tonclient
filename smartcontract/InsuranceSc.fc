@@ -9,7 +9,7 @@
     if (flags & 1) {
         return ();
     }
-    slice sender_addres = cs~load_msg_addr();
+    slice sender_addres = cs~load_bits();
 
     int op = in_msg_body~load_uint(32);
 

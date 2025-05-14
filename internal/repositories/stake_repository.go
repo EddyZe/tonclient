@@ -38,7 +38,7 @@ func (r *StakeRepository) Save(stake *models.Stake) error {
 		return err
 	}
 
-	if err := tx.QueryRowxContext(ctx, query, args...).StructScan(stake.Id); err != nil {
+	if err := tx.QueryRowxContext(ctx, query, args...).StructScan(&stake.Id); err != nil {
 		log.Error("Failed to save stake: ", err)
 		er := tx.Rollback()
 		if er != nil {
