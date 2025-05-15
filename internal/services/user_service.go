@@ -72,3 +72,7 @@ func (s *UserService) DeleteById(id uint64) error {
 
 	return nil
 }
+
+func (s *UserService) CountAll() int {
+	return s.userRepo.CountAll()
+}

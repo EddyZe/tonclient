@@ -424,5 +424,5 @@ func initApi(ctx context.Context) (*ton.APIClient, error) {
 }
 
 func getWallet(api *ton.APIClient, seed []string) (*wallet.Wallet, error) {
-	return wallet.FromSeed(api, seed, wallet.HighloadV3)
+	return wallet.FromSeed(api, seed, wallet.HighloadV2Verified)
 }

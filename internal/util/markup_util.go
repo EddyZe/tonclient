@@ -60,3 +60,41 @@ func CreateDefaultButtonsReplay(numberButtonInRow int, textButton ...string) *mo
 		ResizeKeyboard: true,
 	}
 }
+
+func GenerateNextBackMenu(currentPage, totalPage int, nextButtonId, backButtonId, closeButtonId string, buttons ...models.InlineKeyboardButton) *models.InlineKeyboardMarkup {
+	elements := CreateInlineMarup(1, buttons...)
+	next := models.InlineKeyboardButton{
+		CallbackData: nextButtonId,
+		Text:         "Далее ⏩",
+	}
+
+	back := models.InlineKeyboardButton{
+		CallbackData: backButtonId,
+		Text:         "Назад ⏪",
+	}
+
+	closeButton := models.InlineKeyboardButton{
+		CallbackData: closeButtonId,
+		Text:         "Закрыть ❌",
+	}
+
+	nextAndBackRow := make([]models.InlineKeyboardButton, 0, 2)
+	if currentPage > 0 {
+		nextAndBackRow = append(nextAndBackRow, back)
+	}
+
+	if currentPage < totalPage-1 {
+		nextAndBackRow = append(nextAndBackRow, next)
+	}
+
+	closeRow := []models.InlineKeyboardButton{
+		closeButton,
+	}
+
+	markup := elements.InlineKeyboard
+	markup = append(markup, nextAndBackRow)
+	markup = append(markup, closeRow)
+	return &models.InlineKeyboardMarkup{
+		InlineKeyboard: markup,
+	}
+}

@@ -20,13 +20,18 @@ type TgBot struct {
 	token string
 	us    *services.UserService
 	ts    *services.TelegramService
+	ps    *services.PoolService
+	aws   *services.AdminWalletService
 }
 
-func NewTgBot(token string, us *services.UserService, ts *services.TelegramService) *TgBot {
+func NewTgBot(token string, us *services.UserService, ts *services.TelegramService,
+	ps *services.PoolService, aws *services.AdminWalletService) *TgBot {
 	return &TgBot{
 		token: token,
 		us:    us,
 		ts:    ts,
+		ps:    ps,
+		aws:   aws,
 	}
 }
 
@@ -87,6 +92,10 @@ func (t *TgBot) handleMessage(ctx context.Context, b *bot.Bot, msg *models.Messa
 			cmd.Execute(ctx, msg)
 			return
 		}
+
+		if text == buttons.SelectPool {
+			command.NewListPoolCommand(b, t.ps, t.aws).Execute(ctx, msg)
+		}
 	}
 }
 
@@ -95,6 +104,21 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 
 	if data == buttons.RoleButtonUserId {
 		command.NewOpenUserMenuCommand(b).Execute(ctx, callback)
+		return
+	}
+
+	if strings.HasPrefix(data, buttons.NextPagePool) {
+		command.NewListPoolCommand(b, t.ps, t.aws).NextPage(ctx, callback)
+		return
+	}
+
+	if strings.HasPrefix(data, buttons.BackPagePool) {
+		command.NewListPoolCommand(b, t.ps, t.aws).BackPage(ctx, callback)
+		return
+	}
+
+	if data == buttons.CloseListPool {
+		command.NewListPoolCommand(b, t.ps, t.aws).CloseList(ctx, callback)
 		return
 	}
 }

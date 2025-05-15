@@ -120,7 +120,7 @@ func (r *PoolRepository) FindAll() *[]models.Pool {
 
 	var pools []models.Pool
 	tx := r.db.MustBegin()
-	if err := tx.SelectContext(ctx, &pools, "select * from pool"); err != nil {
+	if err := tx.SelectContext(ctx, &pools, "select * from pool order by created_at desc"); err != nil {
 		log.Error("Error while getting pool: ", err)
 		if er := tx.Rollback(); er != nil {
 			log.Error("Error while rolling back transaction: ", er)
@@ -138,7 +138,7 @@ func (r *PoolRepository) FindAllLimit(offset, limit int) *[]models.Pool {
 	var pools []models.Pool
 
 	tx := r.db.MustBegin()
-	if err := tx.SelectContext(ctx, &pools, "select * from pool limit $1 offset $2", limit, offset); err != nil {
+	if err := tx.SelectContext(ctx, &pools, "select * from pool order by created_at desc limit $1 offset $2", limit, offset); err != nil {
 		log.Error("Error while getting pool: ", err)
 		if er := tx.Rollback(); er != nil {
 			log.Error("Error while rolling back transaction: ", er)
@@ -181,4 +181,53 @@ func (r *PoolRepository) FindByOwnerIdLimit(ownerId, offset, limit int) *[]model
 	}
 
 	return &pools
+}
+
+func (r *PoolRepository) CountAll() int {
+	var res int
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	tx := r.db.MustBegin()
+	err := tx.QueryRowxContext(ctx, "select count(*) as count from pool").Scan(&res)
+	if err != nil {
+		log.Error("Error while getting pool: ", err)
+		return 0
+	}
+	if err := tx.Commit(); err != nil {
+		log.Error("Error while committing transaction: ", err)
+		if er := tx.Rollback(); er != nil {
+			log.Error("Error while rolling back transaction: ", er)
+			return 0
+		}
+		return 0
+	}
+
+	return res
+}
+
+func (r *PoolRepository) CountUser(userId uint64) int {
+	var res int
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	tx := r.db.MustBegin()
+	if err := tx.QueryRowxContext(ctx, "select count(*) from pool p join usr u on u.id=p.owner_id where u.id=$1", userId).
+		Scan(&res); err != nil {
+		log.Error("Error while getting pool: ", err)
+		if er := tx.Rollback(); er != nil {
+			log.Error("Error while rolling back transaction: ", er)
+			return 0
+		}
+		return 0
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.Error("Error while committing transaction: ", err)
+		if er := tx.Rollback(); er != nil {
+			log.Error("Error while rolling back transaction: ", er)
+			return 0
+		}
+		return 0
+	}
+
+	return res
 }

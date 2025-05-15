@@ -64,7 +64,6 @@ func InitAdminService() *services.AdminWalletService {
 	ts := services.NewTelegramService(tr, us)
 	stS := repositories.NewStakeRepository(db.Db)
 	ss := services.NewStakeService(stS, us, ps)
-	bot := tonbot.NewTgBot("8112143412:AAE1EZ3rEmqNx4O41UYch1MtD7NLIxb6-i0")
 	wr := repositories.NewWalletRepository(db.Db)
 	ws := services.NewWalletTonService(us, wr)
 	s, err := services.NewAdminWalletService(&config.TonClientConfig{
@@ -77,11 +76,11 @@ func InitAdminService() *services.AdminWalletService {
 		ts,
 		ss,
 		ws,
-		bot,
 	)
 	if err != nil {
 		log.Fatal("Failed connect to database: ", err)
 	}
+	bot := tonbot.NewTgBot("8112143412:AAE1EZ3rEmqNx4O41UYch1MtD7NLIxb6-i0", us, ts, ps, s)
 	go func() {
 		err := bot.StartBot()
 		if err != nil {

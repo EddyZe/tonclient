@@ -179,3 +179,28 @@ func (r *WalletTonRepository) FindByAddr(addr string) *models.WalletTon {
 
 	return &wallet
 }
+
+func (r *WalletTonRepository) CountAll() int {
+	var res int
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	tx := r.db.MustBegin()
+	if err := tx.QueryRowContext(ctx, "select count(*) from wallet_ton").Scan(&res); err != nil {
+		if er := tx.Rollback(); er != nil {
+			log.Error("Transaction rollback failed: ", er)
+		}
+		log.Error("Failed to count all wallets: ", err)
+		return 0
+	}
+
+	if err := tx.Commit(); err != nil {
+		if er := tx.Rollback(); er != nil {
+			log.Error("Transaction rollback failed: ", er)
+		}
+		log.Error("Failed to count all wallets: ", err)
+		return 0
+	}
+
+	return res
+}

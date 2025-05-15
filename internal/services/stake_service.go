@@ -40,3 +40,15 @@ func (s *StakeService) CreateStake(stake *models.Stake) (*models.Stake, error) {
 
 	return stake, nil
 }
+
+func (s *StakeService) CountAll() int {
+	return s.stakeRepo.CountAll()
+}
+
+func (s *StakeService) CountUser(userId uint64) int {
+	return s.stakeRepo.CountUser(userId)
+}
+
+func (s *StakeService) CountPool(poolId uint64) int {
+	return s.stakeRepo.CountPoolStakes(poolId)
+}

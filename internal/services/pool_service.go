@@ -110,3 +110,11 @@ func (s *PoolService) GetId(poolId uint64) (*models.Pool, error) {
 	}
 	return pool, nil
 }
+
+func (s *PoolService) CountAll() int {
+	return s.poolRepository.CountAll()
+}
+
+func (s *PoolService) CountUserPool(userId uint64) int {
+	return s.poolRepository.CountUser(userId)
+}

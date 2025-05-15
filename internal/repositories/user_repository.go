@@ -226,3 +226,24 @@ func (u *UserRepository) FindAllLimit(offset int, limit int) *[]models.User {
 
 	return &users
 }
+
+func (u *UserRepository) CountAll() int {
+	var res int
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	tx := u.db.MustBegin()
+	if err := tx.QueryRowxContext(ctx, "select count(*) from usr").Scan(&res); err != nil {
+		log.Error("Failed find all users", err)
+		if er := tx.Rollback(); er != nil {
+			log.Error("Failed to rollback transaction", er)
+		}
+		return 0
+	}
+	if err := tx.Commit(); err != nil {
+		log.Error("Failed to commit transaction")
+		return 0
+	}
+
+	return res
+}

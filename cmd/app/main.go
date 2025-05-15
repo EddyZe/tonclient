@@ -53,6 +53,11 @@ func run3() {
 	log.Println("User repository initialized")
 	tr := repositories.NewTelegramRepository(db.Db)
 	log.Println("Telegram repository initialized")
+	pr := repositories.NewPoolRepository(db.Db)
+	log.Println("Pool repository initialized")
+	wr := repositories.NewWalletRepository(db.Db)
+	log.Println("Wallet repository initialized")
+	sr := repositories.NewStakeRepository(db.Db)
 
 	log.Println("Repository initialized")
 
@@ -61,13 +66,33 @@ func run3() {
 	log.Println("User service initialized")
 	ts := services.NewTelegramService(tr, us)
 	log.Println("Telegram service initialized")
+	ps := services.NewPoolService(pr, us)
+	log.Println("Pool service initialized")
+	ss := services.NewStakeService(sr, us, ps)
+	log.Println("Stake service initialized")
+	ws := services.NewWalletTonService(us, wr)
+	log.Println("WalletTon service initialized")
+
+	aws, err := services.NewAdminWalletService(
+		config.LoadTonConfig(),
+		ps,
+		ts,
+		ss,
+		ws,
+	)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	log.Println("AdminWallet service initialized")
 
 	log.Println("Service initialized")
 
 	tokenBot := os.Getenv("TELEGRAM_BOT_TOKEN")
 
 	logger.Infoln("Telegram bot starting:", tokenBot)
-	tgbot := tonbot.NewTgBot(tokenBot, us, ts)
+	tgbot := tonbot.NewTgBot(tokenBot, us, ts, ps, aws)
+
+	go aws.StartSubscribeTransaction()
 
 	if err := tgbot.StartBot(); err != nil {
 		logger.Fatalf("Failed to start bot: %v", err)

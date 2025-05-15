@@ -281,3 +281,87 @@ func (r *StakeRepository) FindStakesByPoolId(poolId int64) *[]models.Stake {
 
 	return &stakes
 }
+
+func (r *StakeRepository) CountAll() int {
+	var res int
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	tx := r.db.MustBegin()
+	if err := tx.QueryRowContext(ctx, "select count(*) from stake").Scan(&res); err != nil {
+		log.Error("Failed to get stake: ", err)
+		if er := tx.Rollback(); er != nil {
+			log.Error("Failed to rollback transaction: ", er)
+			return 0
+		}
+		return 0
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.Error("Failed to commit transaction: ", err)
+		if er := tx.Rollback(); er != nil {
+			log.Error("Failed to rollback transaction: ", er)
+			return 0
+		}
+		return 0
+	}
+
+	return res
+}
+
+func (r *StakeRepository) CountUser(userId uint64) int {
+	var res int
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	tx := r.db.MustBegin()
+	if err := tx.QueryRowxContext(
+		ctx,
+		"select count(*) from stake s join usr u on s.user_id = u.id where u.id=$1",
+		userId,
+	).Scan(&res); err != nil {
+		log.Error("Failed to get stake: ", err)
+		if er := tx.Rollback(); er != nil {
+			log.Error("Failed to rollback transaction: ", er)
+			return 0
+		}
+		return 0
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.Error("Failed to commit transaction: ", err)
+		if er := tx.Rollback(); er != nil {
+			log.Error("Failed to rollback transaction: ", er)
+		}
+		return 0
+	}
+
+	return res
+}
+
+func (r *StakeRepository) CountPoolStakes(poolId uint64) int {
+	var res int
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	tx := r.db.MustBegin()
+	if err := tx.QueryRowxContext(
+		ctx,
+		"select count(*) from stake s join pool p on p.id=s.pool_id where p.id=$1",
+		poolId).Scan(&res); err != nil {
+		log.Error("Failed to get stake: ", err)
+		if er := tx.Rollback(); er != nil {
+			log.Error("Failed to rollback transaction: ", er)
+			return 0
+		}
+		return 0
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.Error("Failed to commit transaction: ", err)
+		if er := tx.Rollback(); er != nil {
+			log.Error("Failed to rollback transaction: ", er)
+			return 0
+		}
+		return 0
+	}
+
+	return res
+}

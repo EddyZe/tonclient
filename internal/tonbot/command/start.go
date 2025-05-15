@@ -44,7 +44,7 @@ func (c *StartCommand) Execute(ctx context.Context, msg *models.Message) {
 	if _, err := util.SendTextMessageMarkup(
 		c.bt,
 		uint64(chatId),
-		generateResponse(),
+		generateStartResponse(),
 		util.CreateInlineMarup(2, btn1, btn2),
 	); err != nil {
 		log.Error(err)
@@ -141,7 +141,7 @@ func (c *StartCommand) createTelegram(user *appModel.User, chatId int64, msg *mo
 	return nil
 }
 
-func generateResponse() string {
+func generateStartResponse() string {
 	return `
 👋 <b>Добро пожаловать в NESTRAH — вашу защиту от рисков в мире криптовалют!</b>
 
