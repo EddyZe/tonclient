@@ -77,6 +77,14 @@ func (c *StartCommand) Execute(ctx context.Context, msg *models.Message) {
 						Int64: id,
 						Valid: true,
 					}
+				} else {
+					if _, err := util.SendTextMessage(
+						c.bt,
+						uint64(chatId),
+						"Ваш реферальный код не был применен! Нельзя использовать свою же ссылку для получения бонусов!",
+					); err != nil {
+						log.Error(err)
+					}
 				}
 			}
 

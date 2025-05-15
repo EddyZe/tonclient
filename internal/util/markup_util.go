@@ -35,3 +35,28 @@ func CreateDefaultButton(idButton, text string) models.InlineKeyboardButton {
 		CallbackData: idButton,
 	}
 }
+
+func CreateDefaultButtonsReplay(numberButtonInRow int, textButton ...string) *models.ReplyKeyboardMarkup {
+	markup := make([][]models.KeyboardButton, 0, 5)
+
+	numberRows := math.Ceil(float64(len(textButton)) / float64(numberButtonInRow))
+	index := 0
+	for i := 0; i < int(numberRows); i++ {
+		row := make([]models.KeyboardButton, 0, 2)
+		for j := 0; j < numberButtonInRow; j++ {
+			if index == len(textButton) {
+				break
+			}
+			row = append(row, models.KeyboardButton{
+				Text: textButton[index],
+			})
+			index++
+		}
+		markup = append(markup, row)
+	}
+
+	return &models.ReplyKeyboardMarkup{
+		Keyboard:       markup,
+		ResizeKeyboard: true,
+	}
+}

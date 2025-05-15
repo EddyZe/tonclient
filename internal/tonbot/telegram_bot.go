@@ -7,6 +7,7 @@ import (
 	"strings"
 	"tonclient/internal/config"
 	"tonclient/internal/services"
+	"tonclient/internal/tonbot/buttons"
 	"tonclient/internal/tonbot/command"
 
 	"github.com/go-telegram/bot"
@@ -80,9 +81,20 @@ func (t *TgBot) handleMessage(ctx context.Context, b *bot.Bot, msg *models.Messa
 			cmd.Execute(ctx, msg)
 			return
 		}
+
+		if text == buttons.InviteFriend {
+			cmd := command.NewInviteFriendCommand(b, t.us)
+			cmd.Execute(ctx, msg)
+			return
+		}
 	}
 }
 
 func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models.CallbackQuery) {
+	data := callback.Data
 
+	if data == buttons.RoleButtonUserId {
+		command.NewOpenUserMenuCommand(b).Execute(ctx, callback)
+		return
+	}
 }
