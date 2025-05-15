@@ -78,8 +78,10 @@ func (c *ListPoolCommand) NextPage(ctx context.Context, callback *models.Callbac
 	if !ok {
 		page = 0
 	}
-	page++
-	currentPage[chatId] = page
+	if page < c.ps.CountAll()-1 {
+		page++
+		currentPage[chatId] = page
+	}
 	c.Execute(ctx, msg)
 }
 
