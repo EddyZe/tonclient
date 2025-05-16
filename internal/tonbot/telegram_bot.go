@@ -133,6 +133,18 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 		return
 	}
 
+	if data == buttons.BackPoolListId {
+		if err := util.CheckTypeMessage(b, callback); err != nil {
+			log.Error("CheckTypeMessage: ", err)
+			return
+		}
+		command.NewListPoolCommand(b, t.ps, t.aws).Execute(ctx, callback.Message.Message)
+	}
+
+	if strings.HasPrefix(data, buttons.CreateStakeId) {
+		//TODO Реализовать стейк токенов
+	}
+
 	if strings.HasPrefix(data, buttons.PoolDataButton) {
 		log.Infoln(data)
 		command.NewPoolInfo(b, t.ps, t.us, t.ss).Execute(ctx, callback)

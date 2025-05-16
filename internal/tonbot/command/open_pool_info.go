@@ -7,6 +7,7 @@ import (
 	"strings"
 	appMoels "tonclient/internal/models"
 	"tonclient/internal/services"
+	"tonclient/internal/tonbot/buttons"
 	"tonclient/internal/util"
 
 	"github.com/go-telegram/bot"
@@ -73,12 +74,16 @@ func (c *OpenPoolInfoCommand) Execute(ctx context.Context, callback *models.Call
 	}
 
 	poolInfo := c.info(pool)
-	if err := util.EditTextMessage(
+	dataBtn := fmt.Sprintf("%v:%v", buttons.CreateStakeId, poolId)
+	btn := util.CreateDefaultButton(dataBtn, buttons.StakePoolTokensText)
+	markup := util.MenuWithBackButton(buttons.BackPoolListId, buttons.BackPoolList, btn)
+	if err := util.EditTextMessageMarkup(
 		ctx,
 		c.b,
 		uint64(chatId),
 		msg.ID,
 		poolInfo,
+		markup,
 	); err != nil {
 		log.Error("[OpenPoolInfoCommand.Execute]", err)
 		return

@@ -98,3 +98,16 @@ func GenerateNextBackMenu(currentPage, totalPage int, nextButtonId, backButtonId
 		InlineKeyboard: markup,
 	}
 }
+
+func MenuWithBackButton(buttonBackId, buttonBackText string, buttons ...models.InlineKeyboardButton) *models.InlineKeyboardMarkup {
+	mainMarkup := CreateInlineMarup(1, buttons...)
+	elements := mainMarkup.InlineKeyboard
+	backBtn := CreateDefaultButton(buttonBackId, buttonBackText)
+	elements = append(elements, []models.InlineKeyboardButton{
+		backBtn,
+	})
+
+	return &models.InlineKeyboardMarkup{
+		InlineKeyboard: elements,
+	}
+}

@@ -13,4 +13,13 @@ const (
 
 	//pool data to button
 	PoolDataButton = "OPEN_POOL"
+
+	//pool menu
+	StakePoolTokensId   = "STAKE_POOL_TOKENS"
+	StakePoolTokensText = "🔒 Стейкнуть токены"
+	BackPoolList        = "⏪ Вернуться к списку пулов"
+	BackPoolListId      = "BACK_POOL_LIST"
+
+	//stakes
+	CreateStakeId = "CREATE_STAKE"
 )
