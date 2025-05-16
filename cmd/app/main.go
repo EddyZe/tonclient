@@ -11,6 +11,7 @@ import (
 	"time"
 	"tonclient/internal/config"
 	"tonclient/internal/database"
+	"tonclient/internal/models"
 	"tonclient/internal/repositories"
 	"tonclient/internal/services"
 	"tonclient/internal/tonbot"
@@ -90,11 +91,13 @@ func run3() {
 	tokenBot := os.Getenv("TELEGRAM_BOT_TOKEN")
 
 	logger.Infoln("Telegram bot starting:", tokenBot)
-	tgbot := tonbot.NewTgBot(tokenBot, us, ts, ps, aws)
+	tgbot := tonbot.NewTgBot(tokenBot, us, ts, ps, aws, ss, ws)
 
-	go aws.StartSubscribeTransaction()
+	transaction := make(chan models.SubmitTransaction)
 
-	if err := tgbot.StartBot(); err != nil {
+	go aws.StartSubscribeTransaction(transaction)
+
+	if err := tgbot.StartBot(transaction); err != nil {
 		logger.Fatalf("Failed to start bot: %v", err)
 	}
 

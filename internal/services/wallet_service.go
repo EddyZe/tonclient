@@ -86,3 +86,11 @@ func (s *WalletTonService) GetById(id uint64) (*models.WalletTon, error) {
 func (s *WalletTonService) CountAll() int {
 	return s.userService.CountAll()
 }
+
+func (s *WalletTonService) GetByUserId(userId uint64) (*models.WalletTon, error) {
+	w := s.walletRep.FindByUserId(userId)
+	if w == nil {
+		return nil, errors.New("wallet not found")
+	}
+	return w, nil
+}

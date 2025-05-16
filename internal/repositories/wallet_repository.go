@@ -141,7 +141,7 @@ func (r *WalletTonRepository) FindById(id uint64) *models.WalletTon {
 	return &wallet
 }
 
-func (r *WalletTonRepository) FindByUserId(userId int) *models.WalletTon {
+func (r *WalletTonRepository) FindByUserId(userId uint64) *models.WalletTon {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 

@@ -13,12 +13,10 @@ const (
 )
 
 type SubmitTransaction struct {
-	OperationType    string
-	Reward           uint32 // награда
-	UserId           uint64
-	Amount           float64
-	Currency         string
-	JettonWalletAddr string
+	OperationType uint64
+	Amount        float64
+	SenderAddr    string
+	Payload       []byte
 }
 
 type Payload struct {

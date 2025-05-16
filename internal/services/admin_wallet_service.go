@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -81,7 +80,7 @@ func NewAdminWalletService(config *config.TonClientConfig, ps *PoolService, ts *
 	}, nil
 }
 
-func (s *AdminWalletService) StartSubscribeTransaction() {
+func (s *AdminWalletService) StartSubscribeTransaction(ch chan models.SubmitTransaction) {
 
 	log.Infoln("waiting for transfers...")
 
@@ -128,7 +127,7 @@ func (s *AdminWalletService) StartSubscribeTransaction() {
 					continue
 				}
 
-				s.processOperation(op, amount, payloadDataBase64)
+				s.processOperation(op, amount, transfer.Sender.String(), payloadDataBase64, ch)
 			}
 
 			if ti.Amount.Nano().Sign() > 0 {
@@ -149,7 +148,7 @@ func getLastMaster(ctx context.Context, api *ton.APIClient) (*ton.BlockIDExt, er
 	return lastMaster, nil
 }
 
-func (s *AdminWalletService) processOperation(op uint64, amount float64, payloadDataBase64 string) {
+func (s *AdminWalletService) processOperation(op uint64, amount float64, senderAddr, payloadDataBase64 string, ch chan models.SubmitTransaction) {
 	data, err := base64.StdEncoding.DecodeString(payloadDataBase64)
 	if err != nil {
 		log.Infoln("Failed to decode payload data:", err)
@@ -159,147 +158,14 @@ func (s *AdminWalletService) processOperation(op uint64, amount float64, payload
 	log.Infoln(op)
 	log.Infoln(string(data))
 
-	switch op {
-	case models.OP_STAKE:
-		var stake models.Stake
-		if err := json.Unmarshal(data, &stake); err != nil {
-			log.Error("Failed to unmarshal stake data:", err)
-			return
-		}
-
-		_, err := s.stakeServ.CreateStake(&stake)
-		if err != nil {
-			log.Error("Failed to create stake:", err)
-			return
-		}
-
-		tg, err := s.tgServ.GetByUserId(stake.UserId)
-		if err != nil {
-			log.Error("Failed to get tg:", err)
-			return
-		}
-
-		log.Infoln(tg)
-
-		break
-	case models.OP_CLAIM:
-		break
-	case models.OP_CLAIM_INSURANCE:
-		break
-	case models.OP_ADMIN_CREATE_POOL:
-		var pool models.Pool
-		if err := json.Unmarshal(data, &pool); err != nil {
-			log.Errorf("Failed to unmarshal payload data: %v", err)
-			return
-		}
-
-		log.Infoln(pool)
-
-		ownerAddr, err := s.wallServ.GetById(pool.OwnerId)
-		infoJetton, err := s.DataJetton(pool.JettonMaster)
-		if err != nil {
-			log.Error("Failed to get owner address:", err)
-			err := s.SendJetton(pool.JettonMaster, ownerAddr.Addr, "Возврат средств", amount, infoJetton.Decimals)
-			if err != nil {
-				return
-			}
-			return
-		}
-		_, err = s.poolServ.CreatePool(&pool)
-
-		if err != nil {
-			log.Errorf("Failed to create pool: %v", err)
-			err := s.SendJetton(pool.JettonMaster, ownerAddr.Addr, "Возврат средств", amount, infoJetton.Decimals)
-			if err != nil {
-				return
-			}
-			return
-		}
-
-		telegram, err := s.tgServ.GetByUserId(pool.OwnerId)
-		if err != nil {
-			log.Errorf("Failed to get telegram: %v", err)
-			return
-		}
-
-		log.Infoln(telegram)
-
-		break
-	case models.OP_ADMIN_ADD_RESERVE:
-		var addReserve models.AddReserve
-		if err := json.Unmarshal(data, &addReserve); err != nil {
-			log.Errorf("Failed to unmarshal payload data: %v", err)
-			return
-		}
-
-		pool, err := s.poolServ.GetId(addReserve.PoolId)
-		if err != nil {
-			log.Errorf("Failed to get pool id: %v", err)
-			return
-		}
-
-		ownerAddr, err := s.wallServ.GetById(pool.OwnerId)
-		infoJetton, err := s.DataJetton(pool.JettonMaster)
-
-		tg, err := s.tgServ.GetByUserId(pool.OwnerId)
-		if err != nil {
-			log.Errorf("Failed to get telegram: %v", err)
-			return
-		}
-
-		newReserve, err := s.poolServ.AddReserve(addReserve.PoolId, addReserve.Amount)
-		if err != nil {
-			log.Errorf("Failed to add reserve: %v", err)
-			err := s.SendJetton(pool.JettonMaster, ownerAddr.Addr, "Возврат средств", amount, infoJetton.Decimals)
-			if err != nil {
-				return
-			}
-			return
-		}
-
-		log.Infoln(newReserve)
-		log.Infoln(tg)
-
-		break
-	case models.OP_ADMIN_CLOSE_POOL:
-		break
-	case models.OP_GET_USER_STAKES:
-		break
-	case models.OP_PAY_COMMISION:
-		var pool models.Pool
-		if amount < config.COMMISSION_AMOUNT {
-			log.Error("Invalid amount received:", amount)
-			return
-		}
-		if err := json.Unmarshal(data, &pool); err != nil {
-			log.Errorf("Failed to unmarshal payload data: %v", err)
-			return
-		}
-
-		if !pool.Id.Valid {
-			log.Error("pool id is not valid")
-			return
-		}
-
-		id := pool.Id.Int64
-
-		if err := s.poolServ.SetCommissionPaid(uint64(id), true); err != nil {
-			log.Errorf("Failed to set commission paid: %v", err)
-			return
-		}
-
-		tg, err := s.tgServ.GetByUserId(pool.OwnerId)
-		if err != nil {
-			log.Errorf("Failed to get telegram: %v", err)
-			return
-		}
-
-		log.Infoln(tg)
-
-		break
-	default:
-		return
+	tr := models.SubmitTransaction{
+		OperationType: op,
+		Amount:        amount,
+		Payload:       data,
+		SenderAddr:    senderAddr,
 	}
+
+	ch <- tr
 }
 
 func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment string, amount float64, decimal int) error {
