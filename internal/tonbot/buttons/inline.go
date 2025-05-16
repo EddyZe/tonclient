@@ -12,5 +12,5 @@ const (
 	CloseListPool = "CLOSE_LIST_POOL"
 
 	//pool data to button
-	PoolDataButton = "OPEN_POOL:%v"
+	PoolDataButton = "OPEN_POOL"
 )

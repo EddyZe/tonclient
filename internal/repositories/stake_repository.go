@@ -25,7 +25,7 @@ func (r *StakeRepository) Save(stake *models.Stake) error {
 	tx := r.db.MustBegin()
 
 	query, args, err := tx.BindNamed(
-		"insert into stake(user_id, pool_id, amount, start_date, is_active, deposit_creation_price) values (:user_id, :pool_id, :amount, :start_date, :is_active, :deposit_creation_price) returning id",
+		"insert into stake(user_id, pool_id, amount, start_date, is_active, deposit_creation_price, balance) values (:user_id, :pool_id, :amount, :start_date, :is_active, :deposit_creation_price, :balance) returning id",
 		stake,
 	)
 
@@ -67,7 +67,7 @@ func (r *StakeRepository) Update(stake *models.Stake) error {
 	tx := r.db.MustBegin()
 	if _, err := tx.NamedExecContext(
 		ctx,
-		"update stake set user_id = :user_id, pool_id = :pool_id, amount = :amount, start_date=:start_date, is_active = :is_active, deposit_creation_price = :deposit_creation_price where id=:id",
+		"update stake set user_id = :user_id, pool_id = :pool_id, amount = :amount, start_date=:start_date, is_active = :is_active, deposit_creation_price = :deposit_creation_price, balance = :balance where id=:id",
 		stake,
 	); err != nil {
 		log.Error("Failed to update stake: ", err)
@@ -255,7 +255,7 @@ func (r *StakeRepository) GetUserStakesLimit(offset, limit int, userId int64) *[
 	return &stakes
 }
 
-func (r *StakeRepository) FindStakesByPoolId(poolId int64) *[]models.Stake {
+func (r *StakeRepository) FindStakesByPoolId(poolId uint64) *[]models.Stake {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	var stakes []models.Stake
@@ -266,7 +266,7 @@ func (r *StakeRepository) FindStakesByPoolId(poolId int64) *[]models.Stake {
 		stakes,
 		"select s.* from stake as s join pool as p on s.pool_id = p.id where p.id=$1",
 		poolId); err != nil {
-		log.Error("Failed to get stake: ", err)
+		log.Error("Failed to get stakes: ", err)
 		return nil
 	}
 

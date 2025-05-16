@@ -132,6 +132,12 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 		command.NewListPoolCommand(b, t.ps, t.aws).CloseList(ctx, callback)
 		return
 	}
+
+	if strings.HasPrefix(data, buttons.PoolDataButton) {
+		log.Infoln(data)
+		command.NewPoolInfo(b, t.ps, t.us, t.ss).Execute(ctx, callback)
+		return
+	}
 }
 
 func (t *TgBot) checkingOperation(ctx context.Context, b *bot.Bot, ch chan appModels.SubmitTransaction) {

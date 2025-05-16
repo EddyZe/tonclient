@@ -13,10 +13,10 @@ const (
 )
 
 type SubmitTransaction struct {
-	OperationType uint64
-	Amount        float64
-	SenderAddr    string
-	Payload       []byte
+	OperationType uint64  `json:"operation_type"`
+	Amount        float64 `json:"amount"`
+	SenderAddr    string  `json:"sender_addr"`
+	Payload       []byte  `json:"payload"`
 }
 
 type Payload struct {

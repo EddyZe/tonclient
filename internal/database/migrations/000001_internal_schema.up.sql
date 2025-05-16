@@ -45,8 +45,9 @@ create table if not exists stake
     pool_id                bigint references pool (id) on delete cascade not null,
     amount                 numeric(19, 9)                                not null check ( amount > 0 ),
     deposit_creation_price numeric(19, 9)                                not null check ( deposit_creation_price > 0 ),
-    start_date             timestamp default now(),
-    is_active              bool      default true
+    balance                numeric(19, 9)                                not null check ( balance > 0 ) default 0,
+    start_date             timestamp                                                                    default now(),
+    is_active              bool                                                                         default true
 );
 
 create table if not exists referral

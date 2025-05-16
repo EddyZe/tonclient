@@ -88,3 +88,36 @@ func EditMessageMarkup(ctx context.Context, b *bot.Bot, chatId uint64, messageId
 
 	return nil
 }
+
+func EditTextMessage(ctx context.Context, b *bot.Bot, chatId uint64, messageId int, message string) error {
+	if _, err := b.EditMessageText(
+		ctx,
+		&bot.EditMessageTextParams{
+			Text:      message,
+			ChatID:    chatId,
+			MessageID: messageId,
+			ParseMode: "HTML",
+		},
+	); err != nil {
+		log.Error("Failed edit message", err)
+		return err
+	}
+	return nil
+}
+
+func EditTextMessageMarkup(ctx context.Context, b *bot.Bot, chatId uint64, messageId int, message string, markup models.ReplyMarkup) error {
+	if _, err := b.EditMessageText(
+		ctx,
+		&bot.EditMessageTextParams{
+			Text:        message,
+			ChatID:      chatId,
+			MessageID:   messageId,
+			ParseMode:   "HTML",
+			ReplyMarkup: markup,
+		},
+	); err != nil {
+		log.Error("Failed edit message", err)
+		return err
+	}
+	return nil
+}

@@ -32,6 +32,7 @@ type Stake struct {
 	UserId               uint64        `db:"user_id" json:"user_id"`
 	PoolId               uint64        `db:"pool_id" json:"pool_id"`
 	Amount               float64       `db:"amount" json:"amount"`
+	Balance              float64       `db:"balance" json:"balance"`
 	StartDate            time.Time     `db:"start_date" json:"start_date"`
 	IsActive             bool          `db:"is_active" json:"is_active"`
 	DepositCreationPrice float64       `db:"deposit_creation_price" json:"deposit_creation_price"`

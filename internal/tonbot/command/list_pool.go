@@ -138,7 +138,7 @@ func (c *ListPoolCommand) generatePoolButtons(pool *[]appModels.Pool) []models.I
 		res = append(
 			res,
 			util.CreateDefaultButton(
-				fmt.Sprintf(buttons.PoolDataButton, poolId),
+				fmt.Sprintf("%v:%d", buttons.PoolDataButton, poolId),
 				c.generateNamePool(&p),
 			),
 		)
