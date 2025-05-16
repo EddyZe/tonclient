@@ -162,13 +162,12 @@ func (t *TgBot) checkingOperation(ctx context.Context, b *bot.Bot, ch chan appMo
 				log.Infoln("Channel operation is closed")
 				return
 			}
-			t.processOperation(ctx, b, v)
+			t.processOperation(b, v)
 		}
 	}
 }
 
-func (t *TgBot) processOperation(ctx context.Context, b *bot.Bot, tr appModels.SubmitTransaction) {
-
+func (t *TgBot) processOperation(b *bot.Bot, tr appModels.SubmitTransaction) {
 	switch tr.OperationType {
 	case appModels.OP_STAKE:
 		var stake appModels.Stake
@@ -335,7 +334,6 @@ func (t *TgBot) processOperation(ctx context.Context, b *bot.Bot, tr appModels.S
 			log.Error("Failed to send telegram:", err)
 			return
 		}
-
 		break
 	default:
 		return
