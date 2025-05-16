@@ -120,28 +120,6 @@ func (c *OpenPoolInfoCommand) info(p *appMoels.Pool) string {
  •	Доступно для новых стейков: %v токенов
 `
 
-	res := fmt.Sprintf(i, p.Reward, p.Period, c.suffixDay(int(p.Period)), p.InsuranceCoating, p.MaxCompensationPercent, ut, reserve)
+	res := fmt.Sprintf(i, p.Reward, p.Period, util.SuffixDay(int(p.Period)), p.InsuranceCoating, p.MaxCompensationPercent, ut, reserve)
 	return res
-}
-
-func (c *OpenPoolInfoCommand) suffixDay(num int) string {
-	a := "дней"
-	b := "дня"
-	def := "день"
-
-	va := []int{2, 3, 4, 5, 11}
-	vb := []int{6, 7, 8, 9, 10}
-
-	for _, i := range va {
-		if num%i == 0 {
-			return a
-		}
-	}
-
-	for _, i := range vb {
-		if num%i == 0 {
-			return b
-		}
-	}
-	return def
 }

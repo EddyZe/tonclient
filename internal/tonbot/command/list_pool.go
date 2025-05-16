@@ -125,7 +125,7 @@ func (c *ListPoolCommand) generateNamePool(pool *appModels.Pool) string {
 	if err != nil {
 		return "Без названия"
 	}
-	return fmt.Sprintf("%v (%d дней / %d%% / резерв %v)", jettonData.Name, pool.Period, pool.Reward, pool.Reserve)
+	return fmt.Sprintf("%v (%d %v / %d%% / резерв %v)", jettonData.Name, pool.Period, util.SuffixDay(int(pool.Period)), pool.Reward, pool.Reserve)
 }
 
 func (c *ListPoolCommand) generatePoolButtons(pool *[]appModels.Pool) []models.InlineKeyboardButton {
