@@ -106,6 +106,12 @@ func (t *TgBot) handleMessage(ctx context.Context, b *bot.Bot, msg *models.Messa
 
 		if text == buttons.SelectPool {
 			command.NewListPoolCommand(b, t.ps, t.aws).Execute(ctx, msg)
+			return
+		}
+
+		if text == buttons.Setting {
+			command.NewOpenSetting(b).Execute(ctx, msg)
+			return
 		}
 	}
 }
