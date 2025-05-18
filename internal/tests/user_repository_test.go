@@ -42,7 +42,7 @@ func TestRepCRUD(t *testing.T) {
 		log.Fatal("Failed find by id ", err)
 	}
 
-	err = repo.DeleteById(user2.Id.Int64)
+	err = repo.DeleteById(uint64(user2.Id.Int64))
 	if err != nil {
 		log.Fatal("Failed delete user by id: ", err)
 	}

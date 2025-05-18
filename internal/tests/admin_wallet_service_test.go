@@ -6,6 +6,7 @@ import (
 	"testing"
 	"tonclient/internal/config"
 	"tonclient/internal/database"
+	"tonclient/internal/models"
 	"tonclient/internal/repositories"
 	"tonclient/internal/services"
 	"tonclient/internal/tonbot"
@@ -13,7 +14,7 @@ import (
 
 func TestAdminWalletService_StartSubscribeTransaction(t *testing.T) {
 	s := InitAdminService()
-	s.StartSubscribeTransaction()
+	s.StartSubscribeTransaction(make(chan models.SubmitTransaction))
 
 }
 
@@ -80,9 +81,9 @@ func InitAdminService() *services.AdminWalletService {
 	if err != nil {
 		log.Fatal("Failed connect to database: ", err)
 	}
-	bot := tonbot.NewTgBot("8112143412:AAE1EZ3rEmqNx4O41UYch1MtD7NLIxb6-i0", us, ts, ps, s)
+	bot := tonbot.NewTgBot("8112143412:AAE1EZ3rEmqNx4O41UYch1MtD7NLIxb6-i0", us, ts, ps, s, ss, ws)
 	go func() {
-		err := bot.StartBot()
+		err := bot.StartBot(make(chan models.SubmitTransaction))
 		if err != nil {
 			return
 		}

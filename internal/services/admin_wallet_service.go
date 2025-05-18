@@ -54,7 +54,11 @@ func NewAdminWalletService(config *config.TonClientConfig, ps *PoolService, ts *
 	}
 
 	wallAddr := wall.WalletAddress()
-	treasuryAddress := address.MustParseAddr(wallAddr.String())
+	treasuryAddress, err := address.ParseAddr(wallAddr.String())
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
 
 	acc, err := api.GetAccount(ctx, master, treasuryAddress)
 	if err != nil {
@@ -135,7 +139,6 @@ func (s *AdminWalletService) StartSubscribeTransaction(ch chan models.SubmitTran
 			}
 		}
 	}
-
 }
 
 func getLastMaster(ctx context.Context, api *ton.APIClient) (*ton.BlockIDExt, error) {
@@ -179,7 +182,11 @@ func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment stri
 
 	amountTok := tlb.MustFromDecimal(fmt.Sprint(amount), decimal)
 	c, err := wallet.CreateCommentCell(comment)
-	to := address.MustParseAddr(receiverAddr)
+	to, err := address.ParseAddr(receiverAddr)
+	if err != nil {
+		log.Errorf("Failed to parse receiver address: %v", err)
+		return err
+	}
 	transferPayload, err := tokenWallet.BuildTransferPayloadV2(to, to, amountTok, tlb.ZeroCoins, c, nil)
 	if err != nil {
 		log.Errorf("Failed to build transfer payload: %v", err)
@@ -199,7 +206,11 @@ func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment stri
 }
 
 func (s *AdminWalletService) TokenWalletAddress(ctx context.Context, jettonMaster string) (*jetton.WalletClient, error) {
-	tokenContract := address.MustParseAddr(jettonMaster)
+	tokenContract, err := address.ParseAddr(jettonMaster)
+	if err != nil {
+		log.Error("Failed to parse jetton token address:", err)
+		return nil, err
+	}
 	token := jetton.NewJettonMasterClient(s.api, tokenContract)
 	tokenWallet, err := token.GetJettonWallet(ctx, s.wallet.WalletAddress())
 	if err != nil {
@@ -211,7 +222,11 @@ func (s *AdminWalletService) TokenWalletAddress(ctx context.Context, jettonMaste
 }
 
 func (s *AdminWalletService) DataJetton(masterAddr string) (*models.JettonData, error) {
-	tokenContract := address.MustParseAddr(masterAddr)
+	tokenContract, err := address.ParseAddr(masterAddr)
+	if err != nil {
+		log.Error("Failed to parse jetton token address:", err)
+		return nil, err
+	}
 	master := jetton.NewJettonMasterClient(s.api, tokenContract)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
@@ -222,6 +237,14 @@ func (s *AdminWalletService) DataJetton(masterAddr string) (*models.JettonData, 
 	}
 
 	return getContent(data), nil
+}
+
+func (s *AdminWalletService) CheckValidAddr(addr string) error {
+	if _, err := address.ParseAddr(addr); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func getContent(any *jetton.Data) *models.JettonData {

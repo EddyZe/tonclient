@@ -12,6 +12,7 @@ import (
 	"tonclient/internal/services"
 	"tonclient/internal/tonbot/buttons"
 	"tonclient/internal/tonbot/command"
+	"tonclient/internal/tonbot/userstate"
 	"tonclient/internal/util"
 
 	"github.com/go-telegram/bot"
@@ -92,6 +93,11 @@ func (t *TgBot) handleMessage(ctx context.Context, b *bot.Bot, msg *models.Messa
 	if msg.Chat.Type == models.ChatTypePrivate {
 		text := msg.Text
 
+		if state, ok := userstate.CurrentState[msg.Chat.ID]; ok {
+			t.handleState(ctx, state, b, msg)
+			return
+		}
+
 		if strings.HasPrefix(text, "/start") {
 			cmd := command.NewStartCommand(b, t.us, t.ts)
 			cmd.Execute(ctx, msg)
@@ -130,7 +136,14 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 	}
 
 	if data == buttons.RoleButtonOwnerTokensId {
-		//TOO реализовать меню для владельцев токенов
+		command.NewOpenOwnerPoolsMenu(b).Execute(ctx, callback)
+		return
+	}
+
+	if data == buttons.SetNumberWalletId {
+		cmd := command.NewSetWalletCommand[*models.CallbackQuery](b, t.ws, t.us, t.aws)
+		cmd.Execute(ctx, callback)
+		return
 	}
 
 	if data == buttons.DefCloseId {
@@ -144,6 +157,8 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 			log.Error("DeleteMessage: ", err)
 			return
 		}
+
+		userstate.CurrentState[msg.Chat.ID] = -1
 	}
 
 	if strings.HasPrefix(data, buttons.NextPagePool) {
@@ -177,6 +192,14 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 		log.Infoln(data)
 		command.NewPoolInfo(b, t.ps, t.us, t.ss).Execute(ctx, callback)
 		return
+	}
+}
+
+func (t *TgBot) handleState(ctx context.Context, state int, b *bot.Bot, msg *models.Message) {
+	switch state {
+	case userstate.EnterWalletAddr:
+		command.NewSetWalletCommand[*models.Message](b, t.ws, t.us, t.aws).Execute(ctx, msg)
+		break
 	}
 }
 
