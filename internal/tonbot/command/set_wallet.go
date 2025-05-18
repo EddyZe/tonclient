@@ -66,10 +66,27 @@ func (s *SetWalletCommand[T]) executeCallback(ctx context.Context, callback *mod
 func (s *SetWalletCommand[T]) executeMessage(ctx context.Context, msg *models.Message) {
 	chatId := msg.Chat.ID
 	text := msg.Text
+	state, ok := userstate.CurrentState[chatId]
+	if !ok {
+		if _, err := util.SendTextMessage(s.b, uint64(chatId), "❌ Что-то пошло не так. Выберите повторно операцию."); err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	switch state {
+	case userstate.EnterWalletAddr:
+		s.enterAddrWallet(uint64(chatId), text)
+		break
+	}
+
+}
+
+func (s *SetWalletCommand[T]) enterAddrWallet(chatId uint64, text string) {
 	if err := s.aws.CheckValidAddr(text); err != nil {
 		btnClose := util.CreateDefaultButton(buttons.DefCloseId, buttons.DefCloseText)
 		markup := util.CreateInlineMarup(1, btnClose)
-		if _, err := util.SendTextMessageMarkup(s.b, uint64(chatId), "❌ Невалидный адрес кошелька! Повторите попытку!", markup); err != nil {
+		if _, err := util.SendTextMessageMarkup(s.b, chatId, "❌ Невалидный адрес кошелька! Повторите попытку!", markup); err != nil {
 			log.Error(err)
 			return
 		}
