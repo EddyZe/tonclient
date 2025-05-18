@@ -53,6 +53,28 @@ func (s *StakeService) CountPool(poolId uint64) int {
 	return s.stakeRepo.CountPoolStakes(poolId)
 }
 
+func (s *StakeService) CountByUserIdIsActive(userId uint64, b bool) int {
+	return s.stakeRepo.CountUserAndStatusStake(userId, b)
+}
+
 func (s *StakeService) GetPoolStakes(poolId uint64) *[]models.Stake {
 	return s.stakeRepo.FindStakesByPoolId(poolId)
+}
+
+func (s *StakeService) GetStakesUserIdStatus(userId uint64, b bool) *[]models.Stake {
+	stakes := s.stakeRepo.GetStakeStatusUser(userId, b)
+	if stakes == nil {
+		return &[]models.Stake{}
+	}
+
+	return stakes
+}
+
+func (s *StakeService) GetStakesUser(userid uint64) *[]models.Stake {
+	stakes := s.stakeRepo.GetUserStakes(userid)
+	if stakes == nil {
+		return &[]models.Stake{}
+	}
+
+	return stakes
 }

@@ -113,6 +113,11 @@ func (t *TgBot) handleMessage(ctx context.Context, b *bot.Bot, msg *models.Messa
 			command.NewOpenSetting(b).Execute(ctx, msg)
 			return
 		}
+
+		if text == buttons.Profile {
+			command.NewProfileCommand(b, t.us, t.ws, t.aws, t.ps, t.ss).Execute(ctx, msg)
+			return
+		}
 	}
 }
 
@@ -122,6 +127,23 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 	if data == buttons.RoleButtonUserId {
 		command.NewOpenUserMenuCommand(b).Execute(ctx, callback)
 		return
+	}
+
+	if data == buttons.RoleButtonOwnerTokensId {
+		//TOO реализовать меню для владельцев токенов
+	}
+
+	if data == buttons.DefCloseId {
+		if err := util.CheckTypeMessage(b, callback); err != nil {
+			log.Error("CheckTypeMessage: ", err)
+			return
+		}
+		msg := callback.Message.Message
+
+		if err := util.DeleteMessage(ctx, b, uint64(msg.Chat.ID), msg.ID); err != nil {
+			log.Error("DeleteMessage: ", err)
+			return
+		}
 	}
 
 	if strings.HasPrefix(data, buttons.NextPagePool) {

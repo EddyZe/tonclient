@@ -22,4 +22,12 @@ const (
 
 	//stakes
 	CreateStakeId = "CREATE_STAKE"
+
+	//profile
+	SetNumberWallet   = "👛 Привязать кошелек"
+	SetNumberWalletId = "SET_NUMBER_WALLET"
+
+	//default button
+	DefCloseId   = "DEF_CLOSE_ID"
+	DefCloseText = "Закрыть ❌"
 )
