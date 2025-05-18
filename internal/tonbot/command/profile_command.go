@@ -19,7 +19,6 @@ type ProfileCommand struct {
 	aws *services.AdminWalletService
 	ps  *services.PoolService
 	ss  *services.StakeService
-	tcs *services.TonConnectService
 }
 
 func NewProfileCommand(b *bot.Bot, us *services.UserService, ws *services.WalletTonService,
@@ -42,8 +41,9 @@ func (c *ProfileCommand) Execute(ctx context.Context, msg *models.Message) {
 			if _, er := util.SendTextMessage(c.b, uint64(chatId), "❌ Профиль не найден. Введите команду /start, чтобы создать профиль!"); err != nil {
 				log.Error("Failed send message", er)
 			}
+			return
 		}
-		log.Error("Failed to get user by telegram chat id", "chatId", chatId, "err", err)
+		log.Error("Failed find user to chatId", chatId, err)
 		return
 	}
 
