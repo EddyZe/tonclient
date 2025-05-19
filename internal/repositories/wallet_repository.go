@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"time"
 	"tonclient/internal/models"
 
@@ -22,37 +23,31 @@ func (r *WalletTonRepository) Save(ton *models.WalletTon) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	tx := r.db.MustBegin()
-	query, args, err := tx.BindNamed(
-		"insert into wallet_ton(name, addr, user_id) values (:name, :addr, :user_id) returning id",
-		ton,
-	)
+	query := `
+        INSERT INTO wallet_ton (user_id, name, addr)
+        VALUES (:user_id, :name, :addr)
+        RETURNING id
+    `
 
+	// Используем NamedQuery вместо BindNamed
+	rows, err := r.db.NamedQueryContext(ctx, query, ton)
 	if err != nil {
-		if er := tx.Rollback(); er != nil {
-			log.Error("Transaction rollback failed: ", er)
-			return er
-		}
-		log.Error("Failed to create new transaction: ", err)
-		return err
+		log.Error("Failed to execute query: ", err)
+		return fmt.Errorf("insert error: %w", err)
 	}
-
-	if err := tx.QueryRowxContext(ctx, query, args).Scan(&ton.Id); err != nil {
-		if er := tx.Rollback(); er != nil {
-			log.Error("Transaction rollback failed: ", er)
-			return er
+	defer func(rows *sqlx.Rows) {
+		err := rows.Close()
+		if err != nil {
+			log.Error("Failed to close rows: ", err)
 		}
-		log.Error("Failed to save wallet: ", err)
-		return err
-	}
+	}(rows)
 
-	if err := tx.Commit(); err != nil {
-		if er := tx.Rollback(); er != nil {
-			log.Error("Transaction rollback failed: ", er)
-			return er
+	// Сканируем возвращённый ID
+	if rows.Next() {
+		if err := rows.Scan(&ton.Id); err != nil {
+			log.Error("Failed to scan ID: ", err)
+			return fmt.Errorf("scan error: %w", err)
 		}
-		log.Error("Failed to save wallet: ", err)
-		return err
 	}
 
 	return nil

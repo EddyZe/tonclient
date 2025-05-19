@@ -35,10 +35,7 @@ func NewTonConnectService(redis *redis.Client, adminWalletServ *AdminWalletServi
 	}
 }
 
-func (s *TonConnectService) LoadSession(key string) (*tonconnect.Session, error) {
-
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-	defer cancel()
+func (s *TonConnectService) LoadSession(ctx context.Context, key string) (*tonconnect.Session, error) {
 
 	result, err := s.redisCli.Get(ctx, key).Result()
 	if errors.Is(err, redis.Nil) {
@@ -59,26 +56,20 @@ func (s *TonConnectService) LoadSession(key string) (*tonconnect.Session, error)
 	return &session, nil
 }
 
-func (s *TonConnectService) SaveSession(key string, session *tonconnect.Session) error {
+func (s *TonConnectService) SaveSession(ctx context.Context, key string, session *tonconnect.Session) error {
 	data, err := session.MarshalJSON()
 	if err != nil {
 		log.Error("Error marshaling session json", err)
 		return err
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-	defer cancel()
-
 	return s.redisCli.Set(ctx, key, data, 0).Err()
 }
 
-func (s *TonConnectService) DeleteSession(key string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-	defer cancel()
+func (s *TonConnectService) DeleteSession(ctx context.Context, key string) error {
 	return s.redisCli.Del(ctx, key).Err()
 }
 
-func (s *TonConnectService) GenerateConnectUrls(session *tonconnect.Session) (connectUrls map[string]string, error error) {
+func (s *TonConnectService) GenerateConnectUrls(ctx context.Context, session *tonconnect.Session) (connectUrls map[string]string, error error) {
 	result := make(map[string]string)
 	data := make([]byte, 32)
 	_, err := rand.Read(data)
@@ -117,15 +108,11 @@ func (s *TonConnectService) GenerateConnectUrls(session *tonconnect.Session) (co
 	return result, nil
 }
 
-func (s *TonConnectService) Connect(session *tonconnect.Session) error {
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	defer cancel()
-
+func (s *TonConnectService) Connect(ctx context.Context, session *tonconnect.Session) (*models.TonConnectResult, error) {
 	res, err := session.Connect(ctx, tonconnect.Wallets["tonkeeper"], tonconnect.Wallets["tonhub"])
 	if err != nil {
 		log.Error("Error generating connect urls", err)
-		return err
+		return nil, err
 	}
 	var addr string
 	network := "mainnet"
@@ -146,21 +133,24 @@ func (s *TonConnectService) Connect(session *tonconnect.Session) error {
 		addr,
 	)
 
-	return nil
+	return &models.TonConnectResult{
+		WalletName: res.Device.AppName,
+		Version:    res.Device.AppVersion,
+		Addr:       addr,
+		Platform:   res.Device.Platform,
+	}, nil
 }
 
 func (s *TonConnectService) CreateSession() (*tonconnect.Session, error) {
 	return tonconnect.NewSession()
 }
 
-func (s *TonConnectService) SendJettonTransaction(jettonAddr, receiverAddr, senderAddr, amount string, payload *models.Payload, session *tonconnect.Session) ([]byte, error) {
+func (s *TonConnectService) SendJettonTransaction(ctx context.Context, jettonAddr, receiverAddr, senderAddr, amount string, payload *models.Payload, session *tonconnect.Session) ([]byte, error) {
 
 	commentCell := cell.BeginCell().
 		MustStoreUInt(payload.OperationType, 32).
 		MustStoreStringSnake(base64.StdEncoding.EncodeToString([]byte(payload.Payload))).
 		EndCell()
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	jettonData, err := s.adminWalletServ.DataJetton(payload.JettonMaster)
 	if err != nil {
@@ -208,14 +198,12 @@ func (s *TonConnectService) SendJettonTransaction(jettonAddr, receiverAddr, send
 	return boc, nil
 }
 
-func (s *TonConnectService) SendTransaction(receiverAddr, amount, comment string, session *tonconnect.Session) ([]byte, error) {
+func (s *TonConnectService) SendTransaction(ctx context.Context, receiverAddr, amount, comment string, session *tonconnect.Session) ([]byte, error) {
 	commentCell, err := wallet.CreateCommentCell(comment)
 	if err != nil {
 		log.Error("Error creating commentCell", err)
 		return nil, err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	defer cancel()
 
 	msg, err := tonconnect.NewMessage(
 		receiverAddr,

@@ -2,7 +2,8 @@ package database
 
 import (
 	"context"
-	"os"
+	"time"
+	"tonclient/internal/config"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -12,23 +13,23 @@ var cts = context.Background()
 var Client *redis.Client
 
 type RedisDb struct {
-	cli *redis.Client
+	Cli *redis.Client
 }
 
-func InitRedisCli() (*redis.Client, error) {
-	if Client != nil {
-		return Client, nil
-	}
+func NewRedisDb(cfg *config.RedisConfig) (*RedisDb, error) {
+	cli := redis.NewClient(&redis.Options{
+		Addr:     cfg.Addr,
+		Password: cfg.Password,
+		DB:       cfg.Db,
+	})
 
-	url := os.Getenv("REDIS_URL")
-	opts, err := redis.ParseURL(url)
-	if err != nil {
+	ctx, cancel := context.WithTimeout(cts, time.Second*10)
+	defer cancel()
+	if _, err := cli.Ping(ctx).Result(); err != nil {
+		log.Error("Error connecting to redis")
 		return nil, err
 	}
-
-	cli := redis.NewClient(opts)
-
-	Client = cli
-
-	return cli, nil
+	return &RedisDb{
+		Cli: cli,
+	}, nil
 }

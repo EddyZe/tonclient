@@ -27,6 +27,12 @@ type PostgresConfig struct {
 	DBName   string
 }
 
+type RedisConfig struct {
+	Addr     string
+	Password string
+	Db       int
+}
+
 type TonClientConfig struct {
 	Seed                []string
 	WalletAddr          string
@@ -72,5 +78,20 @@ func LoadTonConfig() *TonClientConfig {
 		WalletAddr:          walletAddr,
 		JettonAddr:          jettonAddr,
 		JettonAdminContract: contract,
+	}
+}
+
+func LoadRedisConfig() *RedisConfig {
+	addr := os.Getenv("REDIS_ADDR")
+	password := os.Getenv("REDIS_PASSWORD")
+	b := os.Getenv("REDIS_DB")
+	convDb, err := strconv.Atoi(b)
+	if err != nil {
+		log.Error("Error parsing REDIS_DB")
+	}
+	return &RedisConfig{
+		Addr:     addr,
+		Password: password,
+		Db:       convDb,
 	}
 }

@@ -29,11 +29,12 @@ type TgBot struct {
 	ss    *services.StakeService
 	ws    *services.WalletTonService
 	aws   *services.AdminWalletService
+	tcs   *services.TonConnectService
 }
 
 func NewTgBot(token string, us *services.UserService, ts *services.TelegramService,
 	ps *services.PoolService, aws *services.AdminWalletService, ss *services.StakeService,
-	ws *services.WalletTonService) *TgBot {
+	ws *services.WalletTonService, tcs *services.TonConnectService) *TgBot {
 	return &TgBot{
 		token: token,
 		us:    us,
@@ -42,6 +43,7 @@ func NewTgBot(token string, us *services.UserService, ts *services.TelegramServi
 		aws:   aws,
 		ss:    ss,
 		ws:    ws,
+		tcs:   tcs,
 	}
 }
 
@@ -94,8 +96,10 @@ func (t *TgBot) handleMessage(ctx context.Context, b *bot.Bot, msg *models.Messa
 		text := msg.Text
 
 		if state, ok := userstate.CurrentState[msg.Chat.ID]; ok {
-			t.handleState(ctx, state, b, msg)
-			return
+			if state != -1 {
+				t.handleState(ctx, state, b, msg)
+				return
+			}
 		}
 
 		if strings.HasPrefix(text, "/start") {
@@ -141,7 +145,7 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 	}
 
 	if data == buttons.SetNumberWalletId {
-		cmd := command.NewSetWalletCommand[*models.CallbackQuery](b, t.ws, t.us, t.aws)
+		cmd := command.NewSetWalletCommand[*models.CallbackQuery](b, t.ws, t.us, t.aws, t.tcs)
 		cmd.Execute(ctx, callback)
 		return
 	}
@@ -198,7 +202,7 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 func (t *TgBot) handleState(ctx context.Context, state int, b *bot.Bot, msg *models.Message) {
 	switch state {
 	case userstate.EnterWalletAddr:
-		command.NewSetWalletCommand[*models.Message](b, t.ws, t.us, t.aws).Execute(ctx, msg)
+		command.NewSetWalletCommand[*models.Message](b, t.ws, t.us, t.aws, t.tcs).Execute(ctx, msg)
 		break
 	}
 }

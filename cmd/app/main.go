@@ -49,6 +49,11 @@ func run3() {
 	}(db)
 	logger.Infoln("Database initialized")
 
+	redis, err := database.NewRedisDb(config.LoadRedisConfig())
+	if err != nil {
+		logger.Fatalf("Failed to connect to redis: %v", err)
+	}
+
 	log.Println("Init repositories:")
 	ur := repositories.NewUserRepository(db.Db)
 	log.Println("User repository initialized")
@@ -85,13 +90,15 @@ func run3() {
 		logger.Fatal(err)
 	}
 	log.Println("AdminWallet service initialized")
+	tcs := services.NewTonConnectService(redis.Cli, aws)
+	log.Println("Ton connect service initialized")
 
 	log.Println("Service initialized")
 
 	tokenBot := os.Getenv("TELEGRAM_BOT_TOKEN")
 
 	logger.Infoln("Telegram bot starting:", tokenBot)
-	tgbot := tonbot.NewTgBot(tokenBot, us, ts, ps, aws, ss, ws)
+	tgbot := tonbot.NewTgBot(tokenBot, us, ts, ps, aws, ss, ws, tcs)
 
 	transaction := make(chan models.SubmitTransaction)
 

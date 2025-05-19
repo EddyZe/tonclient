@@ -2,6 +2,8 @@ package command
 
 import (
 	"context"
+	"fmt"
+	"time"
 	"tonclient/internal/services"
 	"tonclient/internal/tonbot/buttons"
 	"tonclient/internal/tonbot/userstate"
@@ -20,15 +22,18 @@ type SetWalletCommand[T SetWalletType] struct {
 	ws  *services.WalletTonService
 	us  *services.UserService
 	aws *services.AdminWalletService
+	tcs *services.TonConnectService
 }
 
 func NewSetWalletCommand[T SetWalletType](b *bot.Bot, ws *services.WalletTonService,
-	us *services.UserService, aws *services.AdminWalletService) *SetWalletCommand[T] {
+	us *services.UserService, aws *services.AdminWalletService,
+	tcs *services.TonConnectService) *SetWalletCommand[T] {
 	return &SetWalletCommand[T]{
 		b:   b,
 		ws:  ws,
 		us:  us,
 		aws: aws,
+		tcs: tcs,
 	}
 }
 
@@ -78,6 +83,8 @@ func (s *SetWalletCommand[T]) executeMessage(ctx context.Context, msg *models.Me
 	case userstate.EnterWalletAddr:
 		s.enterAddrWallet(uint64(chatId), text)
 		break
+	case userstate.ConnectTonConnect:
+		break
 	}
 
 }
@@ -92,4 +99,102 @@ func (s *SetWalletCommand[T]) enterAddrWallet(chatId uint64, text string) {
 		}
 		return
 	}
+	closeButton := util.CreateDefaultButton(buttons.DefCloseId, buttons.DefCloseText)
+	markup := util.CreateInlineMarup(1, closeButton)
+	w, _ := s.ws.FindWalletByAddr(text)
+	if w != nil {
+		if _, err := util.SendTextMessageMarkup(
+			s.b,
+			chatId,
+			"❌ Номер кошелька уже привязан к другому аккаунту! Повторите попытку",
+			markup,
+		); err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	s.connectWallet(chatId, text)
+}
+
+func (s *SetWalletCommand[T]) connectWallet(chatId uint64, addr string) {
+	sessionTonConnect, err := s.tcs.CreateSession()
+	if err != nil {
+		log.Error(err)
+		if _, err := util.SendTextMessage(s.b, chatId, "❌ Что-то пошло не так. Попробуйте повторить попытку!"); err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	urls, err := s.tcs.GenerateConnectUrls(ctx, sessionTonConnect)
+	if err != nil {
+		log.Error(err)
+		if _, err := util.SendTextMessage(s.b, chatId, "❌ Произошла ошибка генерации ссылок, для подключения кошелька. Повторите попытку!"); err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	btns := make([]models.InlineKeyboardButton, 0, 2)
+	for k, v := range urls {
+		btn := util.CreateUrlInlineButton(k, v)
+		btns = append(btns, btn)
+	}
+
+	markup := util.MenuWithBackButton(buttons.DefCloseId, buttons.DefCloseText, btns...)
+	if _, err := util.SendTextMessageMarkup(s.b, chatId, "Выберите кошелек, который хотите подключить: ", markup); err != nil {
+		log.Error(err)
+		return
+	}
+
+	res, err := s.tcs.Connect(ctx, sessionTonConnect)
+	if err != nil {
+		log.Error(err)
+		if _, err := util.SendTextMessage(s.b, chatId, "❌ Произошла ошибка подключения. Повторите попытку!"); err != nil {
+			log.Error(err)
+		}
+		return
+	}
+	err = s.tcs.SaveSession(ctx, fmt.Sprint(chatId), sessionTonConnect)
+	if err != nil {
+		log.Error(err)
+		if _, err := util.SendTextMessage(s.b, chatId, "❌ Произошла ошибка при опдключении, повторите попытку!"); err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	user, err := s.us.GetByTelegramChatId(chatId)
+	if err != nil {
+		log.Error(err)
+		if _, err := util.SendTextMessage(s.b, chatId, "❌ Ваш аккаунт не найден! Напишите команду /start, чтобы активировать аккаунт, затем повторите попытку!"); err != nil {
+			log.Error(err)
+		}
+		return
+	}
+	wall, err := s.ws.CreateNewWallet(uint64(user.Id.Int64), addr, res.WalletName)
+	if err != nil {
+		log.Error(err)
+		if err.Error() == "address already exists" {
+			if _, err := util.SendTextMessage(s.b, chatId, "❌ Адрес кошелька привязан к другому аккаунту!"); err != nil {
+				log.Error(err)
+				return
+			}
+			return
+		}
+		if _, err := util.SendTextMessage(s.b, chatId, "❌ Что-то пошло не так. Попробуйте повторить попытку!"); err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	resp := fmt.Sprintf("✅ Кошелек %v, был успешно подключен. Имя кошелька: %v", addr, wall.Name)
+	if _, err := util.SendTextMessage(s.b, chatId, resp); err != nil {
+		log.Error(err)
+	}
+	userstate.CurrentState[int64(chatId)] = -1
 }
