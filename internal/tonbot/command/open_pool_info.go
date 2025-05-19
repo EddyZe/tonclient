@@ -47,6 +47,15 @@ func (c *OpenPoolInfoCommand) Execute(ctx context.Context, callback *models.Call
 	splitData := strings.Split(data, ":")
 	poolIdStr := splitData[1]
 
+	user, err := c.us.GetByTelegramChatId(uint64(chatId))
+	if err != nil {
+		log.Error("[OpenPoolInfoCommand.Execute]", err)
+		if _, err := util.SendTextMessage(c.b, uint64(chatId), "❌ Ваш аккаунт не кативирован, чтобы активировать аккаунт введите команду /start"); err != nil {
+			log.Error("[OpenPoolInfoCommand.Execute]", err)
+		}
+		return
+	}
+
 	poolId, err := strconv.ParseInt(poolIdStr, 10, 64)
 	if err != nil {
 		log.Error("[OpenPoolInfoCommand.Execute]", err)
@@ -76,7 +85,14 @@ func (c *OpenPoolInfoCommand) Execute(ctx context.Context, callback *models.Call
 	poolInfo := c.info(pool)
 	dataBtn := fmt.Sprintf("%v:%v", buttons.CreateStakeId, poolId)
 	btn := util.CreateDefaultButton(dataBtn, buttons.StakePoolTokensText)
-	markup := util.MenuWithBackButton(buttons.BackPoolListId, buttons.BackPoolList, btn)
+	var markup *models.InlineKeyboardMarkup
+
+	if pool.OwnerId == uint64(user.Id.Int64) {
+		//TODO сделать меню для владельца пула
+		markup = util.CreateInlineMarup(1, util.CreateDefaultButton("1", "Test"))
+	} else {
+		markup = util.MenuWithBackButton(buttons.BackPoolListId, buttons.BackPoolList, btn)
+	}
 	if err := util.EditTextMessageMarkup(
 		ctx,
 		c.b,

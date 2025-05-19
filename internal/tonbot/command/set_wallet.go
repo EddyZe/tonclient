@@ -60,7 +60,18 @@ func (s *SetWalletCommand[T]) executeCallback(ctx context.Context, callback *mod
 	btnClose := util.CreateDefaultButton(buttons.DefCloseId, buttons.DefCloseText)
 	markup := util.CreateInlineMarup(1, btnClose)
 
-	if _, err := util.SendTextMessageMarkup(s.b, uint64(chatId), "Отправьте адрес кошелька: ", markup); err != nil {
+	resp := `
+	<b>Привязка кошелька</b>
+
+	Отправьте адрес кошелька. На привязанный адрес будут, отправляться средства и операции.
+	`
+
+	if _, err := util.SendTextMessageMarkup(
+		s.b,
+		uint64(chatId),
+		resp,
+		markup,
+	); err != nil {
 		log.Error(err)
 		return
 	}

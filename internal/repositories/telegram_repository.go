@@ -22,7 +22,11 @@ func (r *TelegramRepository) Save(telegram *models.Telegram) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	tx := r.db.MustBegin()
+	tx, err := r.db.Beginx()
+	if err != nil {
+		log.Error("Failed to begin transaction: ", err)
+		return err
+	}
 	query, args, err := tx.BindNamed(
 		"insert into telegram(username, telegram_id, user_id) values(:username, :telegram_id, :user_id) returning id",
 		telegram,
@@ -30,11 +34,6 @@ func (r *TelegramRepository) Save(telegram *models.Telegram) error {
 
 	if err != nil {
 		log.Error("Failed to create new query: ", err)
-		er := tx.Rollback()
-		if er != nil {
-			log.Error("Failed to rollback transaction: ", err)
-			return er
-		}
 		return err
 	}
 
@@ -45,16 +44,15 @@ func (r *TelegramRepository) Save(telegram *models.Telegram) error {
 	).Scan(&telegram.Id)
 	if err != nil {
 		log.Error("Failed to get result: ", err)
-		er := tx.Rollback()
-		if er != nil {
-			log.Error("Failed to rollback transaction: ", err)
-			return er
-		}
 		return err
 	}
 
 	if err := tx.Commit(); err != nil {
 		log.Error("Failed to commit transaction: ", err)
+		if er := tx.Rollback(); er != nil {
+			log.Error("Failed to rollback transaction: ", err)
+			return er
+		}
 		return err
 	}
 
@@ -65,16 +63,16 @@ func (r *TelegramRepository) Update(telegram *models.Telegram) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	tx := r.db.MustBegin()
+	tx, err := r.db.Beginx()
+	if err != nil {
+		log.Error("Failed to begin transaction: ", err)
+		return err
+	}
 	if _, err := tx.NamedExecContext(
 		ctx,
 		"update telegram set username = :username, user_id = :user_id, telegram_id = :telegram_id where id=:id",
 		telegram); err != nil {
 		log.Error("Failed to update telegram: ", err)
-		if er := tx.Rollback(); er != nil {
-			log.Error("Failed to rollback transaction: ", err)
-			return er
-		}
 		return err
 	}
 
@@ -93,14 +91,18 @@ func (r *TelegramRepository) DeleteById(id int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	tx := r.db.MustBegin()
+	tx, err := r.db.Beginx()
+	if err != nil {
+		log.Error("Failed to begin transaction: ", err)
+		return err
+	}
 	tx.MustExecContext(ctx, "delete from telegram where id=$1", id)
 	if err := tx.Commit(); err != nil {
+		log.Error("Failed to commit transaction: ", err)
 		if er := tx.Rollback(); er != nil {
 			log.Error("Failed to rollback transaction: ", err)
 			return er
 		}
-		log.Error("Failed to commit transaction: ", err)
 		return err
 	}
 
@@ -170,26 +172,26 @@ func (r *TelegramRepository) FindByUserId(userId uint64) *models.Telegram {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	tx := r.db.MustBegin()
+	tx, err := r.db.Beginx()
+	if err != nil {
+		log.Error("Failed to begin transaction: ", err)
+		return nil
+	}
 	if err := tx.GetContext(
 		ctx,
 		&telegram,
 		"select t.* from telegram as t join usr as u on t.user_id = u.id where u.id = $1",
 		userId); err != nil {
-		if er := tx.Rollback(); er != nil {
-			log.Error("Failed RollBack transaction", er)
-			return nil
-		}
 		log.Error("Failed find telegram", err)
 		return nil
 	}
 
 	if err := tx.Commit(); err != nil {
+		log.Error("Failed commiting transaction", err)
 		if er := tx.Rollback(); er != nil {
-			log.Error("Failed rollback transaction", er)
+			log.Error("Failed to rollback transaction: ", err)
 			return nil
 		}
-		log.Error("Failed commiting transaction", err)
 		return nil
 	}
 

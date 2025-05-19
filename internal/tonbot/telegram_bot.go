@@ -114,6 +114,11 @@ func (t *TgBot) handleMessage(ctx context.Context, b *bot.Bot, msg *models.Messa
 			return
 		}
 
+		if text == buttons.MyPools {
+			command.NewMyPoolsCommand(b, t.us, t.ps, t.aws).Execute(ctx, msg)
+			return
+		}
+
 		if text == buttons.SelectPool {
 			command.NewListPoolCommand(b, t.ps, t.aws).Execute(ctx, msg)
 			return
@@ -172,6 +177,16 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 
 	if strings.HasPrefix(data, buttons.BackPagePool) {
 		command.NewListPoolCommand(b, t.ps, t.aws).BackPage(ctx, callback)
+		return
+	}
+
+	if strings.HasPrefix(data, buttons.NextPageMyPool) {
+		command.NewMyPoolsCommand(b, t.us, t.ps, t.aws).NextPage(ctx, callback)
+		return
+	}
+
+	if strings.HasPrefix(data, buttons.BackPageMyPool) {
+		command.NewMyPoolsCommand(b, t.us, t.ps, t.aws).BackPage(ctx, callback)
 		return
 	}
 

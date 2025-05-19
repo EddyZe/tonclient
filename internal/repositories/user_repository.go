@@ -25,36 +25,31 @@ func (u *UserRepository) Save(user *models.User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	tx := u.db.MustBegin()
+	tx, err := u.db.Beginx()
+	if err != nil {
+		log.Error(err)
+		return err
+	}
 	query, args, err := tx.BindNamed(
 		"INSERT into usr (username, created_at, referer_id) values (:username, :created_at, :referer_id) returning id",
 		user,
 	)
 	if err != nil {
 		log.Error("Failed insert user ", err)
-		er := tx.Rollback()
-		if er != nil {
-			return er
-		}
 		return err
 	}
 
 	err = tx.QueryRowContext(ctx, query, args...).Scan(&user.Id)
 	if err != nil {
 		log.Error("Failed save user ", err)
-		er := tx.Rollback()
-		if er != nil {
-			return er
-		}
 		return err
 	}
 
 	err = tx.Commit()
 	if err != nil {
 		log.Error("Failed to commit transaction")
-		er := tx.Rollback()
-		if er != nil {
-			log.Error("Failed to rollback transaction")
+		if er := tx.Rollback(); er != nil {
+			log.Error("Failed to rollback transaction: ", err)
 			return er
 		}
 		return err
@@ -66,27 +61,25 @@ func (u *UserRepository) Save(user *models.User) error {
 func (u *UserRepository) Update(user *models.User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	tx := u.db.MustBegin()
-	_, err := tx.NamedExecContext(
+	tx, err := u.db.Beginx()
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	_, err = tx.NamedExecContext(
 		ctx,
 		"update usr set username = :username where id=:id",
 		user,
 	)
 	if err != nil {
 		log.Error("failed update user: ", err)
-		er := tx.Rollback()
-		if er != nil {
-			log.Error("Failed to rollback transaction")
-			return err
-		}
 		return err
 	}
 	err = tx.Commit()
 	if err != nil {
 		log.Error("Failed to commit transaction")
-		er := tx.Rollback()
-		if er != nil {
-			log.Error("Failed to rollback transaction")
+		if er := tx.Rollback(); er != nil {
+			log.Error("Failed to rollback transaction: ", err)
 			return er
 		}
 		return err
@@ -132,19 +125,25 @@ func (u *UserRepository) FindById(id uint64) *models.User {
 func (u *UserRepository) DeleteById(id uint64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	tx := u.db.MustBegin()
-	tx.MustExecContext(
+	tx, err := u.db.Beginx()
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	if _, err := tx.ExecContext(
 		ctx,
 		"delete from usr where id=$1",
 		id,
-	)
-	err := tx.Commit()
+	); err != nil {
+		log.Error(err)
+		return err
+	}
+	err = tx.Commit()
 	if err != nil {
 		log.Error("Failed to commit transaction")
-		err := tx.Rollback()
-		if err != nil {
-			log.Error("Failed to rollback transaction")
-			return err
+		if er := tx.Rollback(); er != nil {
+			log.Error("Failed to rollback transaction: ", err)
+			return er
 		}
 		return err
 	}
@@ -232,16 +231,21 @@ func (u *UserRepository) CountAll() int {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	tx := u.db.MustBegin()
+	tx, err := u.db.Beginx()
+	if err != nil {
+		log.Error(err)
+		return 0
+	}
 	if err := tx.QueryRowxContext(ctx, "select count(*) from usr").Scan(&res); err != nil {
 		log.Error("Failed find all users", err)
-		if er := tx.Rollback(); er != nil {
-			log.Error("Failed to rollback transaction", er)
-		}
 		return 0
 	}
 	if err := tx.Commit(); err != nil {
 		log.Error("Failed to commit transaction")
+		if er := tx.Rollback(); er != nil {
+			log.Error("Failed to rollback transaction: ", err)
+			return 0
+		}
 		return 0
 	}
 

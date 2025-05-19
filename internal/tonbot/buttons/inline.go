@@ -7,9 +7,11 @@ const (
 	RoleButtonOwnerTokensText = "Я владелец токенов"
 
 	//next and back pool page
-	NextPagePool  = "NEXT_PAGE_POOL"
-	BackPagePool  = "BACK_PAGE_POOL"
-	CloseListPool = "CLOSE_LIST_POOL"
+	NextPagePool   = "NEXT_PAGE_POOL"
+	BackPagePool   = "BACK_PAGE_POOL"
+	CloseListPool  = "CLOSE_LIST_POOL"
+	NextPageMyPool = "NEXT_PAGE_MY_POOL"
+	BackPageMyPool = "BACK_PAGE_MY_POOL"
 
 	//pool data to button
 	PoolDataButton = "OPEN_POOL"

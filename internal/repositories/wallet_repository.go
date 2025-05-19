@@ -57,22 +57,22 @@ func (r *WalletTonRepository) Update(ton *models.WalletTon) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	tx := r.db.MustBegin()
+	tx, err := r.db.Beginx()
+	if err != nil {
+		log.Error("Failed to begin transaction: ", err)
+		return fmt.Errorf("begin transaction error: %w", err)
+	}
 	if _, err := tx.NamedExecContext(ctx, "update wallet_ton set name = :name, addr = :addr, user_id = :user_id where id = :id", ton); err != nil {
-		if er := tx.Rollback(); er != nil {
-			log.Error("Transaction rollback failed: ", er)
-			return er
-		}
 		log.Error("Failed to update wallet: ", err)
 		return err
 	}
 
 	if err := tx.Commit(); err != nil {
+		log.Error("Failed to update wallet: ", err)
 		if er := tx.Rollback(); er != nil {
-			log.Error("Transaction rollback failed: ", er)
+			log.Error("Failed to rollback transaction: ", err)
 			return er
 		}
-		log.Error("Failed to update wallet: ", err)
 		return err
 	}
 
@@ -83,14 +83,21 @@ func (r *WalletTonRepository) DeleteById(id uint64) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	tx := r.db.MustBegin()
-	tx.MustExecContext(ctx, "delete from wallet_ton where id = :id", id)
+	tx, err := r.db.Beginx()
+	if err != nil {
+		log.Error("Failed to begin transaction: ", err)
+		return fmt.Errorf("begin transaction error: %w", err)
+	}
+	if _, err := tx.ExecContext(ctx, "delete from wallet_ton where id = :id", id); err != nil {
+		log.Error("Failed to delete wallet: ", err)
+		return err
+	}
 	if err := tx.Commit(); err != nil {
+		log.Error("Failed to delete wallet: ", err)
 		if er := tx.Rollback(); er != nil {
-			log.Error("Transaction rollback failed: ", er)
+			log.Error("Failed to rollback transaction: ", err)
 			return er
 		}
-		log.Error("Failed to delete wallet: ", err)
 		return err
 	}
 
@@ -159,16 +166,21 @@ func (r *WalletTonRepository) FindByAddr(addr string) *models.WalletTon {
 	defer cancel()
 	var wallet models.WalletTon
 
-	tx := r.db.MustBegin()
+	tx, err := r.db.Beginx()
+	if err != nil {
+		log.Error("Failed to begin transaction: ", err)
+		return nil
+	}
 	if err := tx.GetContext(ctx, &wallet, "select * from wallet_ton where addr = $1", addr); err != nil {
 		log.Error("Failed to find wallet: ", err)
 		return nil
 	}
 	if err := tx.Commit(); err != nil {
-		if er := tx.Rollback(); er != nil {
-			log.Error("Transaction rollback failed: ", er)
-		}
 		log.Error("Failed to find wallet: ", err)
+		if er := tx.Rollback(); er != nil {
+			log.Error("Failed to rollback transaction: ", err)
+			return nil
+		}
 		return nil
 	}
 
@@ -180,20 +192,22 @@ func (r *WalletTonRepository) CountAll() int {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	tx := r.db.MustBegin()
+	tx, err := r.db.Beginx()
+	if err != nil {
+		log.Error("Failed to begin transaction: ", err)
+		return 0
+	}
 	if err := tx.QueryRowContext(ctx, "select count(*) from wallet_ton").Scan(&res); err != nil {
-		if er := tx.Rollback(); er != nil {
-			log.Error("Transaction rollback failed: ", er)
-		}
 		log.Error("Failed to count all wallets: ", err)
 		return 0
 	}
 
 	if err := tx.Commit(); err != nil {
-		if er := tx.Rollback(); er != nil {
-			log.Error("Transaction rollback failed: ", er)
-		}
 		log.Error("Failed to count all wallets: ", err)
+		if er := tx.Rollback(); er != nil {
+			log.Error("Failed to rollback transaction: ", err)
+			return 0
+		}
 		return 0
 	}
 

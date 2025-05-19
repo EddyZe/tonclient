@@ -118,3 +118,11 @@ func (s *PoolService) CountAll() int {
 func (s *PoolService) CountUserPool(userId uint64) int {
 	return s.poolRepository.CountUser(userId)
 }
+
+func (s *PoolService) GetPoolsByUserId(userId uint64) *[]models.Pool {
+	return s.poolRepository.FindByOwnerId(userId)
+}
+
+func (s *PoolService) GetPoolsByUserIdLimit(userId uint64, offset, limit int) *[]models.Pool {
+	return s.poolRepository.FindByOwnerIdLimit(userId, offset, limit)
+}
