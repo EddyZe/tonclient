@@ -13,18 +13,17 @@ type User struct {
 }
 
 type Pool struct {
-	Id                     sql.NullInt64 `db:"id" json:"id"`
-	OwnerId                uint64        `db:"owner_id" json:"owner_id"`
-	Reserve                float64       `db:"reserve" json:"reserve"`
-	JettonWallet           string        `db:"jetton_wallet" json:"jetton_wallet"`
-	JettonMaster           string        `db:"jetton_master" json:"jetton_master"`
-	Reward                 uint          `db:"reward" json:"reward"`
-	Period                 uint          `db:"period" json:"period"`
-	InsuranceCoating       uint          `db:"insurance_coating" json:"insurance_coating"`
-	MaxCompensationPercent uint          `db:"max_compensation_percent" json:"max_compensation_percent"`
-	CreatedAt              time.Time     `db:"created_at" json:"created_at"`
-	IsActive               bool          `db:"is_active" json:"is_active"`
-	IsCommissionPaid       bool          `db:"is_commission_paid" json:"is_commission_paid"`
+	Id               sql.NullInt64 `db:"id" json:"id"`
+	OwnerId          uint64        `db:"owner_id" json:"owner_id"`
+	Reserve          float64       `db:"reserve" json:"reserve"`
+	JettonWallet     string        `db:"jetton_wallet" json:"jetton_wallet"`
+	JettonMaster     string        `db:"jetton_master" json:"jetton_master"`
+	Reward           uint          `db:"reward" json:"reward"`
+	Period           uint          `db:"period" json:"period"`
+	InsuranceCoating uint          `db:"insurance_coating" json:"insurance_coating"`
+	CreatedAt        time.Time     `db:"created_at" json:"created_at"`
+	IsActive         bool          `db:"is_active" json:"is_active"`
+	IsCommissionPaid bool          `db:"is_commission_paid" json:"is_commission_paid"`
 }
 
 type Stake struct {

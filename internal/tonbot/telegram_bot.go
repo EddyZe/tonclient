@@ -94,44 +94,58 @@ func (t *TgBot) handler(ctx context.Context, b *bot.Bot, update *models.Update) 
 func (t *TgBot) handleMessage(ctx context.Context, b *bot.Bot, msg *models.Message) {
 	if msg.Chat.Type == models.ChatTypePrivate {
 		text := msg.Text
-
-		if state, ok := userstate.CurrentState[msg.Chat.ID]; ok {
-			if state != -1 {
-				t.handleState(ctx, state, b, msg)
-				return
-			}
-		}
+		chatId := msg.Chat.ID
 
 		if strings.HasPrefix(text, "/start") {
+			userstate.ResetState(chatId)
 			cmd := command.NewStartCommand(b, t.us, t.ts)
 			cmd.Execute(ctx, msg)
 			return
 		}
 
 		if text == buttons.InviteFriend {
+			userstate.ResetState(chatId)
 			cmd := command.NewInviteFriendCommand(b, t.us)
 			cmd.Execute(ctx, msg)
 			return
 		}
 
 		if text == buttons.MyPools {
+			userstate.ResetState(chatId)
 			command.NewMyPoolsCommand(b, t.us, t.ps, t.aws).Execute(ctx, msg)
 			return
 		}
 
 		if text == buttons.SelectPool {
+			userstate.ResetState(chatId)
 			command.NewListPoolCommand(b, t.ps, t.aws).Execute(ctx, msg)
 			return
 		}
 
 		if text == buttons.Setting {
+			userstate.ResetState(chatId)
 			command.NewOpenSetting(b).Execute(ctx, msg)
 			return
 		}
 
 		if text == buttons.Profile {
+			userstate.ResetState(chatId)
 			command.NewProfileCommand(b, t.us, t.ws, t.aws, t.ps, t.ss).Execute(ctx, msg)
 			return
+		}
+
+		if text == buttons.CreatePool {
+			userstate.ResetState(chatId)
+			cmd := command.NewCreatePoolCommand[*models.Message](b, t.ps, t.us, t.tcs, t.aws, t.ws)
+			cmd.Execute(ctx, msg)
+			return
+		}
+
+		if state, ok := userstate.CurrentState[msg.Chat.ID]; ok {
+			if state != -1 {
+				t.handleState(ctx, state, b, msg)
+				return
+			}
 		}
 	}
 }
@@ -167,7 +181,7 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 			return
 		}
 
-		userstate.CurrentState[msg.Chat.ID] = -1
+		userstate.ResetState(msg.Chat.ID)
 	}
 
 	if strings.HasPrefix(data, buttons.NextPagePool) {
@@ -203,6 +217,16 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 		command.NewListPoolCommand(b, t.ps, t.aws).Execute(ctx, callback.Message.Message)
 	}
 
+	if data == buttons.SevenDaysId || data == buttons.ThirtyDaysId || data == buttons.SixtyDaysId || data == buttons.EnterCustomPeriodId || data == buttons.RepeatCreatePoolId {
+		command.NewCreatePoolCommand[*models.CallbackQuery](b, t.ps, t.us, t.tcs, t.aws, t.ws).Execute(ctx, callback)
+		return
+	}
+
+	if data == buttons.LinkTonConnectId {
+		command.NewTonConnectRepeat(b, t.us, t.ws, t.tcs).Execute(ctx, callback)
+		return
+	}
+
 	if strings.HasPrefix(data, buttons.CreateStakeId) {
 		//TODO Реализовать стейк токенов
 	}
@@ -219,6 +243,12 @@ func (t *TgBot) handleState(ctx context.Context, state int, b *bot.Bot, msg *mod
 	case userstate.EnterWalletAddr:
 		command.NewSetWalletCommand[*models.Message](b, t.ws, t.us, t.aws, t.tcs).Execute(ctx, msg)
 		break
+	case userstate.EnterCustomPeriodHold, userstate.EnterProfitOnPercent, userstate.EnterJettonMasterAddress, userstate.EnterInsuranceCoating, userstate.EnterAmountTokens, userstate.EnterJettonWallet:
+		command.NewCreatePoolCommand[*models.Message](b, t.ps, t.us, t.tcs, t.aws, t.ws).Execute(ctx, msg)
+		break
+	default:
+		log.Error(state)
+		return
 	}
 }
 

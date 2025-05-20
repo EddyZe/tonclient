@@ -3,7 +3,6 @@ package command
 import (
 	"context"
 	"fmt"
-	"time"
 	"tonclient/internal/services"
 	"tonclient/internal/tonbot/buttons"
 	"tonclient/internal/tonbot/userstate"
@@ -95,7 +94,11 @@ func (s *SetWalletCommand[T]) executeMessage(ctx context.Context, msg *models.Me
 		s.enterAddrWallet(uint64(chatId), text)
 		break
 	case userstate.ConnectTonConnect:
+		s.connectWallet(uint64(chatId), text)
 		break
+	default:
+		log.Infoln(state)
+		return
 	}
 
 }
@@ -129,53 +132,9 @@ func (s *SetWalletCommand[T]) enterAddrWallet(chatId uint64, text string) {
 }
 
 func (s *SetWalletCommand[T]) connectWallet(chatId uint64, addr string) {
-	sessionTonConnect, err := s.tcs.CreateSession()
+	res, err := util.ConnectingTonConnect(s.b, chatId, s.tcs)
 	if err != nil {
 		log.Error(err)
-		if _, err := util.SendTextMessage(s.b, chatId, "❌ Что-то пошло не так. Попробуйте повторить попытку!"); err != nil {
-			log.Error(err)
-		}
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	defer cancel()
-
-	urls, err := s.tcs.GenerateConnectUrls(ctx, sessionTonConnect)
-	if err != nil {
-		log.Error(err)
-		if _, err := util.SendTextMessage(s.b, chatId, "❌ Произошла ошибка генерации ссылок, для подключения кошелька. Повторите попытку!"); err != nil {
-			log.Error(err)
-		}
-		return
-	}
-
-	btns := make([]models.InlineKeyboardButton, 0, 2)
-	for k, v := range urls {
-		btn := util.CreateUrlInlineButton(k, v)
-		btns = append(btns, btn)
-	}
-
-	markup := util.MenuWithBackButton(buttons.DefCloseId, buttons.DefCloseText, btns...)
-	if _, err := util.SendTextMessageMarkup(s.b, chatId, "Выберите кошелек, который хотите подключить: ", markup); err != nil {
-		log.Error(err)
-		return
-	}
-
-	res, err := s.tcs.Connect(ctx, sessionTonConnect)
-	if err != nil {
-		log.Error(err)
-		if _, err := util.SendTextMessage(s.b, chatId, "❌ Произошла ошибка подключения. Повторите попытку!"); err != nil {
-			log.Error(err)
-		}
-		return
-	}
-	err = s.tcs.SaveSession(ctx, fmt.Sprint(chatId), sessionTonConnect)
-	if err != nil {
-		log.Error(err)
-		if _, err := util.SendTextMessage(s.b, chatId, "❌ Произошла ошибка при опдключении, повторите попытку!"); err != nil {
-			log.Error(err)
-		}
 		return
 	}
 

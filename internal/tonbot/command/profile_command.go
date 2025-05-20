@@ -38,7 +38,7 @@ func (c *ProfileCommand) Execute(ctx context.Context, msg *models.Message) {
 	user, err := c.us.GetByTelegramChatId(uint64(chatId))
 	if err != nil {
 		if err.Error() == "user not found" {
-			if _, er := util.SendTextMessage(c.b, uint64(chatId), "❌ Профиль не найден. Введите команду /start, чтобы создать профиль!"); err != nil {
+			if _, er := util.SendTextMessage(c.b, uint64(chatId), "❌ Профиль не найден. Введите команду /start, чтобы создать профиль!"); er != nil {
 				log.Error("Failed send message", er)
 			}
 			return
@@ -59,8 +59,9 @@ func (c *ProfileCommand) Execute(ctx context.Context, msg *models.Message) {
 	activeStakes := c.ss.GetStakesUserIdStatus(uint64(user.Id.Int64), true)
 	text := c.generateMessage(user, tonAddr, activeStakes)
 	setWalAddrBtn := util.CreateDefaultButton(buttons.SetNumberWalletId, buttons.SetNumberWallet)
+	conTonW := util.CreateDefaultButton(buttons.LinkTonConnectId, buttons.LinkTonConnect)
 
-	markup := util.MenuWithBackButton(buttons.DefCloseId, buttons.DefCloseText, setWalAddrBtn)
+	markup := util.MenuWithBackButton(buttons.DefCloseId, buttons.DefCloseText, setWalAddrBtn, conTonW)
 
 	if _, err = util.SendTextMessageMarkup(c.b, uint64(chatId), text, markup); err != nil {
 		log.Error("Failed send message", err)

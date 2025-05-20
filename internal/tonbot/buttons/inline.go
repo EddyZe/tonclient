@@ -32,4 +32,22 @@ const (
 	//default button
 	DefCloseId   = "DEF_CLOSE_ID"
 	DefCloseText = "Закрыть ❌"
+
+	//select period hold
+	SevenDays           = "7 Дней"
+	SevenDaysId         = "SEVEN_DAYS_PERIOD"
+	ThirtyDays          = "30 Дней"
+	ThirtyDaysId        = "THIRD_DAYS_PERIOD"
+	SixtyDays           = "60 дней"
+	SixtyDaysId         = "SIX_DAYS_PERIOD"
+	EnterCustomPeriod   = "Ввести свое"
+	EnterCustomPeriodId = "ENTER_CUSTOM_PERIOD"
+
+	//util
+	Repeat             = "🔁 Повторить попытку"
+	RepeatCreatePoolId = "REPEAT_CREATE_POOL"
+
+	//Tonconnect
+	LinkTonConnect   = "🔁 Переподключить TonConnect"
+	LinkTonConnectId = "LINK_TON_CONNECT"
 )

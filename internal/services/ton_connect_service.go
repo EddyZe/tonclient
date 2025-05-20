@@ -152,6 +152,8 @@ func (s *TonConnectService) SendJettonTransaction(ctx context.Context, jettonAdd
 		MustStoreStringSnake(base64.StdEncoding.EncodeToString([]byte(payload.Payload))).
 		EndCell()
 
+	log.Infoln(payload.JettonMaster)
+
 	jettonData, err := s.adminWalletServ.DataJetton(payload.JettonMaster)
 	if err != nil {
 		log.Error("Error getting jetton data", err)
@@ -160,16 +162,21 @@ func (s *TonConnectService) SendJettonTransaction(ctx context.Context, jettonAdd
 	log.Infoln(jettonData)
 
 	parsed, err := strconv.ParseFloat(amount, 64)
+	if err != nil {
+		log.Error("Error parsing amount", err)
+		return nil, err
+	}
+	decimals := math.Pow10(jettonData.Decimals)
 
 	pld := cell.BeginCell().
-		MustStoreUInt(0x0f8a7ea5, 32).                                            // opcode
-		MustStoreUInt(uint64(time.Now().Unix()), 64).                             // query_id (UNIX timestamp)
-		MustStoreCoins(uint64(parsed) * uint64(math.Pow10(jettonData.Decimals))). // amount (с учетом decimals!)
-		MustStoreAddr(address.MustParseAddr(receiverAddr)).                       // destination
-		MustStoreAddr(address.MustParseAddr(senderAddr)).                         // response_destination
-		MustStoreBoolBit(false).                                                  // custom_payload
-		MustStoreCoins(0.01 * 1e9).                                               // forward_ton_amount (0.05 TON)
-		MustStoreMaybeRef(commentCell).                                           // forward_payload
+		MustStoreUInt(0x0f8a7ea5, 32).                         // opcode
+		MustStoreUInt(uint64(time.Now().Unix()), 64).          // query_id (UNIX timestamp)
+		MustStoreCoins(uint64(math.Round(parsed * decimals))). // amount (с учетом decimals!)
+		MustStoreAddr(address.MustParseAddr(receiverAddr)).    // destination
+		MustStoreAddr(address.MustParseAddr(senderAddr)).      // response_destination
+		MustStoreBoolBit(false).                               // custom_payload
+		MustStoreCoins(0.01 * 1e9).                            // forward_ton_amount (0.05 TON)
+		MustStoreMaybeRef(commentCell).                        // forward_payload
 		EndCell()
 
 	msg, err := tonconnect.NewMessage(

@@ -134,13 +134,13 @@ func (c *OpenPoolInfoCommand) info(p *appMoels.Pool) string {
 Если цена токена упадёт более чем на %v%% за время холда — вам будет выплачена компенсация.
 
 <b>💸 Максимальная компенсация:</b>
-До %v%% от вашей стейкнутой суммы.
+До 30%% от вашей стейкнутой суммы.
 
 🔒 Резерв пула:
  •	Заблокировано участниками: %v токенов
  •	Доступно для новых стейков: %v токенов
 `
 
-	res := fmt.Sprintf(i, p.Reward, p.Period, util.SuffixDay(int(p.Period)), p.InsuranceCoating, p.MaxCompensationPercent, ut, reserve)
+	res := fmt.Sprintf(i, p.Reward, p.Period, util.SuffixDay(int(p.Period)), p.InsuranceCoating, ut, reserve)
 	return res
 }

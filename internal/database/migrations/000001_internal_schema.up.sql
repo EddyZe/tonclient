@@ -31,8 +31,7 @@ create table if not exists pool
     jetton_master            varchar(256)                               not null,
     reward                   int check ( reward > 0 )                   not null,
     period                   int check (period > 0)                     not null,
-    insurance_coating        int check ( insurance_coating > 0 )        not null,
-    max_compensation_percent int check ( max_compensation_percent < 30) not null,
+    insurance_coating        int check ( insurance_coating > 0 && insurance_coating < 30)        not null,
     created_at               timestamp default now(),
     is_active                bool      default false,
     is_commission_paid       bool      default false
