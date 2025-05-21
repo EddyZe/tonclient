@@ -88,7 +88,7 @@ func GenerateOwnerPoolInlineKeyboard(poolId int64) *models.InlineKeyboardMarkup 
 	paidCommision := CreateDefaultButton(fmt.Sprintf("%v:%v", buttons.PaidCommissionId, poolId), buttons.PaidCommission)
 	addReserve := CreateDefaultButton(fmt.Sprintf("%v:%v", buttons.AddReserveId, poolId), buttons.AddReserve)
 	closePool := CreateDefaultButton(fmt.Sprintf("%v:%v", buttons.ClosePoolId, poolId), buttons.ClosePool)
-	btnClose := CreateDefaultButton(buttons.DefCloseId, buttons.DefCloseText)
+	backListPools := CreateDefaultButton(buttons.BackMyPoolListId, buttons.BackPoolList)
 
-	return CreateInlineMarup(1, paidCommision, addReserve, closePool, btnClose)
+	return CreateInlineMarup(1, paidCommision, addReserve, closePool, backListPools)
 }

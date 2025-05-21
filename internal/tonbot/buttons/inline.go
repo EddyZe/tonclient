@@ -21,6 +21,7 @@ const (
 	StakePoolTokensText = "🔒 Стейкнуть токены"
 	BackPoolList        = "⏪ Вернуться к списку пулов"
 	BackPoolListId      = "BACK_POOL_LIST"
+	BackMyPoolListId    = "BACK_MY_POOL_LIST"
 
 	// pool owner menu
 	PaidCommission   = "💸 Оплатить комиссию"
