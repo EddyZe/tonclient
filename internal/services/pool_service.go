@@ -78,7 +78,7 @@ func (s *PoolService) AddReserve(poolId uint64, reserve float64) (newReserve flo
 		return 0, err
 	}
 
-	return currentReserve, nil
+	return pool.Reserve, nil
 }
 
 func (s *PoolService) SetCommissionPaid(poolId uint64, b bool) error {

@@ -86,7 +86,7 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService) string {
 
 func GenerateOwnerPoolInlineKeyboard(poolId int64, backPoolListButtonId string, isActive bool, sufData string) *models.InlineKeyboardMarkup {
 	paidCommision := CreateDefaultButton(fmt.Sprintf("%v:%v", buttons.PaidCommissionId, poolId), buttons.PaidCommission)
-	addReserve := CreateDefaultButton(fmt.Sprintf("%v:%v", buttons.AddReserveId, poolId), buttons.AddReserve)
+	addReserve := CreateDefaultButton(fmt.Sprintf("%v:%v:%v", buttons.AddReserveId, poolId, sufData), buttons.AddReserve)
 	var closePoolText string
 	if isActive {
 		closePoolText = buttons.ClosePool

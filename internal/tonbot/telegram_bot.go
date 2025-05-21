@@ -238,6 +238,11 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 		return
 	}
 
+	if strings.HasPrefix(data, buttons.AddReserveId) {
+		command.NewAddReserveCommand[*models.CallbackQuery](b, t.ps, t.tcs, t.us, t.ws).Execute(ctx, callback)
+		return
+	}
+
 	if data == buttons.BackMyPoolListId {
 		if err := util.CheckTypeMessage(b, callback); err != nil {
 			log.Error("CheckTypeMessage: ", err)
@@ -265,6 +270,9 @@ func (t *TgBot) handleState(ctx context.Context, state int, b *bot.Bot, msg *mod
 		break
 	case userstate.EnterCustomPeriodHold, userstate.EnterProfitOnPercent, userstate.EnterJettonMasterAddress, userstate.EnterInsuranceCoating, userstate.EnterAmountTokens:
 		command.NewCreatePoolCommand[*models.Message](b, t.ps, t.us, t.tcs, t.aws, t.ws).Execute(ctx, msg)
+		break
+	case userstate.EnterAddReserveTokens:
+		command.NewAddReserveCommand[*models.Message](b, t.ps, t.tcs, t.us, t.ws).Execute(ctx, msg)
 		break
 	default:
 		log.Error(state)

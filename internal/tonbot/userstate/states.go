@@ -13,6 +13,9 @@ const (
 	EnterProfitOnPercent
 	EnterInsuranceCoating
 	EnterAmountTokens
+
+	//addreserve
+	EnterAddReserveTokens
 )
 
 func ResetState(chatId int64) {
