@@ -5,6 +5,7 @@ import (
 	"math"
 	"tonclient/internal/services"
 	"tonclient/internal/tonbot/buttons"
+	"tonclient/internal/tonbot/callbacksuf"
 	"tonclient/internal/util"
 
 	"github.com/go-telegram/bot"
@@ -56,7 +57,7 @@ func (c *MyPools) Execute(ctx context.Context, msg *models.Message) {
 		buttons.NextPageMyPool,
 		buttons.BackPageMyPool,
 		buttons.CloseListPool,
-		util.GeneratePoolButtons(pools, c.aws)...,
+		util.GeneratePoolButtons(pools, c.aws, callbacksuf.My)...,
 	)
 
 	if err := util.EditMessageMarkup(ctx, c.b, uint64(chatId), msg.ID, markup); err != nil {

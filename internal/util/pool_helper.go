@@ -19,7 +19,7 @@ func generateNamePool(pool *appModels.Pool, aws *services.AdminWalletService) st
 	return fmt.Sprintf("%v (%d %v / %d%% / резерв %v)", jettonData.Name, pool.Period, SuffixDay(int(pool.Period)), pool.Reward, pool.Reserve)
 }
 
-func GeneratePoolButtons(pool *[]appModels.Pool, aws *services.AdminWalletService) []models.InlineKeyboardButton {
+func GeneratePoolButtons(pool *[]appModels.Pool, aws *services.AdminWalletService, suf string) []models.InlineKeyboardButton {
 	res := make([]models.InlineKeyboardButton, 0, len(*pool))
 	for _, p := range *pool {
 		if !p.Id.Valid {
@@ -29,7 +29,7 @@ func GeneratePoolButtons(pool *[]appModels.Pool, aws *services.AdminWalletServic
 		res = append(
 			res,
 			CreateDefaultButton(
-				fmt.Sprintf("%v:%d", buttons.PoolDataButton, poolId),
+				fmt.Sprintf("%v:%d:%v", buttons.PoolDataButton, poolId, suf),
 				generateNamePool(&p, aws),
 			),
 		)
@@ -84,7 +84,7 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService) string {
 	return res
 }
 
-func GenerateOwnerPoolInlineKeyboard(poolId int64, isActive bool) *models.InlineKeyboardMarkup {
+func GenerateOwnerPoolInlineKeyboard(poolId int64, backPoolListButtonId string, isActive bool) *models.InlineKeyboardMarkup {
 	paidCommision := CreateDefaultButton(fmt.Sprintf("%v:%v", buttons.PaidCommissionId, poolId), buttons.PaidCommission)
 	addReserve := CreateDefaultButton(fmt.Sprintf("%v:%v", buttons.AddReserveId, poolId), buttons.AddReserve)
 	var closePoolText string
@@ -94,7 +94,7 @@ func GenerateOwnerPoolInlineKeyboard(poolId int64, isActive bool) *models.Inline
 		closePoolText = buttons.OpePool
 	}
 	closePool := CreateDefaultButton(fmt.Sprintf("%v:%v", buttons.ClosePoolId, poolId), closePoolText)
-	backListPools := CreateDefaultButton(buttons.BackMyPoolListId, buttons.BackPoolList)
+	backListPools := CreateDefaultButton(backPoolListButtonId, buttons.BackPoolList)
 
 	return CreateInlineMarup(1, paidCommision, addReserve, closePool, backListPools)
 }

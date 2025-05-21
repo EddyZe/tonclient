@@ -50,7 +50,10 @@ func (c *PaidCommission) Execute(ctx context.Context, callback *models.CallbackQ
 	msg := callback.Message.Message
 	chatId := msg.Chat.ID
 	dataSplit := strings.Split(callback.Data, ":")
-	if len(dataSplit) != 2 {
+	if len(dataSplit) < 2 {
+		if _, err := util.SendTextMessage(c.b, uint64(chatId), "❌ Что-то пошло не так! Повторите попытку!"); err != nil {
+			log.Error(err)
+		}
 		return
 	}
 

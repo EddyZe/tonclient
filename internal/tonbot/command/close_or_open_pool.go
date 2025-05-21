@@ -6,6 +6,7 @@ import (
 	"strings"
 	appModels "tonclient/internal/models"
 	"tonclient/internal/services"
+	"tonclient/internal/tonbot/buttons"
 	"tonclient/internal/util"
 
 	"github.com/go-telegram/bot"
@@ -37,7 +38,7 @@ func (c *CloseOrOpenPool) Execute(ctx context.Context, callback *models.Callback
 	chatId := msg.Chat.ID
 	messageId := msg.ID
 	splitText := strings.Split(callback.Data, ":")
-	if len(splitText) != 2 {
+	if len(splitText) < 2 {
 		if _, err := util.SendTextMessage(c.b, uint64(chatId), "❌ Что-то пошло не так, повторите попытку!"); err != nil {
 			log.Error(err)
 		}
@@ -106,7 +107,7 @@ func (c *CloseOrOpenPool) editStatus(ctx context.Context, poolId, chatId uint64,
 		chatId,
 		messageId,
 		util.PoolInfo(pool, c.ss),
-		util.GenerateOwnerPoolInlineKeyboard(int64(poolId), pool.IsActive),
+		util.GenerateOwnerPoolInlineKeyboard(int64(poolId), buttons.BackMyPoolListId, pool.IsActive),
 	); err != nil {
 		log.Error(err)
 	}

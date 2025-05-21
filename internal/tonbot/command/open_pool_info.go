@@ -7,6 +7,7 @@ import (
 	"strings"
 	"tonclient/internal/services"
 	"tonclient/internal/tonbot/buttons"
+	"tonclient/internal/tonbot/callbacksuf"
 	"tonclient/internal/util"
 
 	"github.com/go-telegram/bot"
@@ -42,6 +43,12 @@ func (c *OpenPoolInfoCommand) Execute(ctx context.Context, callback *models.Call
 	chatId := msg.Chat.ID
 
 	splitData := strings.Split(data, ":")
+	if len(splitData) < 3 {
+		if _, err := util.SendTextMessage(c.b, uint64(chatId), "❌ Что-то пошло не так! Повторите попытку!"); err != nil {
+			log.Error(err)
+		}
+		return
+	}
 	poolIdStr := splitData[1]
 
 	user, err := c.us.GetByTelegramChatId(uint64(chatId))
@@ -85,7 +92,13 @@ func (c *OpenPoolInfoCommand) Execute(ctx context.Context, callback *models.Call
 	var markup *models.InlineKeyboardMarkup
 
 	if pool.OwnerId == uint64(user.Id.Int64) {
-		markup = util.GenerateOwnerPoolInlineKeyboard(poolId, pool.IsActive)
+		var buttonId string
+		if splitData[2] == callbacksuf.My {
+			buttonId = buttons.BackMyPoolListId
+		} else {
+			buttonId = buttons.BackPoolListId
+		}
+		markup = util.GenerateOwnerPoolInlineKeyboard(poolId, buttonId, pool.IsActive)
 	} else {
 		markup = util.MenuWithBackButton(buttons.BackPoolListId, buttons.BackPoolList, btn)
 	}

@@ -361,7 +361,7 @@ func (t *TgBot) processOperation(b *bot.Bot, tr appModels.SubmitTransaction) {
 		}
 
 		text := fmt.Sprint("✅ Пул был успешно создан! Оплатите оплатите комиссию, чтобы активировать его!\n\n", util.PoolInfo(&pool, t.ss))
-		markup := util.GenerateOwnerPoolInlineKeyboard(pool.Id.Int64, pool.IsActive)
+		markup := util.GenerateOwnerPoolInlineKeyboard(pool.Id.Int64, buttons.BackMyPoolListId, pool.IsActive)
 
 		if _, err := util.SendTextMessageMarkup(b, telegram.TelegramId, text, markup); err != nil {
 			log.Error("Failed to send telegram:", err)
