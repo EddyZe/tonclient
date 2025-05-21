@@ -28,7 +28,8 @@ const (
 	PaidCommissionId = "PAID_COMMISSION_POOL"
 	AddReserve       = "➕ Добавить резерв"
 	AddReserveId     = "ADD_RESERVE_POOL"
-	ClosePool        = "🗝️ Закрыть/Открыть пул"
+	ClosePool        = "🔒 Закрыть пул"
+	OpePool          = "🔓 Открыть пул"
 	ClosePoolId      = "CLOSE_POOL"
 
 	//stakes

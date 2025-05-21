@@ -85,7 +85,7 @@ func (c *OpenPoolInfoCommand) Execute(ctx context.Context, callback *models.Call
 	var markup *models.InlineKeyboardMarkup
 
 	if pool.OwnerId == uint64(user.Id.Int64) {
-		markup = util.GenerateOwnerPoolInlineKeyboard(poolId)
+		markup = util.GenerateOwnerPoolInlineKeyboard(poolId, pool.IsActive)
 	} else {
 		markup = util.MenuWithBackButton(buttons.BackPoolListId, buttons.BackPoolList, btn)
 	}

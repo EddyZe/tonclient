@@ -232,6 +232,11 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 		return
 	}
 
+	if strings.HasPrefix(data, buttons.ClosePoolId) {
+		command.NewCloseOrOpenPoolCommand(b, t.ps, t.us, t.ss).Execute(ctx, callback)
+		return
+	}
+
 	if data == buttons.BackMyPoolListId {
 		if err := util.CheckTypeMessage(b, callback); err != nil {
 			log.Error("CheckTypeMessage: ", err)
@@ -247,7 +252,6 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 	}
 
 	if strings.HasPrefix(data, buttons.PoolDataButton) {
-		log.Infoln(data)
 		command.NewPoolInfo(b, t.ps, t.us, t.ss).Execute(ctx, callback)
 		return
 	}
@@ -357,7 +361,7 @@ func (t *TgBot) processOperation(b *bot.Bot, tr appModels.SubmitTransaction) {
 		}
 
 		text := fmt.Sprint("✅ Пул был успешно создан! Оплатите оплатите комиссию, чтобы активировать его!\n\n", util.PoolInfo(&pool, t.ss))
-		markup := util.GenerateOwnerPoolInlineKeyboard(pool.Id.Int64)
+		markup := util.GenerateOwnerPoolInlineKeyboard(pool.Id.Int64, pool.IsActive)
 
 		if _, err := util.SendTextMessageMarkup(b, telegram.TelegramId, text, markup); err != nil {
 			log.Error("Failed to send telegram:", err)
