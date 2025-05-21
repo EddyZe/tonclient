@@ -243,7 +243,7 @@ func (t *TgBot) handleState(ctx context.Context, state int, b *bot.Bot, msg *mod
 	case userstate.EnterWalletAddr:
 		command.NewSetWalletCommand[*models.Message](b, t.ws, t.us, t.aws, t.tcs).Execute(ctx, msg)
 		break
-	case userstate.EnterCustomPeriodHold, userstate.EnterProfitOnPercent, userstate.EnterJettonMasterAddress, userstate.EnterInsuranceCoating, userstate.EnterAmountTokens, userstate.EnterJettonWallet:
+	case userstate.EnterCustomPeriodHold, userstate.EnterProfitOnPercent, userstate.EnterJettonMasterAddress, userstate.EnterInsuranceCoating, userstate.EnterAmountTokens:
 		command.NewCreatePoolCommand[*models.Message](b, t.ps, t.us, t.tcs, t.aws, t.ws).Execute(ctx, msg)
 		break
 	default:
@@ -300,7 +300,7 @@ func (t *TgBot) processOperation(b *bot.Bot, tr appModels.SubmitTransaction) {
 			return
 		}
 
-		if _, err := util.SendTextMessage(b, tg.TelegramId, "✅ Стейк был успешно создан!"); err != nil {
+		if _, err := util.SendTextMessage(b, tg.TelegramId, "✅ Стейк создан"); err != nil {
 			log.Error("Failed to send message:", err)
 			return
 		}
@@ -333,7 +333,10 @@ func (t *TgBot) processOperation(b *bot.Bot, tr appModels.SubmitTransaction) {
 			return
 		}
 
-		if _, err := util.SendTextMessage(b, telegram.TelegramId, "✅ Пул был успешно создан!"); err != nil {
+		text := fmt.Sprint("✅ Пул был успешно создан! Оплатите оплатите комиссию, чтобы активировать его!\n\n", util.PoolInfo(&pool, t.ss))
+		markup := util.GenerateOwnerPoolInlineKeyboard(pool.Id.Int64)
+
+		if _, err := util.SendTextMessageMarkup(b, telegram.TelegramId, text, markup); err != nil {
 			log.Error("Failed to send telegram:", err)
 			return
 		}

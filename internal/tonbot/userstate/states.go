@@ -10,7 +10,6 @@ const (
 	EnterJettonMasterAddress
 	SelectPeriodHold
 	EnterCustomPeriodHold
-	EnterJettonWallet
 	EnterProfitOnPercent
 	EnterInsuranceCoating
 	EnterAmountTokens

@@ -112,54 +112,12 @@ func (c *CreatePool[T]) executeMessage(ctx context.Context, msg *models.Message)
 		c.enterInsuranceCoating(msg)
 		break
 	case userstate.EnterAmountTokens:
-		c.enterAmountToken(msg)
-		break
-	case userstate.EnterJettonWallet:
-		c.enterJettonWallet(msg, w)
+		c.enterAmountToken(msg, w)
 		break
 	default:
 		if _, err := util.SendTextMessage(c.b, uint64(chatId), "❌ Что-то пошло не так! Повторите команду!"); err != nil {
 			log.Error(err)
 		}
-	}
-}
-
-func (c *CreatePool[T]) enterJettonWallet(msg *models.Message, w *appModels.WalletTon) {
-	chatId := msg.Chat.ID
-	text := msg.Text
-	if err := c.aws.CheckValidAddr(text); err != nil {
-		if _, err := util.SendTextMessage(
-			c.b,
-			uint64(chatId),
-			"❌ Адрес невалиден! Повторите попытка",
-		); err != nil {
-			log.Error(err)
-		}
-		return
-	}
-
-	pool, ok := currentCreatingPool[chatId]
-	if !ok {
-		if _, err := util.SendTextMessage(c.b, uint64(chatId), "❌ Что-то пошло не так! Повторите операцию!"); err != nil {
-			log.Error(err)
-		}
-		return
-	}
-
-	pool.JettonWallet = text
-	pool.IsCommissionPaid = false
-	pool.CreatedAt = time.Now()
-	pool.IsActive = false
-	currentCreatingPool[chatId] = pool
-
-	if _, err := util.SendTextMessage(c.b, uint64(chatId), "Подтвердите операцию в течении 5 минут в вашем привязанном кошельке, чтобы заморозить резерв."); err != nil {
-		log.Error(err)
-		return
-	}
-
-	if err := c.sendTransactionCreatingPool(&pool, chatId, w); err != nil {
-		log.Error(err)
-		return
 	}
 }
 
@@ -242,7 +200,7 @@ func (c *CreatePool[T]) sendTransactionCreatingPool(pool *appModels.Pool, chatId
 	return nil
 }
 
-func (c *CreatePool[T]) enterAmountToken(msg *models.Message) {
+func (c *CreatePool[T]) enterAmountToken(msg *models.Message, w *appModels.WalletTon) {
 	chatId := msg.Chat.ID
 	text := msg.Text
 	num, err := strconv.ParseFloat(text, 64)
@@ -276,18 +234,29 @@ func (c *CreatePool[T]) enterAmountToken(msg *models.Message) {
 		return
 	}
 
-	if _, err := util.SendTextMessage(
-		c.b,
-		uint64(chatId),
-		"✅ Отлично! Пул почти создан! Отправьте адрес вашего jetton кошелька(Jetton wallet)",
-	); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*5)
+	defer cancel()
+	jettonWallet, err := c.aws.TokenWalletAddress(ctx, pool.JettonMaster, address.MustParseAddr(w.Addr))
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	pool.JettonWallet = jettonWallet.Address().String()
+	pool.Reserve = num
+	pool.IsCommissionPaid = false
+	pool.CreatedAt = time.Now()
+	pool.IsActive = false
+	currentCreatingPool[chatId] = pool
+
+	if _, err := util.SendTextMessage(c.b, uint64(chatId), "Подтвердите операцию в течении 5 минут в вашем привязанном кошельке, чтобы заморозить резерв."); err != nil {
 		log.Error(err)
 		return
 	}
 
-	pool.Reserve = num
-	currentCreatingPool[chatId] = pool
-	userstate.CurrentState[chatId] = userstate.EnterJettonWallet
+	if err := c.sendTransactionCreatingPool(&pool, chatId, w); err != nil {
+		log.Error(err)
+		return
+	}
 }
 
 func (c *CreatePool[T]) enterInsuranceCoating(msg *models.Message) {

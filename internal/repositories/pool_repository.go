@@ -193,6 +193,59 @@ func (r *PoolRepository) FindAllLimit(offset, limit int) *[]models.Pool {
 	return &pools
 }
 
+func (r *PoolRepository) FindAllByStatus(b bool) *[]models.Pool {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	var pools []models.Pool
+	tx, err := r.db.Beginx()
+	if err != nil {
+		log.Error("Error while beginning transaction: ", err)
+		return nil
+	}
+	if err := tx.SelectContext(ctx, &pools, "select * from pool where is_active=$1 order by created_at desc", b); err != nil {
+		log.Error("Error while getting pool: ", err)
+		return nil
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.Error("Error while committing transaction: ", err)
+		if er := tx.Rollback(); er != nil {
+			log.Error("Failed to rollback transaction: ", err)
+		}
+		return nil
+	}
+
+	return &pools
+}
+
+func (r *PoolRepository) FindAllByStatusLimit(b bool, offset, limit int) *[]models.Pool {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	var pools []models.Pool
+
+	tx, err := r.db.Beginx()
+	if err != nil {
+		log.Error("Error while beginning transaction: ", err)
+		return nil
+	}
+	if err := tx.SelectContext(ctx, &pools, "select * from pool where is_active=$1 order by created_at desc limit $2 offset $3", b, limit, offset); err != nil {
+		log.Error("Error while getting pool: ", err)
+		return nil
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.Error("Error while committing transaction: ", err)
+		if er := tx.Rollback(); er != nil {
+			log.Error("Failed to rollback transaction: ", err)
+		}
+		return nil
+	}
+
+	return &pools
+}
+
 func (r *PoolRepository) FindByOwnerId(ownerId uint64) *[]models.Pool {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()

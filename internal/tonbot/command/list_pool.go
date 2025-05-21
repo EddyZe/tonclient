@@ -41,7 +41,7 @@ func (c *ListPoolCommand) Execute(ctx context.Context, msg *models.Message) {
 	offset := page * numberElementPage
 	limit := numberElementPage
 
-	pools := c.ps.AllLimit(offset, limit)
+	pools := c.ps.AllLimitByStatus(true, offset, limit)
 	markup := util.GenerateNextBackMenu(
 		page,
 		totalPage,

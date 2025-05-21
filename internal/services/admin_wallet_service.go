@@ -47,7 +47,7 @@ func NewAdminWalletService(config *config.TonClientConfig, ps *PoolService, ts *
 		return nil, err
 	}
 
-	wall, err := getWallet(api, config.Seed)
+	wall, err := getWalletFromSeed(api, config.Seed)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -174,7 +174,7 @@ func (s *AdminWalletService) processOperation(op uint64, amount float64, senderA
 func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment string, amount float64, decimal int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
-	tokenWallet, err := s.TokenWalletAddress(ctx, jettonMaster)
+	tokenWallet, err := s.TokenWalletAddress(ctx, jettonMaster, s.wallet.WalletAddress())
 	if err != nil {
 		log.Errorf("Failed to get jetton token: %v", err)
 		return err
@@ -205,14 +205,14 @@ func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment stri
 	return nil
 }
 
-func (s *AdminWalletService) TokenWalletAddress(ctx context.Context, jettonMaster string) (*jetton.WalletClient, error) {
+func (s *AdminWalletService) TokenWalletAddress(ctx context.Context, jettonMaster string, walletAddr *address.Address) (*jetton.WalletClient, error) {
 	tokenContract, err := address.ParseAddr(jettonMaster)
 	if err != nil {
 		log.Error("Failed to parse jetton token address:", err)
 		return nil, err
 	}
 	token := jetton.NewJettonMasterClient(s.api, tokenContract)
-	tokenWallet, err := token.GetJettonWallet(ctx, s.wallet.WalletAddress())
+	tokenWallet, err := token.GetJettonWallet(ctx, walletAddr)
 	if err != nil {
 		log.Errorf("Failed to get jetton token: %v", err)
 		return nil, err
@@ -312,6 +312,10 @@ func initApi(ctx context.Context) (*ton.APIClient, error) {
 	return api, nil
 }
 
-func getWallet(api *ton.APIClient, seed []string) (*wallet.Wallet, error) {
+func getWalletFromSeed(api *ton.APIClient, seed []string) (*wallet.Wallet, error) {
 	return wallet.FromSeed(api, seed, wallet.HighloadV2Verified)
+}
+
+func (s *AdminWalletService) GetAdminWalletAddr() *address.Address {
+	return s.wallet.WalletAddress()
 }

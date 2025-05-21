@@ -103,6 +103,14 @@ func (s *PoolService) AllLimit(offset, limit int) *[]models.Pool {
 	return s.poolRepository.FindAllLimit(offset, limit)
 }
 
+func (s *PoolService) AllByStatus(isActive bool) *[]models.Pool {
+	return s.poolRepository.FindAllByStatus(isActive)
+}
+
+func (s *PoolService) AllLimitByStatus(isActive bool, offset, limit int) *[]models.Pool {
+	return s.poolRepository.FindAllByStatusLimit(isActive, offset, limit)
+}
+
 func (s *PoolService) GetId(poolId uint64) (*models.Pool, error) {
 	pool := s.poolRepository.FindById(poolId)
 	if pool == nil {

@@ -5,15 +5,12 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	appMoels "tonclient/internal/models"
 	"tonclient/internal/services"
 	"tonclient/internal/tonbot/buttons"
 	"tonclient/internal/util"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 )
 
 type OpenPoolInfoCommand struct {
@@ -82,14 +79,13 @@ func (c *OpenPoolInfoCommand) Execute(ctx context.Context, callback *models.Call
 		return
 	}
 
-	poolInfo := c.info(pool)
+	poolInfo := util.PoolInfo(pool, c.ss)
 	dataBtn := fmt.Sprintf("%v:%v", buttons.CreateStakeId, poolId)
 	btn := util.CreateDefaultButton(dataBtn, buttons.StakePoolTokensText)
 	var markup *models.InlineKeyboardMarkup
 
 	if pool.OwnerId == uint64(user.Id.Int64) {
-		//TODO сделать меню для владельца пула
-		markup = util.CreateInlineMarup(1, util.CreateDefaultButton("1", "Test"))
+		markup = util.GenerateOwnerPoolInlineKeyboard(poolId)
 	} else {
 		markup = util.MenuWithBackButton(buttons.BackPoolListId, buttons.BackPoolList, btn)
 	}
@@ -105,42 +101,4 @@ func (c *OpenPoolInfoCommand) Execute(ctx context.Context, callback *models.Call
 		return
 	}
 
-}
-
-func (c *OpenPoolInfoCommand) info(p *appMoels.Pool) string {
-	allStakesPool := c.ss.GetPoolStakes(uint64(p.Id.Int64))
-	var sumAmount float64
-
-	if allStakesPool != nil {
-		for _, stake := range *allStakesPool {
-			sumAmount += stake.Amount
-		}
-	}
-
-	foramter := message.NewPrinter(language.English)
-	ut := foramter.Sprintf("%.2f", sumAmount)
-	reserve := foramter.Sprintf("%.2f", p.Reserve)
-
-	i := `
-<b> Описание пула: </b>
-
-<b>📈 Доходность: </b>
-%v%% в день начисляется на ваш застейканый баланс.
-
-<b>⏳Срок холда:</b>
-%v %v без возможности досрочного вывода
-
-<b>🛡️ Страховка:</b>
-Если цена токена упадёт более чем на %v%% за время холда — вам будет выплачена компенсация.
-
-<b>💸 Максимальная компенсация:</b>
-До 30%% от вашей стейкнутой суммы.
-
-🔒 Резерв пула:
- •	Заблокировано участниками: %v токенов
- •	Доступно для новых стейков: %v токенов
-`
-
-	res := fmt.Sprintf(i, p.Reward, p.Period, util.SuffixDay(int(p.Period)), p.InsuranceCoating, ut, reserve)
-	return res
 }
