@@ -54,7 +54,7 @@ func (c *OpenPoolInfoCommand) Execute(ctx context.Context, callback *models.Call
 	user, err := c.us.GetByTelegramChatId(uint64(chatId))
 	if err != nil {
 		log.Error("[OpenPoolInfoCommand.Execute]", err)
-		if _, err := util.SendTextMessage(c.b, uint64(chatId), "❌ Ваш аккаунт не кативирован, чтобы активировать аккаунт введите команду /start"); err != nil {
+		if _, err := util.SendTextMessage(c.b, uint64(chatId), "❌ Ваш аккаунт не активирован, чтобы активировать аккаунт введите команду /start"); err != nil {
 			log.Error("[OpenPoolInfoCommand.Execute]", err)
 		}
 		return
@@ -98,7 +98,7 @@ func (c *OpenPoolInfoCommand) Execute(ctx context.Context, callback *models.Call
 		} else {
 			buttonId = buttons.BackPoolListId
 		}
-		markup = util.GenerateOwnerPoolInlineKeyboard(poolId, buttonId, pool.IsActive)
+		markup = util.GenerateOwnerPoolInlineKeyboard(poolId, buttonId, pool.IsActive, splitData[2])
 	} else {
 		markup = util.MenuWithBackButton(buttons.BackPoolListId, buttons.BackPoolList, btn)
 	}

@@ -11,6 +11,7 @@ import (
 	appModels "tonclient/internal/models"
 	"tonclient/internal/services"
 	"tonclient/internal/tonbot/buttons"
+	"tonclient/internal/tonbot/callbacksuf"
 	"tonclient/internal/tonbot/command"
 	"tonclient/internal/tonbot/userstate"
 	"tonclient/internal/util"
@@ -361,7 +362,7 @@ func (t *TgBot) processOperation(b *bot.Bot, tr appModels.SubmitTransaction) {
 		}
 
 		text := fmt.Sprint("✅ Пул был успешно создан! Оплатите оплатите комиссию, чтобы активировать его!\n\n", util.PoolInfo(&pool, t.ss))
-		markup := util.GenerateOwnerPoolInlineKeyboard(pool.Id.Int64, buttons.BackMyPoolListId, pool.IsActive)
+		markup := util.GenerateOwnerPoolInlineKeyboard(pool.Id.Int64, buttons.BackMyPoolListId, pool.IsActive, callbacksuf.My)
 
 		if _, err := util.SendTextMessageMarkup(b, telegram.TelegramId, text, markup); err != nil {
 			log.Error("Failed to send telegram:", err)

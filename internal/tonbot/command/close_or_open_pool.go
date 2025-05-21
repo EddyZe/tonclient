@@ -7,6 +7,7 @@ import (
 	appModels "tonclient/internal/models"
 	"tonclient/internal/services"
 	"tonclient/internal/tonbot/buttons"
+	"tonclient/internal/tonbot/callbacksuf"
 	"tonclient/internal/util"
 
 	"github.com/go-telegram/bot"
@@ -38,7 +39,7 @@ func (c *CloseOrOpenPool) Execute(ctx context.Context, callback *models.Callback
 	chatId := msg.Chat.ID
 	messageId := msg.ID
 	splitText := strings.Split(callback.Data, ":")
-	if len(splitText) < 2 {
+	if len(splitText) < 3 {
 		if _, err := util.SendTextMessage(c.b, uint64(chatId), "❌ Что-то пошло не так, повторите попытку!"); err != nil {
 			log.Error(err)
 		}
@@ -86,19 +87,27 @@ func (c *CloseOrOpenPool) Execute(ctx context.Context, callback *models.Callback
 	}
 
 	if pool.IsActive {
-		c.editStatus(ctx, uint64(poolId), uint64(chatId), messageId, pool, false)
+		c.editStatus(ctx, uint64(poolId), uint64(chatId), messageId, pool, false, splitText[2])
 		return
 	} else {
-		c.editStatus(ctx, uint64(poolId), uint64(chatId), messageId, pool, true)
+		c.editStatus(ctx, uint64(poolId), uint64(chatId), messageId, pool, true, splitText[2])
 		return
 	}
 }
 
-func (c *CloseOrOpenPool) editStatus(ctx context.Context, poolId, chatId uint64, messageId int, pool *appModels.Pool, isActive bool) {
+func (c *CloseOrOpenPool) editStatus(ctx context.Context, poolId, chatId uint64, messageId int, pool *appModels.Pool, isActive bool, sufData string) {
 	if err := c.ps.SetActive(poolId, isActive); err != nil {
 		if _, err := util.SendTextMessage(c.b, chatId, "❌ Статус не был изменен. Повторите попытку позже!"); err != nil {
 			log.Error(err)
 		}
+	}
+	pool.IsActive = isActive
+
+	var btnId string
+	if sufData == callbacksuf.My {
+		btnId = buttons.BackMyPoolListId
+	} else {
+		btnId = buttons.BackPoolListId
 	}
 
 	if err := util.EditTextMessageMarkup(
@@ -107,7 +116,7 @@ func (c *CloseOrOpenPool) editStatus(ctx context.Context, poolId, chatId uint64,
 		chatId,
 		messageId,
 		util.PoolInfo(pool, c.ss),
-		util.GenerateOwnerPoolInlineKeyboard(int64(poolId), buttons.BackMyPoolListId, pool.IsActive),
+		util.GenerateOwnerPoolInlineKeyboard(int64(poolId), btnId, pool.IsActive, sufData),
 	); err != nil {
 		log.Error(err)
 	}
