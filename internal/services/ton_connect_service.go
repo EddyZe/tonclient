@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base32"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"math"
 	"strconv"
@@ -147,19 +148,24 @@ func (s *TonConnectService) CreateSession() (*tonconnect.Session, error) {
 
 func (s *TonConnectService) SendJettonTransaction(ctx context.Context, jettonAddr, receiverAddr, senderAddr, amount string, payload *models.Payload, session *tonconnect.Session) ([]byte, error) {
 
+	payloadJson, err := json.Marshal(payload)
+	if err != nil {
+		log.Error("Error marshaling payload", err)
+		return nil, err
+	}
+
 	commentCell := cell.BeginCell().
 		MustStoreUInt(payload.OperationType, 32).
-		MustStoreStringSnake(base64.StdEncoding.EncodeToString([]byte(payload.Payload))).
+		MustStoreStringSnake(base64.StdEncoding.EncodeToString(payloadJson)).
 		EndCell()
-
-	log.Infoln(payload.JettonMaster)
 
 	jettonData, err := s.adminWalletServ.DataJetton(payload.JettonMaster)
 	if err != nil {
 		log.Error("Error getting jetton data", err)
 		return nil, err
 	}
-	log.Infoln(jettonData)
+
+	log.Infoln(payload.Amount)
 
 	parsed, err := strconv.ParseFloat(amount, 64)
 	if err != nil {

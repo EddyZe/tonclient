@@ -51,8 +51,17 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService) string {
 	ut := foramter.Sprintf("%.2f", sumAmount)
 	reserve := foramter.Sprintf("%.2f", p.Reserve)
 
+	var status string
+	if p.IsActive {
+		status = "✅ Активен"
+	} else {
+		status = "⏳ Пул не активен"
+	}
+
 	i := `
 <b> Описание пула: </b>
+
+Статус: %v
 
 <b>📈 Доходность: </b>
 %v%% в день начисляется на ваш застейканый баланс.
@@ -71,7 +80,7 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService) string {
  •	Доступно для новых стейков: %v токенов
 `
 
-	res := fmt.Sprintf(i, p.Reward, p.Period, SuffixDay(int(p.Period)), p.InsuranceCoating, ut, reserve)
+	res := fmt.Sprintf(i, status, p.Reward, p.Period, SuffixDay(int(p.Period)), p.InsuranceCoating, ut, reserve)
 	return res
 }
 

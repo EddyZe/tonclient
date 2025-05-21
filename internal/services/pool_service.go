@@ -119,6 +119,10 @@ func (s *PoolService) GetId(poolId uint64) (*models.Pool, error) {
 	return pool, nil
 }
 
+func (s *PoolService) CountAllByStatus(isActive bool) int {
+	return s.poolRepository.CountAllByStatus(isActive)
+}
+
 func (s *PoolService) CountAll() int {
 	return s.poolRepository.CountAll()
 }
@@ -133,4 +137,8 @@ func (s *PoolService) GetPoolsByUserId(userId uint64) *[]models.Pool {
 
 func (s *PoolService) GetPoolsByUserIdLimit(userId uint64, offset, limit int) *[]models.Pool {
 	return s.poolRepository.FindByOwnerIdLimit(userId, offset, limit)
+}
+
+func (s *PoolService) Update(pool *models.Pool) error {
+	return s.poolRepository.Update(pool)
 }

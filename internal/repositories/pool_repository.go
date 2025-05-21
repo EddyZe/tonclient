@@ -299,6 +299,33 @@ func (r *PoolRepository) FindByOwnerIdLimit(ownerId uint64, offset, limit int) *
 	return &pools
 }
 
+func (r *PoolRepository) CountAllByStatus(b bool) int {
+	var res int
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	tx, err := r.db.Beginx()
+	if err != nil {
+		log.Error("Error while beginning transaction: ", err)
+		return 0
+	}
+
+	err = tx.QueryRowxContext(ctx, "select count(*) as count from pool where is_active=$1", b).Scan(&res)
+	if err != nil {
+		log.Error("Error while getting pool: ", err)
+		return 0
+	}
+	if err := tx.Commit(); err != nil {
+		log.Error("Error while committing transaction: ", err)
+		if er := tx.Rollback(); er != nil {
+			log.Error("Failed to rollback transaction: ", err)
+			return 0
+		}
+		return 0
+	}
+
+	return res
+}
+
 func (r *PoolRepository) CountAll() int {
 	var res int
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)

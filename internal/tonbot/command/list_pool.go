@@ -37,7 +37,7 @@ func (c *ListPoolCommand) Execute(ctx context.Context, msg *models.Message) {
 		currentPageAllPools[chatId] = page
 	}
 
-	totalPage := int(math.Ceil(float64(c.ps.CountAll()) / float64(numberElementPage)))
+	totalPage := int(math.Ceil(float64(c.ps.CountAllByStatus(true)) / float64(numberElementPage)))
 	offset := page * numberElementPage
 	limit := numberElementPage
 

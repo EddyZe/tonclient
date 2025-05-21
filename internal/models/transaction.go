@@ -20,9 +20,10 @@ type SubmitTransaction struct {
 }
 
 type Payload struct {
-	OperationType uint64 `json:"operation_type"`
-	JettonMaster  string `json:"master_jetton"`
-	Payload       string `json:"payload"`
+	OperationType uint64  `json:"operation_type"`
+	JettonMaster  string  `json:"master_jetton"`
+	Amount        float64 `json:"amount"`
+	Payload       string  `json:"payload"`
 }
 
 type AddReserve struct {

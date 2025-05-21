@@ -227,6 +227,11 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 		return
 	}
 
+	if strings.HasPrefix(data, buttons.PaidCommissionId) {
+		command.NewPaidCommissionCommand(b, t.aws, t.tcs, t.ps, t.ws, t.us).Execute(ctx, callback)
+		return
+	}
+
 	if strings.HasPrefix(data, buttons.CreateStakeId) {
 		//TODO Реализовать стейк токенов
 	}
@@ -268,10 +273,15 @@ func (t *TgBot) checkingOperation(ctx context.Context, b *bot.Bot, ch chan appMo
 }
 
 func (t *TgBot) processOperation(b *bot.Bot, tr appModels.SubmitTransaction) {
+	var payload appModels.Payload
+	if err := json.Unmarshal(tr.Payload, &payload); err != nil {
+		log.Error("Unmarshal: ", err)
+		return
+	}
 	switch tr.OperationType {
 	case appModels.OP_STAKE:
 		var stake appModels.Stake
-		if err := json.Unmarshal(tr.Payload, &stake); err != nil {
+		if err := json.Unmarshal([]byte(payload.Payload), &stake); err != nil {
 			log.Error("Failed to unmarshal stake data:", err)
 			return
 		}
@@ -312,7 +322,10 @@ func (t *TgBot) processOperation(b *bot.Bot, tr appModels.SubmitTransaction) {
 		break
 	case appModels.OP_ADMIN_CREATE_POOL:
 		var pool appModels.Pool
-		if err := json.Unmarshal(tr.Payload, &pool); err != nil {
+		if err := json.Unmarshal(
+			[]byte(payload.Payload),
+			&pool,
+		); err != nil {
 			log.Errorf("Failed to unmarshal payload data: %v", err)
 			return
 		}
@@ -344,7 +357,7 @@ func (t *TgBot) processOperation(b *bot.Bot, tr appModels.SubmitTransaction) {
 		break
 	case appModels.OP_ADMIN_ADD_RESERVE:
 		var addReserve appModels.AddReserve
-		if err := json.Unmarshal(tr.Payload, &addReserve); err != nil {
+		if err := json.Unmarshal([]byte(payload.Payload), &addReserve); err != nil {
 			log.Errorf("Failed to unmarshal payload data: %v", err)
 			return
 		}
@@ -388,38 +401,13 @@ func (t *TgBot) processOperation(b *bot.Bot, tr appModels.SubmitTransaction) {
 		break
 	case appModels.OP_PAY_COMMISION:
 		var pool appModels.Pool
-		if err := json.Unmarshal(tr.Payload, &pool); err != nil {
+		if err := json.Unmarshal([]byte(payload.Payload), &pool); err != nil {
 			log.Errorf("Failed to unmarshal payload data: %v", err)
 			return
 		}
 
 		if !pool.Id.Valid {
 			log.Error("pool id is not valid")
-			return
-		}
-		id := pool.Id.Int64
-
-		if tr.Amount < config.COMMISSION_AMOUNT {
-			log.Error("Invalid amount received:", tr.Amount)
-			if err := t.returnTokens(
-				pool.OwnerId,
-				pool.JettonMaster,
-				fmt.Sprintf("❌ Комиссия должна быть %v. Возврат", config.COMMISSION_AMOUNT),
-				tr.Amount); err != nil {
-				log.Error("Failed to return tokens:", err)
-			}
-			return
-		}
-
-		if err := t.ps.SetCommissionPaid(uint64(id), true); err != nil {
-			log.Errorf("Failed to set commission paid: %v", err)
-			if err := t.returnTokens(
-				pool.OwnerId,
-				pool.JettonMaster,
-				fmt.Sprintf("❌ Комиссия должна быть %v. Возврат", config.COMMISSION_AMOUNT),
-				tr.Amount); err != nil {
-				log.Error("Failed to return tokens:", err)
-			}
 			return
 		}
 
@@ -429,10 +417,40 @@ func (t *TgBot) processOperation(b *bot.Bot, tr appModels.SubmitTransaction) {
 			return
 		}
 
+		if payload.Amount < config.COMMISSION_AMOUNT {
+			log.Error("Invalid amount received:", payload.Payload)
+			if err := t.returnTokens(
+				pool.OwnerId,
+				payload.JettonMaster,
+				fmt.Sprintf("❌ Комиссия должна быть %v. Возврат", config.COMMISSION_AMOUNT),
+				payload.Amount); err != nil {
+				log.Error("Failed to return tokens:", err)
+				if _, err := util.SendTextMessage(b, tg.TelegramId, "❌ Комиссия должна быть %v."); err != nil {
+					log.Error("Failed to send telegram:", err)
+				}
+			}
+			return
+		}
+
+		pool.IsActive = true
+		pool.IsCommissionPaid = true
+
+		if err := t.ps.Update(&pool); err != nil {
+			log.Errorf("Failed to set commission paid: %v", err)
+			if err := t.returnTokens(
+				pool.OwnerId,
+				pool.JettonMaster,
+				"Возврат",
+				tr.Amount); err != nil {
+				log.Error("Failed to return tokens:", err)
+			}
+			return
+		}
+
 		if _, err := util.SendTextMessage(
 			b,
 			tg.TelegramId,
-			"✅ Комиссия принята. Теперь ваш пул активен",
+			"✅ Комиссия принята. Теперь ваш пул активен! Активность вы так же можете менять в настройках пула!",
 		); err != nil {
 			log.Error("Failed to send telegram:", err)
 			return

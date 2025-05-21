@@ -140,29 +140,13 @@ func (c *CreatePool[T]) sendTransactionCreatingPool(pool *appModels.Pool, chatId
 	payload := appModels.Payload{
 		OperationType: appModels.OP_ADMIN_CREATE_POOL,
 		JettonMaster:  pool.JettonMaster,
+		Amount:        pool.Reserve,
 		Payload:       string(poolJson),
 	}
 
 	s, err := c.tcs.LoadSession(ctx, fmt.Sprint(chatId))
 	if err != nil {
-		if _, err := util.SendTextMessageMarkup(
-			c.b,
-			uint64(chatId),
-			"❌ Возможно вы отключили TonConnect! Подтвердите подключение снова! А затем нажмите <b>Повторить попытку</b>",
-			markup,
-		); err != nil {
-			log.Error(err)
-			return err
-		}
-		if _, err := util.ConnectingTonConnect(c.b, uint64(chatId), c.tcs); err != nil {
-			log.Error(err)
-			return err
-		}
-		if _, err := util.SendTextMessageMarkup(
-			c.b,
-			uint64(chatId),
-			"✅ Кошелек привязан. Нажмите 'повторить попытку' и подтвердите транзакцию по резерву в привязанном кошельке",
-			markup); err != nil {
+		if err := util.RequestRepeatTonConnect(c.b, chatId, markup, c.tcs); err != nil {
 			log.Error(err)
 			return err
 		}

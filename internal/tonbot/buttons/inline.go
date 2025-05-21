@@ -23,11 +23,11 @@ const (
 	BackPoolListId      = "BACK_POOL_LIST"
 
 	// pool owner menu
-	PaidCommission   = "Оплатить комиссию"
+	PaidCommission   = "💸 Оплатить комиссию"
 	PaidCommissionId = "PAID_COMMISSION_POOL"
-	AddReserve       = "Добавить резерв"
+	AddReserve       = "➕ Добавить резерв"
 	AddReserveId     = "ADD_RESERVE_POOL"
-	ClosePool        = "Закрыть пул"
+	ClosePool        = "🗝️ Закрыть/Открыть пул"
 	ClosePoolId      = "CLOSE_POOL"
 
 	//stakes

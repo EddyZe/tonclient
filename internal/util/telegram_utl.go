@@ -179,3 +179,28 @@ func ConnectingTonConnect(b *bot.Bot, chatId uint64, tcs *services.TonConnectSer
 
 	return res, nil
 }
+
+func RequestRepeatTonConnect(b *bot.Bot, chatId int64, markup *models.InlineKeyboardMarkup, tcs *services.TonConnectService) error {
+	if _, err := SendTextMessageMarkup(
+		b,
+		uint64(chatId),
+		"❌ Возможно вы отключили TonConnect! Подтвердите подключение снова! А затем нажмите <b>Повторить попытку</b>",
+		markup,
+	); err != nil {
+		log.Error(err)
+		return err
+	}
+	if _, err := ConnectingTonConnect(b, uint64(chatId), tcs); err != nil {
+		log.Error(err)
+		return err
+	}
+	if _, err := SendTextMessageMarkup(
+		b,
+		uint64(chatId),
+		"✅ Кошелек привязан. Нажмите 'повторить попытку' и подтвердите транзакцию по резерву в привязанном кошельке",
+		markup); err != nil {
+		log.Error(err)
+		return err
+	}
+	return nil
+}
