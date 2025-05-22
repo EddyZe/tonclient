@@ -13,6 +13,14 @@ const (
 	NextPageMyPool = "NEXT_PAGE_MY_POOL"
 	BackPageMyPool = "BACK_PAGE_MY_POOL"
 
+	//operation menu
+	OpenOperationHistory = "OPEN_OPERATION"
+	NextPageHistory      = "NEXT_PAGE_HISTORY"
+	BackPageHistory      = "BACK_PAGE_HISTORY"
+	BackHistoryList      = "Вернуться к списку операций ⏮️"
+	BackHistoryListId    = "BACK_LIST_HISTORY"
+	CloseListHistory     = "CLOSE_LIST_HISTORY"
+
 	//pool data to button
 	PoolDataButton = "OPEN_POOL"
 

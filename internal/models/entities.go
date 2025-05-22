@@ -26,6 +26,15 @@ type Pool struct {
 	IsCommissionPaid bool          `db:"is_commission_paid" json:"is_commission_paid"`
 }
 
+type Operation struct {
+	Id           sql.NullInt64 `db:"id" json:"id"`
+	UserId       uint64        `db:"user_id" json:"user_id"`
+	NumOperation int           `db:"num_operation" json:"num_operation"`
+	Name         string        `db:"name" json:"name"`
+	CreatedAt    time.Time     `db:"created_at" json:"created_at"`
+	Description  string        `db:"description" json:"description"`
+}
+
 type Stake struct {
 	Id                   sql.NullInt64 `db:"id" json:"id"`
 	UserId               uint64        `db:"user_id" json:"user_id"`

@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 	appModels "tonclient/internal/models"
@@ -15,18 +16,23 @@ import (
 )
 
 type CloseOrOpenPool struct {
-	b  *bot.Bot
-	ps *services.PoolService
-	us *services.UserService
-	ss *services.StakeService
+	b   *bot.Bot
+	ps  *services.PoolService
+	us  *services.UserService
+	ss  *services.StakeService
+	opS *services.OperationService
+	aws *services.AdminWalletService
 }
 
-func NewCloseOrOpenPoolCommand(b *bot.Bot, ps *services.PoolService, us *services.UserService, ss *services.StakeService) *CloseOrOpenPool {
+func NewCloseOrOpenPoolCommand(b *bot.Bot, ps *services.PoolService, us *services.UserService,
+	ss *services.StakeService, opS *services.OperationService, aws *services.AdminWalletService) *CloseOrOpenPool {
 	return &CloseOrOpenPool{
-		b:  b,
-		ps: ps,
-		us: us,
-		ss: ss,
+		b:   b,
+		ps:  ps,
+		us:  us,
+		ss:  ss,
+		opS: opS,
+		aws: aws,
 	}
 }
 
@@ -87,19 +93,46 @@ func (c *CloseOrOpenPool) Execute(ctx context.Context, callback *models.Callback
 	}
 
 	if pool.IsActive {
-		c.editStatus(ctx, uint64(poolId), uint64(chatId), messageId, pool, false, splitText[2])
+		if err := c.editStatus(ctx, uint64(poolId), uint64(chatId), messageId, pool, false, splitText[2]); err != nil {
+			log.Error(err)
+			return
+		}
+		jettonData, err := c.aws.DataJetton(pool.JettonMaster)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		desc := fmt.Sprintf("Закрытие пула с jetton: %v.", jettonData.Name)
+		if _, err := c.opS.Create(pool.OwnerId, appModels.OP_ADMIN_CLOSE_POOL, desc); err != nil {
+			log.Error(err)
+			return
+		}
 		return
 	} else {
-		c.editStatus(ctx, uint64(poolId), uint64(chatId), messageId, pool, true, splitText[2])
+		if err := c.editStatus(ctx, uint64(poolId), uint64(chatId), messageId, pool, true, splitText[2]); err != nil {
+			log.Error(err)
+			return
+		}
+		jettonData, err := c.aws.DataJetton(pool.JettonMaster)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		desc := fmt.Sprintf("Открытие пула с jetton: %v.", jettonData.Name)
+		if _, err := c.opS.Create(pool.OwnerId, appModels.OP_ADMIN_OPEN_POOL, desc); err != nil {
+			log.Error(err)
+			return
+		}
 		return
 	}
 }
 
-func (c *CloseOrOpenPool) editStatus(ctx context.Context, poolId, chatId uint64, messageId int, pool *appModels.Pool, isActive bool, sufData string) {
+func (c *CloseOrOpenPool) editStatus(ctx context.Context, poolId, chatId uint64, messageId int, pool *appModels.Pool, isActive bool, sufData string) error {
 	if err := c.ps.SetActive(poolId, isActive); err != nil {
 		if _, err := util.SendTextMessage(c.b, chatId, "❌ Статус не был изменен. Повторите попытку позже!"); err != nil {
 			log.Error(err)
 		}
+		return err
 	}
 	pool.IsActive = isActive
 
@@ -120,4 +153,6 @@ func (c *CloseOrOpenPool) editStatus(ctx context.Context, poolId, chatId uint64,
 	); err != nil {
 		log.Error(err)
 	}
+
+	return nil
 }

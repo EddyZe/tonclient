@@ -57,4 +57,14 @@ create table if not exists referral
     first_stake_id   bigint references stake (id) on delete set null,
     reward_given     bool           default false,
     reward_amount    numeric(19, 9) default 0
+);
+
+create table if not exists operation
+(
+    id bigserial primary key ,
+    user_id bigint references usr(id) on delete cascade not null ,
+    num_operation int ,
+    name varchar(255),
+    created_at timestamp default now(),
+    description varchar(1024)
 )

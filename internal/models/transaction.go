@@ -10,6 +10,7 @@ const (
 	OP_ADMIN_CLOSE_POOL  = 6 //закрыть пул
 	OP_GET_USER_STAKES   = 7 // показать список активных стейков пользователя
 	OP_PAY_COMMISION     = 8
+	OP_ADMIN_OPEN_POOL   = 9
 )
 
 type SubmitTransaction struct {
