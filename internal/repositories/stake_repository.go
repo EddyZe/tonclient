@@ -436,3 +436,41 @@ func (r *StakeRepository) GetStakeStatusUser(userId uint64, b bool) *[]models.St
 
 	return &stakes
 }
+
+func (r *StakeRepository) GetStakesPoolIdAndStatus(poolId uint64, b bool) *[]models.Stake {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	stakes := make([]models.Stake, 0)
+
+	if err := r.db.SelectContext(
+		ctx,
+		&stakes,
+		"select s.* from stake s join pool p on p.id=s.pool_id where p.id=$1 and s.is_active=$2",
+		poolId,
+		b,
+	); err != nil {
+		return &stakes
+	}
+
+	return &stakes
+}
+
+func (r *StakeRepository) CountStakesPoolIdAndStatus(poolId uint64, b bool) int {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	var count int
+
+	if err := r.db.QueryRowxContext(
+		ctx,
+		"select count(*) from stake s join pool p on s.pool_id = p.id where p.id = $1 and s.is_active= $2",
+		poolId,
+		b,
+	).Scan(&count); err != nil {
+		log.Error("Failed to get stake: ", err)
+		return 0
+	}
+
+	return count
+}

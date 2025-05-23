@@ -201,6 +201,7 @@ func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment stri
 		log.Errorf("Failed to send transaction: %v", err)
 		return err
 	}
+
 	log.Infoln("transaction confirmed, hash:", base64.StdEncoding.EncodeToString(tx.Hash))
 	return nil
 }

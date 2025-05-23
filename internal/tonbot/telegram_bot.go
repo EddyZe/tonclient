@@ -193,6 +193,11 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 		return
 	}
 
+	if strings.HasPrefix(data, buttons.TakeTokensId) {
+		command.NewTakeTokensCommand(b, t.us, t.ps, t.ss, t.aws, t.ws).Execute(ctx, callback)
+		return
+	}
+
 	if data == buttons.DefCloseId {
 		if err := util.CheckTypeMessage(b, callback); err != nil {
 			log.Error("CheckTypeMessage: ", err)

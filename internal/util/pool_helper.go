@@ -2,9 +2,11 @@ package util
 
 import (
 	"fmt"
+	"strconv"
 	appModels "tonclient/internal/models"
 	"tonclient/internal/services"
 	"tonclient/internal/tonbot/buttons"
+	"tonclient/internal/tonfi"
 
 	"github.com/go-telegram/bot/models"
 	"golang.org/x/text/language"
@@ -58,10 +60,25 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService) string {
 		status = "⏳ Пул не активен"
 	}
 
-	i := `
-<b> Описание пула: </b>
+	jettonInfo, err := tonfi.GetAssetByAddr(p.JettonMaster)
+	if err != nil {
+		log.Error(err)
+		return "-"
+	}
+	price := 0.
+	if jettonInfo.DexPriceUsd != "" {
+		price, err = strconv.ParseFloat(jettonInfo.DexPriceUsd, 64)
+		if err != nil {
+			log.Error(err)
+			price = 0
+		}
+	}
 
-Статус: %v
+	i := `
+<b> Описание пула %v: </b>
+
+<b>Статус</b>: %v
+<b>Текущая цена токена:</b> %.6f$
 
 <b>📈 Доходность: </b>
 %v%% в день начисляется на ваш застейканый баланс.
@@ -80,7 +97,7 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService) string {
  •	Доступно для новых стейков: %v токенов
 `
 
-	res := fmt.Sprintf(i, status, p.Reward, p.Period, SuffixDay(int(p.Period)), p.InsuranceCoating, ut, reserve)
+	res := fmt.Sprintf(i, jettonInfo.DisplayName, status, price, p.Reward, p.Period, SuffixDay(int(p.Period)), p.InsuranceCoating, ut, reserve)
 	return res
 }
 
@@ -93,8 +110,9 @@ func GenerateOwnerPoolInlineKeyboard(poolId int64, backPoolListButtonId string, 
 	} else {
 		closePoolText = buttons.OpePool
 	}
+	takeTokens := CreateDefaultButton(fmt.Sprintf("%v:%v:%v", buttons.TakeTokensId, poolId, sufData), buttons.TakeTokens)
 	closePool := CreateDefaultButton(fmt.Sprintf("%v:%v:%v", buttons.ClosePoolId, poolId, sufData), closePoolText)
 	backListPools := CreateDefaultButton(backPoolListButtonId, buttons.BackPoolList)
 
-	return CreateInlineMarup(1, paidCommision, addReserve, closePool, backListPools)
+	return CreateInlineMarup(1, paidCommision, addReserve, closePool, takeTokens, backListPools)
 }

@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -133,6 +134,12 @@ func (c *CloseOrOpenPool) editStatus(ctx context.Context, poolId, chatId uint64,
 			log.Error(err)
 		}
 		return err
+	}
+	if isActive && pool.Reserve == 0 {
+		if _, err := util.SendTextMessage(c.b, chatId, "❌ Статус не был изменен. Пополните резерв, чтобы можно было открыть пул!"); err != nil {
+			log.Error(err)
+		}
+		return errors.New("нельзя открыть пул с 0 резервом")
 	}
 	pool.IsActive = isActive
 

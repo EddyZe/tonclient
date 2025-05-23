@@ -38,6 +38,8 @@ const (
 	AddReserveId     = "ADD_RESERVE_POOL"
 	ClosePool        = "🔒 Закрыть пул"
 	OpePool          = "🔓 Открыть пул"
+	TakeTokens       = "🏦 Вывести токены"
+	TakeTokensId     = "TAKE_TOKENS"
 	ClosePoolId      = "CLOSE_POOL"
 
 	//stakes

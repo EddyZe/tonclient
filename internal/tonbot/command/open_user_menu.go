@@ -46,6 +46,7 @@ func (c *OpenUserMenuCommand) Execute(ctx context.Context, callback *models.Call
 		buttons.TakeAwards,
 		buttons.CheckInsurance,
 		buttons.InviteFriend,
+		buttons.LearnMore,
 		buttons.Setting,
 	)
 
