@@ -173,7 +173,7 @@ func (c *TakeTokens) Execute(ctx context.Context, callback *models.CallbackQuery
 	if err := c.aws.SendJetton(
 		p.JettonMaster,
 		w.Addr,
-		"Закрытие пула",
+		"Close pool",
 		p.Reserve,
 		jettonData.Decimals,
 	); err != nil {

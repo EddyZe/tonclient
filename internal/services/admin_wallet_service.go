@@ -182,18 +182,22 @@ func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment stri
 
 	amountTok := tlb.MustFromDecimal(fmt.Sprint(amount), decimal)
 	c, err := wallet.CreateCommentCell(comment)
+	if err != nil {
+		log.Errorf("Failed to create comment: %v", err)
+		return err
+	}
 	to, err := address.ParseAddr(receiverAddr)
 	if err != nil {
 		log.Errorf("Failed to parse receiver address: %v", err)
 		return err
 	}
-	transferPayload, err := tokenWallet.BuildTransferPayloadV2(to, to, amountTok, tlb.ZeroCoins, c, nil)
+	transferPayload, err := tokenWallet.BuildTransferPayloadV2(to, s.wallet.WalletAddress(), amountTok, tlb.ZeroCoins, c, nil)
 	if err != nil {
 		log.Errorf("Failed to build transfer payload: %v", err)
 		return err
 	}
 
-	msg := wallet.SimpleMessage(tokenWallet.Address(), tlb.MustFromTON("0.05"), transferPayload)
+	msg := wallet.SimpleMessage(tokenWallet.Address(), tlb.MustFromTON("0.07"), transferPayload)
 
 	log.Infoln("sending transaction...")
 	tx, _, err := s.wallet.SendWaitTransaction(ctx, msg)
