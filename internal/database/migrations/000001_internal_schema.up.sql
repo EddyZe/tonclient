@@ -66,5 +66,5 @@ create table if not exists operation
     num_operation int,
     name          varchar(255),
     created_at    timestamp default now(),
-    description   varchar(1024)
+    description   varchar
 )

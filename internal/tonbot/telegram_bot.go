@@ -2,6 +2,7 @@ package tonbot
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -194,7 +195,7 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 	}
 
 	if strings.HasPrefix(data, buttons.TakeTokensId) {
-		command.NewTakeTokensCommand(b, t.us, t.ps, t.ss, t.aws, t.ws).Execute(ctx, callback)
+		command.NewTakeTokensCommand(b, t.us, t.ps, t.ss, t.aws, t.ws, t.opS).Execute(ctx, callback)
 		return
 	}
 
@@ -620,14 +621,20 @@ func (t *TgBot) returnTokens(userId uint64, jettonMaster, comment string, amount
 		return err
 	}
 
-	if err := t.aws.SendJetton(
+	hash, err := t.aws.SendJetton(
 		jettonMaster,
 		userWall.Addr,
 		comment,
 		amount,
 		jetData.Decimals,
-	); err != nil {
+	)
+	if err != nil {
 		log.Error("Failed to send jetton data:", err)
+		return err
+	}
+
+	_, err = t.opS.Create(userId, appModels.OP_RETURNING_TOKENS, fmt.Sprintf("Возврат. Hash операции: %v", base64.StdEncoding.EncodeToString(hash)))
+	if err != nil {
 		return err
 	}
 

@@ -91,7 +91,7 @@ func (r *OperationRepository) FindByUserId(userId uint64) ([]models.Operation, e
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	var ops []models.Operation
-	err := r.Db.SelectContext(ctx, &ops, "select * from operation where user_id=$1", userId)
+	err := r.Db.SelectContext(ctx, &ops, "select * from operation where user_id=$1 order by created_at desc", userId)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (r *OperationRepository) FindByUserIdLimit(userId uint64, offset, limit int
 
 	var ops []models.Operation
 
-	if err := r.Db.SelectContext(ctx, &ops, "select * from operation where user_id=$1 limit $2 offset $3", userId, limit, offset); err != nil {
+	if err := r.Db.SelectContext(ctx, &ops, "select * from operation where user_id=$1 order by created_at desc limit $2 offset $3", userId, limit, offset); err != nil {
 		return nil, err
 	}
 	return ops, nil

@@ -2,9 +2,11 @@ package command
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strconv"
 	"strings"
+	appModels "tonclient/internal/models"
 	"tonclient/internal/services"
 	"tonclient/internal/util"
 
@@ -19,6 +21,7 @@ type TakeTokens struct {
 	ss  *services.StakeService
 	aws *services.AdminWalletService
 	ws  *services.WalletTonService
+	opS *services.OperationService
 }
 
 func NewTakeTokensCommand(
@@ -28,6 +31,7 @@ func NewTakeTokensCommand(
 	ss *services.StakeService,
 	aws *services.AdminWalletService,
 	ws *services.WalletTonService,
+	opS *services.OperationService,
 ) *TakeTokens {
 	return &TakeTokens{
 		b:   b,
@@ -36,6 +40,7 @@ func NewTakeTokensCommand(
 		ss:  ss,
 		aws: aws,
 		ws:  ws,
+		opS: opS,
 	}
 }
 
@@ -170,19 +175,20 @@ func (c *TakeTokens) Execute(ctx context.Context, callback *models.CallbackQuery
 		return
 	}
 
-	if err := c.aws.SendJetton(
+	hash, err := c.aws.SendJetton(
 		p.JettonMaster,
 		w.Addr,
 		"Close pool",
 		p.Reserve,
 		jettonData.Decimals,
-	); err != nil {
+	)
+	if err != nil {
 		log.Error(err)
 		log.Error(err)
 		if _, err := util.SendTextMessage(
 			c.b,
 			uint64(chatId),
-			"❌ Произошла ошибка при выводе средств, повторите попытку!",
+			"❌ Произошла ошибка при выводе средств, повторите попытку позже!",
 		); err != nil {
 			log.Error(err)
 		}
@@ -197,6 +203,17 @@ func (c *TakeTokens) Execute(ctx context.Context, callback *models.CallbackQuery
 		return
 	}
 	if _, err := util.SendTextMessage(c.b, uint64(chatId), resp); err != nil {
+		log.Error(err)
+		return
+	}
+
+	str := base64.StdEncoding.EncodeToString(hash)
+
+	if _, err := c.opS.Create(
+		uint64(u.Id.Int64),
+		appModels.OP_CLAIM_RESERVE,
+		fmt.Sprintf("Снятие резерва. Hash: %v", str),
+	); err != nil {
 		log.Error(err)
 		return
 	}

@@ -76,6 +76,10 @@ func OperationName(numOperation int) string {
 		return "Получение награды"
 	case models.OP_ADMIN_OPEN_POOL:
 		return "Открытие пула"
+	case models.OP_RETURNING_TOKENS:
+		return "Возврат токенов"
+	case models.OP_CLAIM_RESERVE:
+		return "Снятие резерва"
 	default:
 		return "Неизвестная команда"
 	}

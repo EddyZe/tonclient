@@ -3,7 +3,10 @@ package services
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
+	"os"
+	"os/signal"
 	"strconv"
 	"time"
 	"tonclient/internal/config"
@@ -34,7 +37,7 @@ type AdminWalletService struct {
 }
 
 func NewAdminWalletService(config *config.TonClientConfig, ps *PoolService, ts *TelegramService, ss *StakeService, ws *WalletTonService) (*AdminWalletService, error) {
-	ctx := context.Background()
+	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
 	api, err := initApi(ctx)
 	if err != nil {
 		log.Error(err)
@@ -141,16 +144,6 @@ func (s *AdminWalletService) StartSubscribeTransaction(ch chan models.SubmitTran
 	}
 }
 
-func getLastMaster(ctx context.Context, api *ton.APIClient) (*ton.BlockIDExt, error) {
-	lastMaster, err := api.CurrentMasterchainInfo(ctx)
-	if err != nil {
-		log.Error("Failed to get master info:", err)
-		return nil, err
-	}
-
-	return lastMaster, nil
-}
-
 func (s *AdminWalletService) processOperation(op uint64, amount float64, senderAddr, payloadDataBase64 string, ch chan models.SubmitTransaction) {
 	data, err := base64.StdEncoding.DecodeString(payloadDataBase64)
 	if err != nil {
@@ -171,43 +164,74 @@ func (s *AdminWalletService) processOperation(op uint64, amount float64, senderA
 	ch <- tr
 }
 
-func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment string, amount float64, decimal int) error {
+func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment string, amount float64, decimal int) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
 	tokenWallet, err := s.TokenWalletAddress(ctx, jettonMaster, s.wallet.WalletAddress())
 	if err != nil {
 		log.Errorf("Failed to get jetton token: %v", err)
-		return err
+		return nil, err
 	}
 
 	amountTok := tlb.MustFromDecimal(fmt.Sprint(amount), decimal)
-	c, err := wallet.CreateCommentCell(comment)
+
+	balance, err := tokenWallet.GetBalance(ctx)
 	if err != nil {
-		log.Errorf("Failed to create comment: %v", err)
-		return err
+		log.Errorf("Failed to get balance: %v", err)
+		return nil, err
 	}
+
+	if balance.Int64() < amountTok.Nano().Int64() {
+		return nil, errors.New("balance is insufficient")
+	}
+
+	block, err := s.api.CurrentMasterchainInfo(context.Background())
+	if err != nil {
+		log.Fatalln("get masterchain info err: ", err.Error())
+		return nil, err
+	}
+
+	commission := tlb.MustFromTON("0.05")
+	balanceTon, err := s.wallet.GetBalance(ctx, block)
+	if err != nil {
+		log.Fatalln("get balance err: ", err.Error())
+		return nil, err
+	}
+
+	if balanceTon.Nano().Int64() < commission.Nano().Int64() {
+		return nil, errors.New("balance is insufficient")
+	}
+
 	to, err := address.ParseAddr(receiverAddr)
 	if err != nil {
 		log.Errorf("Failed to parse receiver address: %v", err)
-		return err
-	}
-	transferPayload, err := tokenWallet.BuildTransferPayloadV2(to, s.wallet.WalletAddress(), amountTok, tlb.ZeroCoins, c, nil)
-	if err != nil {
-		log.Errorf("Failed to build transfer payload: %v", err)
-		return err
+		return nil, err
 	}
 
-	msg := wallet.SimpleMessage(tokenWallet.Address(), tlb.MustFromTON("0.07"), transferPayload)
+	transferPayload, err := tokenWallet.BuildTransferPayloadV2(
+		to,
+		s.wallet.WalletAddress(),
+		amountTok,
+		tlb.ZeroCoins,
+		nil,
+		nil,
+	)
+	if err != nil {
+		log.Errorf("Failed to build transfer payload: %v", err)
+		return nil, err
+	}
+
+	msg := wallet.SimpleMessage(tokenWallet.Address(), commission, transferPayload)
 
 	log.Infoln("sending transaction...")
 	tx, _, err := s.wallet.SendWaitTransaction(ctx, msg)
 	if err != nil {
 		log.Errorf("Failed to send transaction: %v", err)
-		return err
+		return nil, err
 	}
 
 	log.Infoln("transaction confirmed, hash:", base64.StdEncoding.EncodeToString(tx.Hash))
-	return nil
+	return tx.Hash, nil
 }
 
 func (s *AdminWalletService) TokenWalletAddress(ctx context.Context, jettonMaster string, walletAddr *address.Address) (*jetton.WalletClient, error) {
