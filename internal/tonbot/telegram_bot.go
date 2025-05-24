@@ -81,19 +81,21 @@ func (t *TgBot) handler(ctx context.Context, b *bot.Bot, update *models.Update) 
 
 	if update.Message != nil {
 		msg := update.Message
-		t.handleMessage(ctx, b, msg)
+		go t.handleMessage(ctx, b, msg)
+		return
 	}
 
 	if update.CallbackQuery != nil {
 		callback := update.CallbackQuery
 
-		t.handleCallback(ctx, b, callback)
+		go t.handleCallback(ctx, b, callback)
 
 		if _, err := b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
 			CallbackQueryID: callback.ID,
 		}); err != nil {
 			log.Error("AnswerCallbackQuery: ", err)
 		}
+		return
 	}
 }
 
@@ -384,7 +386,7 @@ func (t *TgBot) stake(payload *appModels.Payload, b *bot.Bot) {
 	pool, err := t.ps.GetId(stake.PoolId)
 	if err != nil {
 		log.Error("Failed to get pool id:", err)
-		if err := t.returnTokens(stake.UserId, pool.JettonMaster, "Ошибка создания стейка. Возврат.", stake.Amount); err != nil {
+		if err := t.returnTokens(stake.UserId, pool.JettonMaster, stake.Amount); err != nil {
 			log.Error("Failed to return tokens:", err)
 		}
 		return
@@ -393,7 +395,7 @@ func (t *TgBot) stake(payload *appModels.Payload, b *bot.Bot) {
 	_, err = t.ss.CreateStake(&stake)
 	if err != nil {
 		log.Error("Failed to create stake:", err)
-		if err := t.returnTokens(stake.UserId, pool.JettonMaster, "Ошибка создания стейка. Возврат", stake.Amount); err != nil {
+		if err := t.returnTokens(stake.UserId, pool.JettonMaster, stake.Amount); err != nil {
 			log.Error("Failed to return tokens:", err)
 		}
 		return
@@ -438,7 +440,7 @@ func (t *TgBot) createPool(payload *appModels.Payload, b *bot.Bot) {
 	_, err := t.ps.CreatePool(&pool)
 	if err != nil {
 		log.Errorf("Failed to create pool: %v", err)
-		if err := t.returnTokens(pool.OwnerId, pool.JettonMaster, "Ошибка создания пула. Возврат", pool.Reserve); err != nil {
+		if err := t.returnTokens(pool.OwnerId, pool.JettonMaster, pool.Reserve); err != nil {
 			log.Error("Failed to return tokens:", err)
 		}
 		return
@@ -482,7 +484,7 @@ func (t *TgBot) addReserve(payload *appModels.Payload, b *bot.Bot) {
 	pool, err := t.ps.GetId(addReserve.PoolId)
 	if err != nil {
 		log.Errorf("Failed to get pool id: %v", err)
-		if err := t.returnTokens(pool.OwnerId, pool.JettonMaster, "Не удалось пополнить резерв. Возврат.", addReserve.Amount); err != nil {
+		if err := t.returnTokens(pool.OwnerId, pool.JettonMaster, addReserve.Amount); err != nil {
 			log.Error("Failed to return tokens:", err)
 		}
 		return
@@ -491,7 +493,7 @@ func (t *TgBot) addReserve(payload *appModels.Payload, b *bot.Bot) {
 	newReserve, err := t.ps.AddReserve(addReserve.PoolId, addReserve.Amount)
 	if err != nil {
 		log.Errorf("Failed to add reserve: %v", err)
-		if err := t.returnTokens(pool.OwnerId, pool.JettonMaster, "Не удалось пополнить резерв. Возврат.", addReserve.Amount); err != nil {
+		if err := t.returnTokens(pool.OwnerId, pool.JettonMaster, addReserve.Amount); err != nil {
 			log.Error("Failed to return tokens:", err)
 		}
 		return
@@ -548,7 +550,6 @@ func (t *TgBot) payCommission(payload *appModels.Payload, b *bot.Bot) error {
 		if err := t.returnTokens(
 			pool.OwnerId,
 			payload.JettonMaster,
-			fmt.Sprintf("❌ Комиссия должна быть %v. Возврат", config.COMMISSION_AMOUNT),
 			payload.Amount); err != nil {
 			log.Error("Failed to return tokens:", err)
 			if _, err := util.SendTextMessage(b, tg.TelegramId, "❌ Комиссия должна быть %v."); err != nil {
@@ -566,7 +567,6 @@ func (t *TgBot) payCommission(payload *appModels.Payload, b *bot.Bot) error {
 		if err := t.returnTokens(
 			pool.OwnerId,
 			pool.JettonMaster,
-			"Возврат",
 			payload.Amount); err != nil {
 			log.Error("Failed to return tokens:", err)
 		}
@@ -608,7 +608,7 @@ func (t *TgBot) payCommission(payload *appModels.Payload, b *bot.Bot) error {
 	return nil
 }
 
-func (t *TgBot) returnTokens(userId uint64, jettonMaster, comment string, amount float64) error {
+func (t *TgBot) returnTokens(userId uint64, jettonMaster string, amount float64) error {
 	userWall, err := t.ws.GetByUserId(userId)
 	if err != nil {
 		log.Error("Failed to get user wall:", err)
@@ -624,7 +624,7 @@ func (t *TgBot) returnTokens(userId uint64, jettonMaster, comment string, amount
 	hash, err := t.aws.SendJetton(
 		jettonMaster,
 		userWall.Addr,
-		comment,
+		"",
 		amount,
 		jetData.Decimals,
 	)

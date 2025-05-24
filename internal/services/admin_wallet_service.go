@@ -20,6 +20,7 @@ import (
 	"github.com/xssnick/tonutils-go/ton/jetton"
 	"github.com/xssnick/tonutils-go/ton/nft"
 	"github.com/xssnick/tonutils-go/ton/wallet"
+	"github.com/xssnick/tonutils-go/tvm/cell"
 )
 
 type AdminWalletService struct {
@@ -208,12 +209,17 @@ func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment stri
 		return nil, err
 	}
 
+	var c *cell.Cell
+	if comment != "" {
+		c, err = wallet.CreateCommentCell(comment)
+	}
+
 	transferPayload, err := tokenWallet.BuildTransferPayloadV2(
 		to,
 		s.wallet.WalletAddress(),
 		amountTok,
 		tlb.ZeroCoins,
-		nil,
+		c,
 		nil,
 	)
 	if err != nil {

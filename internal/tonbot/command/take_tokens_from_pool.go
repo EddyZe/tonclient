@@ -178,7 +178,7 @@ func (c *TakeTokens) Execute(ctx context.Context, callback *models.CallbackQuery
 	hash, err := c.aws.SendJetton(
 		p.JettonMaster,
 		w.Addr,
-		"Close pool",
+		"",
 		p.Reserve,
 		jettonData.Decimals,
 	)
