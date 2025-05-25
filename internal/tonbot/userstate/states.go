@@ -16,6 +16,9 @@ const (
 
 	//addreserve
 	EnterAddReserveTokens
+
+	//stakes
+	CreateStake
 )
 
 func ResetState(chatId int64) {

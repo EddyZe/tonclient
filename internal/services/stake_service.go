@@ -1,7 +1,6 @@
 package services
 
 import (
-	"errors"
 	"tonclient/internal/models"
 	"tonclient/internal/repositories"
 )
@@ -29,9 +28,6 @@ func (s *StakeService) CreateStake(stake *models.Stake) (*models.Stake, error) {
 	}
 	if _, err := s.poolService.GetId(stake.PoolId); err != nil {
 		return nil, err
-	}
-	if stake.Amount < 1 {
-		return nil, errors.New("amount must be greater than 0")
 	}
 
 	if err := s.stakeRepo.Save(stake); err != nil {

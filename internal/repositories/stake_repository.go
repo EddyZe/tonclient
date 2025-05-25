@@ -38,7 +38,7 @@ func (r *StakeRepository) Save(stake *models.Stake) error {
 		return err
 	}
 
-	if err := tx.QueryRowxContext(ctx, query, args...).StructScan(&stake.Id); err != nil {
+	if err := tx.QueryRowxContext(ctx, query, args...).Scan(&stake.Id); err != nil {
 		log.Error("Failed to save stake: ", err)
 		return err
 	}
@@ -270,7 +270,7 @@ func (r *StakeRepository) FindStakesByPoolId(poolId uint64) *[]models.Stake {
 	}
 	if err := tx.SelectContext(
 		ctx,
-		stakes,
+		&stakes,
 		"select s.* from stake as s join pool as p on s.pool_id = p.id where p.id=$1",
 		poolId); err != nil {
 		log.Error("Failed to get stakes: ", err)

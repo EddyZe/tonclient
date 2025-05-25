@@ -300,7 +300,17 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 	}
 
 	if strings.HasPrefix(data, buttons.CreateStakeId) {
-		//TODO Реализовать стейк токенов
+		command.NewCreateStackeCommand[*models.CallbackQuery](
+			b,
+			t.ps,
+			t.us,
+			t.tcs,
+			t.ss,
+			t.ts,
+			t.aws,
+			t.ws,
+		).Execute(ctx, callback)
+		return
 	}
 
 	if strings.HasPrefix(data, buttons.PoolDataButton) {
@@ -319,6 +329,9 @@ func (t *TgBot) handleState(ctx context.Context, state int, b *bot.Bot, msg *mod
 		break
 	case userstate.EnterAddReserveTokens:
 		command.NewAddReserveCommand[*models.Message](b, t.ps, t.tcs, t.us, t.ws).Execute(ctx, msg)
+		break
+	case userstate.CreateStake:
+		command.NewCreateStackeCommand[*models.Message](b, t.ps, t.us, t.tcs, t.ss, t.ts, t.aws, t.ws).Execute(ctx, msg)
 		break
 	default:
 		log.Error(state)
@@ -400,17 +413,6 @@ func (t *TgBot) stake(payload *appModels.Payload, b *bot.Bot) {
 		}
 		return
 	}
-
-	tg, err := t.ts.GetByUserId(pool.OwnerId)
-	if err != nil {
-		log.Error("Failed to get user wall:", err)
-		return
-	}
-
-	if _, err := util.SendTextMessage(b, tg.TelegramId, "✅ Стейк создан"); err != nil {
-		log.Error("Failed to send message:", err)
-		return
-	}
 	jettodData, err := t.aws.DataJetton(pool.JettonMaster)
 	if err != nil {
 		log.Error("Failed to get jettod data:", err)
@@ -423,6 +425,28 @@ func (t *TgBot) stake(payload *appModels.Payload, b *bot.Bot) {
 	if err != nil {
 		log.Error("Failed to create stake:", err)
 		return
+	}
+
+	tg, err := t.ts.GetByUserId(pool.OwnerId)
+	if err != nil {
+		log.Error("Failed to get user wall:", err)
+	}
+	tgStaker, err := t.ts.GetByUserId(stake.UserId)
+	if err != nil {
+		log.Error("Failed to get user wall:", err)
+	}
+
+	if tg != nil {
+		if _, err := util.SendTextMessage(b, tg.TelegramId, "✅ Новый стейк"); err != nil {
+			log.Error("Failed to send message:", err)
+			return
+		}
+	}
+	if tgStaker != nil {
+		if _, err := util.SendTextMessage(b, tgStaker.TelegramId, "✅ Стейк создан!"); err != nil {
+			log.Error("Failed to send message:", err)
+			return
+		}
 	}
 }
 
