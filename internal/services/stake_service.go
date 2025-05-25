@@ -70,6 +70,10 @@ func (s *StakeService) GetStakesPoolIdAndStatus(poolId uint64, b bool) *[]models
 	return s.stakeRepo.GetStakesPoolIdAndStatus(poolId, b)
 }
 
+func (s *StakeService) Update(stake *models.Stake) error {
+	return s.stakeRepo.Update(stake)
+}
+
 func (s *StakeService) CountStakesPoolIdAndStatus(poolId uint64, b bool) int {
 	return s.stakeRepo.CountStakesPoolIdAndStatus(poolId, b)
 }
@@ -81,4 +85,8 @@ func (s *StakeService) GetStakesUser(userid uint64) *[]models.Stake {
 	}
 
 	return stakes
+}
+
+func (s *StakeService) GetAllIsStatus(b bool) *[]models.Stake {
+	return s.stakeRepo.FindAllByStatus(b)
 }

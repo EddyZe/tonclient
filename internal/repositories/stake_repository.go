@@ -474,3 +474,16 @@ func (r *StakeRepository) CountStakesPoolIdAndStatus(poolId uint64, b bool) int 
 
 	return count
 }
+
+func (r *StakeRepository) FindAllByStatus(b bool) *[]models.Stake {
+	res := make([]models.Stake, 0)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if err := r.db.SelectContext(ctx, &res, "select * from stake where is_active=$1", b); err != nil {
+		log.Error("Failed to get stake: ", err)
+		return &res
+	}
+
+	return &res
+}

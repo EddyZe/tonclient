@@ -46,7 +46,7 @@ func TestTonConnectService_SaveSession(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = tcs.SaveSession("TEST", s)
+	err = tcs.SaveSession(context.Background(), "TEST", s)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,20 +60,20 @@ func TestTonConnectServiceAndConncect_GenerateConnectUrls(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() {
-		err := tcs.SaveSession("TEST", s)
+		err := tcs.SaveSession(context.Background(), "TEST", s)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}()
 
-	urls, err := tcs.GenerateConnectUrls(s)
+	urls, err := tcs.GenerateConnectUrls(context.Background(), s)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	fmt.Println(urls)
 
-	err = tcs.Connect(s)
+	_, err = tcs.Connect(context.Background(), s)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +83,7 @@ func TestTonConnectServiceAndConncect_GenerateConnectUrls(t *testing.T) {
 func TestTonConnectService_GetSession(t *testing.T) {
 	rdb := redisInit()
 	tcs := services.NewTonConnectService(rdb, InitAdminService())
-	s, err := tcs.LoadSession("TEST")
+	s, err := tcs.LoadSession(context.Background(), "TEST")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +94,7 @@ func TestTonConnectService_GetSession(t *testing.T) {
 func TestTonConnectService_SendTransaction(t *testing.T) {
 	rdb := redisInit()
 	tcs := services.NewTonConnectService(rdb, InitAdminService())
-	s, err := tcs.LoadSession("TEST")
+	s, err := tcs.LoadSession(context.Background(), "TEST")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -121,6 +121,7 @@ func TestTonConnectService_SendTransaction(t *testing.T) {
 	}
 
 	boc, err := tcs.SendJettonTransaction(
+		context.Background(),
 		p.JettonWallet,
 		"UQD6A01mB8tAKJVekRrMjoA3l188LSCF2zrIHoH94tWhZGAO",
 		"UQCrciOc9HE341fFtBs-WFuttXeciFDIvFwafCO4QQhAinLG",

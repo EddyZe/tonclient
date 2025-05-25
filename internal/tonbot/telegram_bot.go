@@ -12,6 +12,7 @@ import (
 	"strings"
 	"tonclient/internal/config"
 	appModels "tonclient/internal/models"
+	"tonclient/internal/schedulers"
 	"tonclient/internal/services"
 	"tonclient/internal/tonbot/buttons"
 	"tonclient/internal/tonbot/callbacksuf"
@@ -21,6 +22,7 @@ import (
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
+	"github.com/robfig/cron/v3"
 )
 
 var log = config.InitLogger()
@@ -69,10 +71,60 @@ func (t *TgBot) StartBot(ch chan appModels.SubmitTransaction) error {
 	}
 
 	go t.checkingOperation(ctx, tgbot, ch)
+	go t.createCron(ctx, tgbot)
 
 	tgbot.Start(ctx)
 
 	return nil
+}
+
+func (t *TgBot) createCron(ctx context.Context, b *bot.Bot) {
+	stakes := make(chan *appModels.NotificationStake)
+	c := cron.New()
+	_, err := c.AddFunc("* 0 * * *", schedulers.AddStakeBonusActiveStakes(t.ss, t.ps, stakes))
+	if err != nil {
+		log.Fatal(err)
+	}
+	c.Start()
+
+	go t.checkMessageBonusStakes(ctx, b, stakes)
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				c.Stop()
+				break
+			default:
+				continue
+			}
+		}
+	}()
+}
+
+func (t *TgBot) checkMessageBonusStakes(ctx context.Context, b *bot.Bot, ch chan *appModels.NotificationStake) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case notification, ok := <-ch:
+			if !ok {
+				continue
+			}
+			tg, err := t.ts.GetByUserId(notification.Stake.UserId)
+			if err != nil {
+				continue
+			}
+			if _, err := util.SendTextMessage(
+				b,
+				tg.TelegramId,
+				notification.Msg,
+			); err != nil {
+				log.Error(err)
+				continue
+			}
+		}
+	}
 }
 
 func (t *TgBot) handler(ctx context.Context, b *bot.Bot, update *models.Update) {

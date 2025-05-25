@@ -272,6 +272,18 @@ func (c *CreateStakeCommand[T]) executeCallback(callback *models.CallbackQuery) 
 		return
 	}
 
+	if !pool.IsActive {
+		if _, err := util.SendTextMessage(
+			c.b,
+			uint64(chatId),
+			"❌ Нельзя стейкнуть в закрытый пул!",
+		); err != nil {
+			log.Error(err)
+			return
+		}
+		return
+	}
+
 	currentStakesFromPool := c.ss.GetPoolStakes(uint64(poolId))
 	if currentStakesFromPool != nil {
 		currentSumStakes := c.calculateSumStakesFromPool(currentStakesFromPool)

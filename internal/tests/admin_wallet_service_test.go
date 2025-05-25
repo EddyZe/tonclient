@@ -32,7 +32,13 @@ func TestGetData_GetDataJetton(t *testing.T) {
 
 func TestSendJetton(t *testing.T) {
 	s := InitAdminService()
-	err := s.SendJetton("EQAJKTfw3qP0OFUba-1l7rtA7_TzXd9Cbm4DjNCaioCdofF_", "UQAdpNJR-hZ72cPb70eFuQU3VDx8EcLsOEgm7K0Puh9cHA1d", "test", 5, 9)
+	_, err := s.SendJetton(
+		"EQAJKTfw3qP0OFUba-1l7rtA7_TzXd9Cbm4DjNCaioCdofF_",
+		"UQAdpNJR-hZ72cPb70eFuQU3VDx8EcLsOEgm7K0Puh9cHA1d",
+		"test",
+		5,
+		9,
+	)
 	if err != nil {
 		log.Fatalln("Error getting jetton data", err)
 		return
@@ -67,6 +73,7 @@ func InitAdminService() *services.AdminWalletService {
 	ss := services.NewStakeService(stS, us, ps)
 	wr := repositories.NewWalletRepository(db.Db)
 	ws := services.NewWalletTonService(us, wr)
+	ops := services.NewOperationService(repositories.NewOperationRepository(db.Db))
 	s, err := services.NewAdminWalletService(&config.TonClientConfig{
 		Seed:                seeds,
 		WalletAddr:          "UQD6A01mB8tAKJVekRrMjoA3l188LSCF2zrIHoH94tWhZGAO",
@@ -78,10 +85,12 @@ func InitAdminService() *services.AdminWalletService {
 		ss,
 		ws,
 	)
+
+	tcs := services.NewTonConnectService(redisInit(), s)
 	if err != nil {
 		log.Fatal("Failed connect to database: ", err)
 	}
-	bot := tonbot.NewTgBot("8112143412:AAE1EZ3rEmqNx4O41UYch1MtD7NLIxb6-i0", us, ts, ps, s, ss, ws)
+	bot := tonbot.NewTgBot("8112143412:AAE1EZ3rEmqNx4O41UYch1MtD7NLIxb6-i0", us, ts, ps, s, ss, ws, tcs, ops)
 	go func() {
 		err := bot.StartBot(make(chan models.SubmitTransaction))
 		if err != nil {
