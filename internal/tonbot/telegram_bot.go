@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"tonclient/internal/config"
 	appModels "tonclient/internal/models"
@@ -419,11 +420,9 @@ func (t *TgBot) stake(payload *appModels.Payload, b *bot.Bot) {
 		return
 	}
 
-	description := fmt.Sprintf("Стейк в jetton: %v. Кол-во: %v", jettodData.Name, stake.Amount)
-
-	_, err = t.opS.Create(stake.UserId, appModels.OP_STAKE, description)
+	u, err := t.us.GetById(stake.UserId)
 	if err != nil {
-		log.Error("Failed to create stake:", err)
+		log.Error("Failed to get user:", err)
 		return
 	}
 
@@ -436,6 +435,19 @@ func (t *TgBot) stake(payload *appModels.Payload, b *bot.Bot) {
 		log.Error("Failed to get user wall:", err)
 	}
 
+	stakesCountUser := t.ss.CountUser(stake.UserId)
+	if stakesCountUser == 0 && u.RefererId.Valid {
+		t.sendBonus(b, pool, &stake, tgStaker, tg)
+	}
+
+	description := fmt.Sprintf("Стейк в jetton: %v. Кол-во: %v", jettodData.Name, stake.Amount)
+
+	_, err = t.opS.Create(stake.UserId, appModels.OP_STAKE, description)
+	if err != nil {
+		log.Error("Failed to create stake:", err)
+		return
+	}
+
 	if tg != nil {
 		if _, err := util.SendTextMessage(b, tg.TelegramId, "✅ Новый стейк"); err != nil {
 			log.Error("Failed to send message:", err)
@@ -445,6 +457,62 @@ func (t *TgBot) stake(payload *appModels.Payload, b *bot.Bot) {
 	if tgStaker != nil {
 		if _, err := util.SendTextMessage(b, tgStaker.TelegramId, "✅ Стейк создан!"); err != nil {
 			log.Error("Failed to send message:", err)
+			return
+		}
+	}
+}
+
+func (t *TgBot) sendBonus(b *bot.Bot, pool *appModels.Pool, stake *appModels.Stake, tgStaker, tgOwnerPool *appModels.Telegram) {
+	w, err := t.ws.GetByUserId(pool.OwnerId)
+	if err != nil {
+		log.Error("Failed to get user:", err)
+		return
+	}
+	jettonAdminAddr := os.Getenv("JETTON_CONTRACT_ADMIN_JETTON")
+	if jettonAdminAddr == "" {
+		return
+	}
+	bonus := os.Getenv("REFERAL_BONUS")
+	if bonus == "" {
+		bonus = "2"
+	}
+	bonusNum, err := strconv.Atoi(bonus)
+	if err != nil {
+		log.Error("Failed to parse bonus:", err)
+		return
+	}
+	decimal := os.Getenv("JETTON_DECIMAL")
+	if decimal == "" {
+		decimal = "9"
+	}
+	decimalNum, err := strconv.Atoi(decimal)
+	if err != nil {
+		log.Error("Failed to parse decimal:", err)
+		return
+	}
+	bonusAmount := stake.Amount * float64(bonusNum/100)
+	if _, err := t.aws.SendJetton(
+		jettonAdminAddr,
+		w.Addr,
+		"",
+		bonusAmount,
+		decimalNum,
+	); err != nil {
+		log.Error("Failed to send bonus:", err)
+		return
+	}
+	tokenName := os.Getenv("JETTON_NAME_COIN")
+	if tokenName == "" {
+		tokenName = "NESTRAH"
+	}
+
+	if tgStaker != nil {
+		if _, err := util.SendTextMessage(
+			b,
+			tgOwnerPool.TelegramId,
+			fmt.Sprintf("✅ Вы получили бонус %v %v, за пользователя %v. Токены были отправлены на привязанный кошелек", bonusAmount, tokenName, tgStaker.Username),
+		); err != nil {
+			log.Error("Failed to send bonus:", err)
 			return
 		}
 	}
