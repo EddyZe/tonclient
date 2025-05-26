@@ -207,6 +207,13 @@ func (t *TgBot) handleMessage(ctx context.Context, b *bot.Bot, msg *models.Messa
 			return
 		}
 
+		if text == buttons.MyStakes {
+			userstate.ResetState(chatId)
+			cmd := command.NewStakesUserList[*models.Message](b, t.us, t.ss)
+			cmd.Execute(ctx, msg)
+			return
+		}
+
 		if state, ok := userstate.CurrentState[msg.Chat.ID]; ok {
 			if state != -1 {
 				t.handleState(ctx, state, b, msg)
@@ -267,6 +274,48 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 		}
 
 		userstate.ResetState(msg.Chat.ID)
+	}
+
+	if data == buttons.BackListGroupId {
+		cmd := command.NewStakesUserList[*models.CallbackQuery](b, t.us, t.ss)
+		cmd.BackStakesGroup(callback)
+		return
+	}
+
+	if strings.HasPrefix(data, buttons.OpenGroupId) {
+		cmd := command.NewStakesUserList[*models.CallbackQuery](b, t.us, t.ss)
+		cmd.Execute(ctx, callback)
+		return
+	}
+
+	if data == buttons.NextListStakesGroupId {
+		cmd := command.NewStakesUserList[*models.CallbackQuery](b, t.us, t.ss)
+		cmd.NextGroupPage(callback)
+		return
+	}
+
+	if data == buttons.BackListStakesGroupId {
+		cmd := command.NewStakesUserList[*models.CallbackQuery](b, t.us, t.ss)
+		cmd.BackGroupPage(callback)
+		return
+	}
+
+	if data == buttons.CloseListStakesGroupId {
+		cmd := command.NewStakesUserList[*models.CallbackQuery](b, t.us, t.ss)
+		cmd.CloseGroupList(callback)
+		return
+	}
+
+	if strings.HasPrefix(data, buttons.NextPageStakesFromGroupJettonName) {
+		cmd := command.NewStakesUserList[*models.CallbackQuery](b, t.us, t.ss)
+		cmd.NextPageStakesFromGroup(callback)
+		return
+	}
+
+	if strings.HasPrefix(data, buttons.BackPageStakesFromGroupJettonName) {
+		cmd := command.NewStakesUserList[*models.CallbackQuery](b, t.us, t.ss)
+		cmd.BackStakesFromGroup(callback)
+		return
 	}
 
 	if strings.HasPrefix(data, buttons.NextPagePool) {

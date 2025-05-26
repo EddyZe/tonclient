@@ -17,13 +17,13 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-type AddReserveType interface {
+type CommandType interface {
 	*models.Message | *models.CallbackQuery
 }
 
 var currentPoolId = make(map[int64]uint64)
 
-type AddReserve[T AddReserveType] struct {
+type AddReserve[T CommandType] struct {
 	b   *bot.Bot
 	ps  *services.PoolService
 	tcs *services.TonConnectService
@@ -31,7 +31,7 @@ type AddReserve[T AddReserveType] struct {
 	ws  *services.WalletTonService
 }
 
-func NewAddReserveCommand[T AddReserveType](b *bot.Bot, ps *services.PoolService,
+func NewAddReserveCommand[T CommandType](b *bot.Bot, ps *services.PoolService,
 	tcs *services.TonConnectService, us *services.UserService, ws *services.WalletTonService) *AddReserve[T] {
 	return &AddReserve[T]{
 		b:   b,

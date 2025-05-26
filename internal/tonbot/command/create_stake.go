@@ -21,7 +21,7 @@ import (
 
 var currentStakePoolId = make(map[int64]uint64)
 
-type CreateStakeCommand[T AddReserveType] struct {
+type CreateStakeCommand[T CommandType] struct {
 	b   *bot.Bot
 	ps  *services.PoolService
 	us  *services.UserService
@@ -32,7 +32,7 @@ type CreateStakeCommand[T AddReserveType] struct {
 	ws  *services.WalletTonService
 }
 
-func NewCreateStackeCommand[T AddReserveType](
+func NewCreateStackeCommand[T CommandType](
 	b *bot.Bot,
 	ps *services.PoolService,
 	us *services.UserService,

@@ -29,7 +29,7 @@ func (r *StakeRepository) Save(stake *models.Stake) error {
 	}
 
 	query, args, err := tx.BindNamed(
-		"insert into stake(user_id, pool_id, amount, start_date, is_active, deposit_creation_price, balance) values (:user_id, :pool_id, :amount, :start_date, :is_active, :deposit_creation_price, :balance) returning id",
+		"insert into stake(user_id, pool_id, amount, start_date, is_active, deposit_creation_price, balance, is_insurance_paid, is_reward_paid) values (:user_id, :pool_id, :amount, :start_date, :is_active, :deposit_creation_price, :balance, :is_insurance_paid, :is_reward_paid) returning id",
 		stake,
 	)
 
@@ -67,7 +67,7 @@ func (r *StakeRepository) Update(stake *models.Stake) error {
 
 	if _, err := tx.NamedExecContext(
 		ctx,
-		"update stake set user_id = :user_id, pool_id = :pool_id, amount = :amount, start_date=:start_date, is_active = :is_active, deposit_creation_price = :deposit_creation_price, balance = :balance where id=:id",
+		"update stake set user_id = :user_id, pool_id = :pool_id, amount = :amount, start_date=:start_date, is_active = :is_active, deposit_creation_price = :deposit_creation_price, balance = :balance, is_insurance_paid = :is_insurance_paid, is_reward_paid = :is_reward_paid where id=:id",
 		stake,
 	); err != nil {
 		log.Error("Failed to update stake: ", err)
@@ -486,4 +486,89 @@ func (r *StakeRepository) FindAllByStatus(b bool) *[]models.Stake {
 	}
 
 	return &res
+}
+
+func (r *StakeRepository) GroupFromPoolNameByUserId(userId uint64) *[]models.GroupElements {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	res := make([]models.GroupElements, 0)
+
+	if err := r.db.SelectContext(
+		ctx,
+		&res,
+		"select p.jetton_name as name, count(*) as count from stake s join pool p on s.pool_id = p.id where s.user_id = $1 group by p.jetton_name order by max(p.created_at) desc ", userId); err != nil {
+		log.Error("Failed froup stakes: ", err)
+	}
+	return &res
+}
+
+func (r *StakeRepository) GroupFromPoolNameByUserIdLimit(userId uint64, offset, limit int) *[]models.GroupElements {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	res := make([]models.GroupElements, 0)
+
+	if err := r.db.SelectContext(
+		ctx,
+		&res,
+		"select p.jetton_name as name, count(*) as count from stake s join pool p on s.pool_id = p.id where s.user_id = $1 group by p.jetton_name order by max(p.created_at) desc limit $2 offset $3", userId, limit, offset); err != nil {
+		log.Error("Failed froup stakes: ", err)
+	}
+	return &res
+}
+
+func (r *StakeRepository) FindByJettonNameAndUserId(userId uint64, jettonName string) *[]models.Stake {
+	ctx, cacel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cacel()
+
+	res := make([]models.Stake, 0)
+
+	if err := r.db.SelectContext(ctx, &res, "select s.* from stake s join pool p on s.pool_id = p.id where s.user_id = $1 and p.jetton_name = $2", userId, jettonName); err != nil {
+		log.Error("Failed to get stake: ", err)
+	}
+
+	return &res
+}
+
+func (r *StakeRepository) FindByJettonNameAndUserIdLimit(userId uint64, jettonName string, offset, limit int) *[]models.Stake {
+	ctx, cacel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cacel()
+
+	res := make([]models.Stake, 0)
+
+	if err := r.db.SelectContext(ctx, &res, "select s.* from stake s join pool p on s.pool_id = p.id where s.user_id = $1 and p.jetton_name = $2 offset $3 limit $4", userId, jettonName, offset, limit); err != nil {
+		log.Error("Failed to get stake: ", err)
+	}
+
+	return &res
+}
+
+func (r *StakeRepository) CountGroupsStakesUserId(userId uint64) int {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	res := 0
+	if err := r.db.QueryRowxContext(
+		ctx,
+		"select count(distinct p.jetton_name) from stake s join pool p on s.pool_id = p.id where s.user_id=$1", userId).Scan(&res); err != nil {
+		log.Error("Failed to get stake: ", err)
+	}
+
+	return res
+}
+
+func (r *StakeRepository) CountGroupsStakesByUserIdAndJettonName(userId uint64, jettonName string) int {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	res := 0
+
+	if err := r.db.QueryRowxContext(
+		ctx,
+		"select count(*) from stake s join pool p on s.pool_id = p.id where s.user_id=$1 and jetton_name = $2", userId, jettonName).Scan(&res); err != nil {
+		log.Error("Failed to get stake: ", err)
+	}
+
+	return res
 }

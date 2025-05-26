@@ -411,6 +411,7 @@ func (c *CreatePool[T]) enterJettonMaster(msg *models.Message, chatId int64, use
 		return
 	}
 
+	newPool.JettonName = jettonData.Name
 	text := fmt.Sprintf("✅ Отлично! Выбранный токен <b>%v</b>.\n\nВыберите срок холда:", jettonData.Name)
 
 	if _, err := util.SendTextMessageMarkup(

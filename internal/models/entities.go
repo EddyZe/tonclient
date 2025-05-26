@@ -15,6 +15,7 @@ type User struct {
 type Pool struct {
 	Id               sql.NullInt64 `db:"id" json:"id"`
 	OwnerId          uint64        `db:"owner_id" json:"owner_id"`
+	JettonName       string        `db:"jetton_name" json:"jetton_name"`
 	Reserve          float64       `db:"reserve" json:"reserve"`
 	JettonWallet     string        `db:"jetton_wallet" json:"jetton_wallet"`
 	JettonMaster     string        `db:"jetton_master" json:"jetton_master"`
@@ -44,6 +45,8 @@ type Stake struct {
 	StartDate            time.Time     `db:"start_date" json:"start_date"`
 	IsActive             bool          `db:"is_active" json:"is_active"`
 	DepositCreationPrice float64       `db:"deposit_creation_price" json:"deposit_creation_price"`
+	IsInsurancePaid      bool          `db:"is_insurance_paid" json:"is_insurance_paid"`
+	IsRewardPaid         bool          `db:"is_reward_paid" json:"is_reward_paid"`
 }
 
 type Telegram struct {

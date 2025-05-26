@@ -70,4 +70,15 @@ const (
 	//Tonconnect
 	LinkTonConnect   = "🔁 Переподключить TonConnect"
 	LinkTonConnectId = "LINK_TON_CONNECT"
+
+	//listStakes
+	BackListStakesGroupId             = "BACK_LIST_STAKES_GROUP_ID"
+	NextListStakesGroupId             = "NEXT_LIST_STAKES_GROUP_ID"
+	CloseListStakesGroupId            = "CLOSE_LIST_STAKES_GROUP_ID"
+	NextPageStakesFromGroupJettonName = "NEXT_PAGE_STAKES_FROM"
+	BackPageStakesFromGroupJettonName = "BACK_PAGE_STAKES_FROM"
+	BackListGroup                     = "Вернуться к списку групп ⏮️"
+	BackListGroupId                   = "BACK_LIST_GROUP_ID"
+	OpenGroupId                       = "OPEN_GROUP_ID"
+	OpenStakeInfo                     = "OPEN_STAKE_INFO"
 )

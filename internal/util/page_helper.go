@@ -33,6 +33,27 @@ func NextPage(ctx context.Context, callback *models.CallbackQuery, pages map[int
 	return pages
 }
 
+func NextPageV2(callback *models.CallbackQuery, pages map[int64]int, totalPages int, b *bot.Bot, f func()) map[int64]int {
+
+	if err := CheckTypeMessage(b, callback); err != nil {
+		log.Error(err)
+		return pages
+	}
+
+	msg := callback.Message.Message
+	chatId := msg.Chat.ID
+	page, ok := pages[chatId]
+	if !ok {
+		page = 0
+	}
+	if page < totalPages {
+		page++
+		pages[chatId] = page
+	}
+	f()
+	return pages
+}
+
 func BackPage(ctx context.Context, callback *models.CallbackQuery, pages map[int64]int, b *bot.Bot, c interfaces.Command[*models.Message]) map[int64]int {
 	if err := CheckTypeMessage(b, callback); err != nil {
 		log.Error(err)
@@ -51,6 +72,27 @@ func BackPage(ctx context.Context, callback *models.CallbackQuery, pages map[int
 		pages[chatId] = page
 	}
 	c.Execute(ctx, msg)
+	return pages
+}
+
+func BackPageV2(callback *models.CallbackQuery, pages map[int64]int, b *bot.Bot, f func()) map[int64]int {
+	if err := CheckTypeMessage(b, callback); err != nil {
+		log.Error(err)
+		return pages
+	}
+
+	msg := callback.Message.Message
+	chatId := msg.Chat.ID
+	page, ok := pages[chatId]
+	if !ok {
+		page = 0
+		pages[chatId] = page
+	}
+	if page > 0 {
+		page--
+		pages[chatId] = page
+	}
+	f()
 	return pages
 }
 

@@ -26,6 +26,7 @@ create table if not exists pool
 (
     id                 bigserial primary key,
     owner_id           bigint references usr (id) on delete cascade,
+    jetton_name        varchar   default 'Не указано',
     reserve            numeric(19, 9)                      not null,
     jetton_wallet      varchar(256)                        not null,
     jetton_master      varchar(256)                        not null,
@@ -46,7 +47,9 @@ create table if not exists stake
     deposit_creation_price numeric(19, 9)                                not null,
     balance                numeric(19, 9)                                not null check ( balance > 0 ) default 0,
     start_date             timestamp                                                                    default now(),
-    is_active              bool                                                                         default true
+    is_active              bool                                                                         default true,
+    is_insurance_paid      bool                                                                         default false,
+    is_reward_paid         bool                                                                         default false
 );
 
 create table if not exists referral

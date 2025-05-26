@@ -90,3 +90,27 @@ func (s *StakeService) GetStakesUser(userid uint64) *[]models.Stake {
 func (s *StakeService) GetAllIsStatus(b bool) *[]models.Stake {
 	return s.stakeRepo.FindAllByStatus(b)
 }
+
+func (s *StakeService) GroupFromPoolByUserId(userId uint64) *[]models.GroupElements {
+	return s.stakeRepo.GroupFromPoolNameByUserId(userId)
+}
+
+func (s *StakeService) GroupFromPoolByUserIdLimit(userId uint64, limit, offset int) *[]models.GroupElements {
+	return s.stakeRepo.GroupFromPoolNameByUserIdLimit(userId, offset, limit)
+}
+
+func (s *StakeService) GetByJettonNameAndUserId(userId uint64, jettonName string) *[]models.Stake {
+	return s.stakeRepo.FindByJettonNameAndUserId(userId, jettonName)
+}
+
+func (s *StakeService) GetByJettonNameAndUserIdLimit(userId uint64, jettonName string, offset, limit int) *[]models.Stake {
+	return s.stakeRepo.FindByJettonNameAndUserIdLimit(userId, jettonName, offset, limit)
+}
+
+func (s *StakeService) CountGroupsStakesUserId(userId uint64) int {
+	return s.stakeRepo.CountGroupsStakesUserId(userId)
+}
+
+func (s *StakeService) CountGroupsStakesByUserIdAndJettonName(userId uint64, jettonName string) int {
+	return s.stakeRepo.CountGroupsStakesByUserIdAndJettonName(userId, jettonName)
+}

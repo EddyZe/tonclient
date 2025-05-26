@@ -7,6 +7,7 @@ const (
 	HistoryOperation = "📃 История операций"
 	TakeAwards       = "💵 Забрать награды"
 	CheckInsurance   = "✅ Проверить страховку"
+	MyStakes         = "📈 Мои стейки"
 
 	//owner pools menu
 	CreatePool = "➕ Создать пул"
