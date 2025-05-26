@@ -81,4 +81,5 @@ const (
 	BackListGroupId                   = "BACK_LIST_GROUP_ID"
 	OpenGroupId                       = "OPEN_GROUP_ID"
 	OpenStakeInfo                     = "OPEN_STAKE_INFO"
+	BackStakesFromGroup               = "Вернуться к списку стейков ⏮️"
 )

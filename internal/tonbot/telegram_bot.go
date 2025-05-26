@@ -312,6 +312,12 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 		return
 	}
 
+	if strings.HasPrefix(data, buttons.OpenStakeInfo) {
+		cmd := command.NewOpenStakeInfoCommand(b, t.ss, t.ps)
+		cmd.Execute(ctx, callback)
+		return
+	}
+
 	if strings.HasPrefix(data, buttons.BackPageStakesFromGroupJettonName) {
 		cmd := command.NewStakesUserList[*models.CallbackQuery](b, t.us, t.ss)
 		cmd.BackStakesFromGroup(callback)

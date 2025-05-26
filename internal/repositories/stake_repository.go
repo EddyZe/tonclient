@@ -109,7 +109,7 @@ func (r *StakeRepository) DeleteById(id int64) error {
 	return nil
 }
 
-func (r *StakeRepository) GetById(id int64) *models.Stake {
+func (r *StakeRepository) GetById(id uint64) *models.Stake {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 

@@ -89,11 +89,11 @@ func (c *StakesUserList[T]) executeCallback(callback *models.CallbackQuery) {
 		fmt.Sprintf("%v:%v", buttons.NextPageStakesFromGroupJettonName, jettonName),
 		fmt.Sprintf("%v:%v", buttons.BackPageStakesFromGroupJettonName, jettonName),
 		buttons.CloseListStakesGroupId,
-		c.generateStakeListByGroup(*stakes)...,
+		c.generateStakeListByGroup(*stakes, jettonName)...,
 	)
 
 	btns := markup.InlineKeyboard
-	btns[len(btns)-1][0] = util.CreateDefaultButton(buttons.BackListGroupId, buttons.BackPoolList)
+	btns[len(btns)-1][0] = util.CreateDefaultButton(buttons.BackListGroupId, buttons.BackListGroup)
 	markup.InlineKeyboard = btns
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -122,7 +122,7 @@ func (c *StakesUserList[T]) executeMessage(msg *models.Message) {
 	if _, err := util.SendTextMessageMarkup(
 		c.b,
 		uint64(chatId),
-		"Ваши стейки: ",
+		"Список ваших стейков. Выберите стейк из списка, чтобы посмотреть информацию: ",
 		markup); err != nil {
 		log.Error(err)
 		return
@@ -190,10 +190,10 @@ func (c *StakesUserList[T]) generateGroupButtons(groups *[]appModels.GroupElemen
 	return res
 }
 
-func (c *StakesUserList[T]) generateStakeListByGroup(stakes []appModels.Stake) []models.InlineKeyboardButton {
+func (c *StakesUserList[T]) generateStakeListByGroup(stakes []appModels.Stake, jettonName string) []models.InlineKeyboardButton {
 	res := make([]models.InlineKeyboardButton, 0, 5)
 	for _, s := range stakes {
-		idButton := fmt.Sprintf("%v:%v", buttons.OpenStakeInfo, s.Id.Int64)
+		idButton := fmt.Sprintf("%v:%v:%v", buttons.OpenStakeInfo, jettonName, s.Id.Int64)
 		text := fmt.Sprintf("Стейк от %v", s.StartDate.Format("02.01.2006 15:04"))
 		btn := util.CreateDefaultButton(idButton, text)
 		res = append(res, btn)

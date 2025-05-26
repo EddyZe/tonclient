@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"tonclient/internal/models"
 	"tonclient/internal/repositories"
 )
@@ -113,4 +114,13 @@ func (s *StakeService) CountGroupsStakesUserId(userId uint64) int {
 
 func (s *StakeService) CountGroupsStakesByUserIdAndJettonName(userId uint64, jettonName string) int {
 	return s.stakeRepo.CountGroupsStakesByUserIdAndJettonName(userId, jettonName)
+}
+
+func (s *StakeService) GetById(poolId uint64) (*models.Stake, error) {
+	stake := s.stakeRepo.GetById(poolId)
+	if stake == nil {
+		return nil, errors.New("stake not found")
+	}
+
+	return stake, nil
 }
