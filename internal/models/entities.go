@@ -44,6 +44,7 @@ type Stake struct {
 	Balance              float64       `db:"balance" json:"balance"`
 	StartDate            time.Time     `db:"start_date" json:"start_date"`
 	IsActive             bool          `db:"is_active" json:"is_active"`
+	JettonPriceClosed    float64       `db:"jetton_price_closed" json:"jetton_price_closed"`
 	DepositCreationPrice float64       `db:"deposit_creation_price" json:"deposit_creation_price"`
 	IsInsurancePaid      bool          `db:"is_insurance_paid" json:"is_insurance_paid"`
 	IsRewardPaid         bool          `db:"is_reward_paid" json:"is_reward_paid"`

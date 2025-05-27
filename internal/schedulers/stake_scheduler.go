@@ -2,6 +2,7 @@ package schedulers
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 	"tonclient/internal/models"
 	"tonclient/internal/services"
@@ -19,16 +20,21 @@ func AddStakeBonusActiveStakes(s *services.StakeService, ps *services.PoolServic
 			period := time.Duration(pool.Period) * (time.Hour * 24)
 			if stake.StartDate.Add(period).Before(time.Now()) {
 				if stake.IsActive {
+					jettonData, err := tonfi.GetAssetByAddr(pool.JettonMaster)
+					if err != nil {
+						continue
+					}
 					stake.IsActive = false
-					err := s.Update(&stake)
+					currentPrice, err := strconv.ParseFloat(jettonData.DexPriceUsd, 64)
+					if err != nil {
+						currentPrice = 0.
+					}
+					stake.JettonPriceClosed = currentPrice
+					err = s.Update(&stake)
 					if err != nil {
 						continue
 					}
 					if closedStake != nil {
-						jettonData, err := tonfi.GetAssetByAddr(pool.JettonMaster)
-						if err != nil {
-							continue
-						}
 						profit := stake.Balance - stake.Amount
 						closedStake <- &models.NotificationStake{
 							Stake: &stake,

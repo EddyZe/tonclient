@@ -29,7 +29,7 @@ func (r *StakeRepository) Save(stake *models.Stake) error {
 	}
 
 	query, args, err := tx.BindNamed(
-		"insert into stake(user_id, pool_id, amount, start_date, is_active, deposit_creation_price, balance, is_insurance_paid, is_reward_paid) values (:user_id, :pool_id, :amount, :start_date, :is_active, :deposit_creation_price, :balance, :is_insurance_paid, :is_reward_paid) returning id",
+		"insert into stake(user_id, pool_id, amount, start_date, is_active, deposit_creation_price, balance, is_insurance_paid, is_reward_paid, jetton_price_closed) values (:user_id, :pool_id, :amount, :start_date, :is_active, :deposit_creation_price, :balance, :is_insurance_paid, :is_reward_paid, :jetton_price_closed) returning id",
 		stake,
 	)
 
@@ -67,7 +67,7 @@ func (r *StakeRepository) Update(stake *models.Stake) error {
 
 	if _, err := tx.NamedExecContext(
 		ctx,
-		"update stake set user_id = :user_id, pool_id = :pool_id, amount = :amount, start_date=:start_date, is_active = :is_active, deposit_creation_price = :deposit_creation_price, balance = :balance, is_insurance_paid = :is_insurance_paid, is_reward_paid = :is_reward_paid where id=:id",
+		"update stake set user_id = :user_id, pool_id = :pool_id, amount = :amount, start_date=:start_date, is_active = :is_active, deposit_creation_price = :deposit_creation_price, balance = :balance, is_insurance_paid = :is_insurance_paid, is_reward_paid = :is_reward_paid, jetton_price_closed = :jetton_price_closed where id=:id",
 		stake,
 	); err != nil {
 		log.Error("Failed to update stake: ", err)

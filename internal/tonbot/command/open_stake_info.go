@@ -58,32 +58,23 @@ func (c *OpenStakeInfo) Execute(ctx context.Context, callback *models.CallbackQu
 		return
 	}
 
-	info := c.generateInfo(stake, jettonName, p.Period)
+	info := c.generateInfo(stake, jettonName, p)
 	btns := make([]models.InlineKeyboardButton, 0, 3)
 
 	buttonId := fmt.Sprintf("%v:%v", buttons.OpenGroupId, jettonName)
 	backBtn := util.CreateDefaultButton(buttonId, buttons.BackStakesFromGroup)
 
-	asset, err := tonfi.GetAssetByAddr(p.JettonMaster)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
-	currentPrice, err := strconv.ParseFloat(asset.DexPriceUsd, 64)
-	if err != nil {
-		log.Error(err)
-		currentPrice = 0.0
-	}
-
-	subPrice := util.SubProcientFromNumber(stake.DepositCreationPrice, 30)
 	//TODO реализовать кнопки для сбора страховки и получения наград
-	if currentPrice <= subPrice {
-		btnInsurance := util.CreateDefaultButton("test", "test")
-		btns = append(btns, btnInsurance)
-	} else {
-		btn := util.CreateDefaultButton("test2", "test2")
-		btns = append(btns, btn)
+	if !stake.IsActive {
+		procientEditPrice := util.CalculateProcientEditPrice(stake.JettonPriceClosed, stake.DepositCreationPrice)
+		log.Infoln(procientEditPrice)
+		if procientEditPrice <= -30 {
+			btnInsurance := util.CreateDefaultButton("test", "test")
+			btns = append(btns, btnInsurance)
+		} else {
+			btn := util.CreateDefaultButton("test2", "test2")
+			btns = append(btns, btn)
+		}
 	}
 
 	btns = append(btns, backBtn)
@@ -103,30 +94,68 @@ func (c *OpenStakeInfo) Execute(ctx context.Context, callback *models.CallbackQu
 	}
 }
 
-func (c *OpenStakeInfo) generateInfo(stake *appModels.Stake, jettonName string, period uint) string {
+func (c *OpenStakeInfo) generateInfo(stake *appModels.Stake, jettonName string, pool *appModels.Pool) string {
+	jettonData, err := tonfi.GetAssetByAddr(pool.JettonMaster)
+	if err != nil {
+		log.Error(err)
+		return ""
+	}
+
+	currentPrice, err := strconv.ParseFloat(jettonData.DexPriceUsd, 64)
+	if err != nil {
+		currentPrice = 0.
+	}
+
 	text := `
 	<b>Стейк с токеном %v</b>
 
-	<b>Сумма стейка</b>: %v
-	<b>Цена на момент стейка:</b> %.9f $
-	<b>Старт стейка</b>: %v
-	<b>Осталось до закрытия</b>: %v %v
-	<b>Общий баланс</b>: %v
-	<b>Заработано на текущий момент</b>: %v
+	<b>Ставка:</b> +%v%% за %v %v
+	<b>Гарантия:</b> Компенсация при снижении цены %v более чем на 30%%
+
+	<b>Сумма стейка:</b> %v
+	<b>Цена на момент стейка:</b> %v $
+	<b>Текущая цена:</b> %f $ (%v%%)
+
+	<b>Старт:</b> %v
+	<b>Стоп:</b> %v
+
+	<b>Осталось дней:</b> %v %v
+
+	<b>Заработано:</b> %v %v
+	<b>Итого баланс:</b> %v %v
 	`
 	profit := stake.Balance - stake.Amount
-	leftDay := stake.StartDate.Add(time.Duration(period) * 24 * time.Hour).Sub(time.Now())
+	leftDay := stake.StartDate.Add(time.Duration(pool.Period) * 24 * time.Hour).Sub(time.Now())
+	procientPriceEdit := util.CalculateProcientEditPrice(currentPrice, stake.DepositCreationPrice)
 	timeFormat := "02 January 2006 15:04:05"
 	formatText := fmt.Sprintf(
 		text,
 		jettonName,
+		pool.Reward*pool.Period,
+		pool.Period,
+		util.SuffixDay(int(pool.Period)),
+		jettonName,
 		stake.Amount,
 		stake.DepositCreationPrice,
+		currentPrice,
+		procientPriceEdit,
 		stake.StartDate.Format(timeFormat),
+		stake.StartDate.Add(time.Duration(pool.Period)*24*time.Hour).Format(timeFormat),
 		int(leftDay.Hours()/24),
 		util.SuffixDay(int(leftDay.Hours()/24)),
+		profit,
+		jettonName,
 		stake.Balance,
-		profit)
+		jettonName,
+	)
+
+	if !stake.IsActive {
+		formatText += fmt.Sprintf(
+			"\n\n<b>Цена на момент закрытия стейка</b>: %f$ (%v%%)",
+			stake.JettonPriceClosed,
+			util.CalculateProcientEditPrice(stake.JettonPriceClosed, stake.DepositCreationPrice),
+		)
+	}
 
 	return formatText
 }
