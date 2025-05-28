@@ -1,7 +1,7 @@
 package models
 
 type JettonData struct {
-	TotalSupply uint64
+	TotalSupply float64
 	Mintable    bool
 	AdminAddr   string
 	Name        string

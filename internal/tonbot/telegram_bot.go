@@ -422,7 +422,21 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 	}
 
 	if strings.HasPrefix(data, buttons.PoolDataButton) {
-		command.NewPoolInfo(b, t.ps, t.us, t.ss).Execute(ctx, callback)
+		command.NewPoolInfo(b, t.ps, t.us, t.ss, t.aws).Execute(ctx, callback)
+		return
+	}
+
+	if strings.HasPrefix(data, buttons.TakeInsuranceId) {
+		command.NewTakeInsuranceFromStake(
+			b,
+			t.us,
+			t.ss,
+			t.ps,
+			t.ts,
+			t.opS,
+			t.ws,
+			t.aws,
+		).Execute(ctx, callback)
 		return
 	}
 
@@ -656,17 +670,20 @@ func (t *TgBot) createPool(payload *appModels.Payload, b *bot.Bot) {
 		return
 	}
 
-	text := fmt.Sprint("✅ Пул был успешно создан! Оплатите оплатите комиссию, чтобы активировать его!\n\n", util.PoolInfo(&pool, t.ss))
+	jettonData, err := t.aws.DataJetton(pool.JettonMaster)
+	if err != nil {
+		log.Errorf("Failed to get jetton: %v", err)
+		return
+	}
+
+	text := fmt.Sprint(
+		"✅ Пул был успешно создан! Оплатите оплатите комиссию, чтобы активировать его!\n\n",
+		util.PoolInfo(&pool, t.ss, jettonData),
+	)
 	markup := util.GenerateOwnerPoolInlineKeyboard(pool.Id.Int64, buttons.BackMyPoolListId, pool.IsActive, callbacksuf.My)
 
 	if _, err := util.SendTextMessageMarkup(b, telegram.TelegramId, text, markup); err != nil {
 		log.Error("Failed to send telegram:", err)
-		return
-	}
-
-	jettonData, err := t.aws.DataJetton(pool.JettonMaster)
-	if err != nil {
-		log.Error("Failed to get jettod data:", err)
 		return
 	}
 

@@ -42,11 +42,11 @@ func (c *OpenUserMenuCommand) Execute(ctx context.Context, callback *models.Call
 		2,
 		buttons.SelectPool,
 		buttons.Profile,
+		buttons.MyStakes,
 		buttons.HistoryOperation,
 		buttons.TakeAwards,
-		buttons.CheckInsurance,
-		buttons.MyStakes,
 		buttons.InviteFriend,
+		buttons.CheckInsurance,
 		buttons.LearnMore,
 		buttons.Setting,
 	)

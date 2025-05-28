@@ -6,7 +6,7 @@ const (
 	Profile          = "🧑‍💼 Профиль"
 	HistoryOperation = "📃 История операций"
 	TakeAwards       = "💵 Забрать награды"
-	CheckInsurance   = "✅ Проверить страховку"
+	CheckInsurance   = "💰 Компенсация"
 	MyStakes         = "📈 Мои стейки"
 
 	//owner pools menu

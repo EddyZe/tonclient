@@ -10,6 +10,8 @@ import (
 	"time"
 	appModels "tonclient/internal/models"
 	"tonclient/internal/services"
+	"tonclient/internal/tonbot/buttons"
+	"tonclient/internal/tonbot/callbacksuf"
 	"tonclient/internal/tonbot/userstate"
 	"tonclient/internal/tonfi"
 	"tonclient/internal/util"
@@ -335,7 +337,7 @@ func (c *CreateStakeCommand[T]) checkSumStakes(
 	if tenProcientFromSum <= currentSumStakes {
 		if _, err := util.SendTextMessage(
 			c.b,
-			uint64(chatId),
+			chatId,
 			"❌ Нельзя сделать стейк на текущий момент! Недостаточно резерва",
 		); err != nil {
 			log.Error(err)
@@ -352,10 +354,20 @@ func (c *CreateStakeCommand[T]) checkSumStakes(
 			log.Error(err)
 			return err
 		}
-		if _, err := util.SendTextMessage(
+		idButton := fmt.Sprintf("%v:%v:%v", buttons.PoolDataButton, pool.Id.Int64, callbacksuf.My)
+		btn := util.CreateDefaultButton(idButton, "Открыть пул")
+		markup := util.CreateInlineMarup(1, btn)
+		pool.IsActive = false
+
+		if err := c.ps.Update(pool); err != nil {
+			log.Error(err)
+		}
+
+		if _, err := util.SendTextMessageMarkup(
 			c.b,
 			tgOwner.TelegramId,
-			fmt.Sprintf("❌ В пуле %v недостаточно резерва. Пользователи не могут делать стейки на текущий момент. Пополните резерв!\n\nТекущий резерв: %v", jettonaData.Name, pool.Reserve),
+			fmt.Sprintf("❌ В пуле %v недостаточно резерва. Пользователи не могут делать стейки на текущий момент. Пополните резерв!\n\nТекущий резерв: %v\n\nПул был закрыт автоматически. Вы сможете его сново открыть, после пополнения резерва!", jettonaData.Name, pool.Reserve),
+			markup,
 		); err != nil {
 			log.Error(err)
 		}

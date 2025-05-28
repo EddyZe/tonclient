@@ -134,7 +134,14 @@ func (c *CloseOrOpenPool) Execute(ctx context.Context, callback *models.Callback
 	}
 }
 
-func (c *CloseOrOpenPool) editStatus(ctx context.Context, poolId, chatId uint64, messageId int, pool *appModels.Pool, isActive bool, sufData string) error {
+func (c *CloseOrOpenPool) editStatus(
+	ctx context.Context,
+	poolId, chatId uint64,
+	messageId int,
+	pool *appModels.Pool,
+	isActive bool,
+	sufData string,
+) error {
 	if err := c.ps.SetActive(poolId, isActive); err != nil {
 		if _, err := util.SendTextMessage(c.b, chatId, "❌ Статус не был изменен. Повторите попытку позже!"); err != nil {
 			log.Error(err)
@@ -149,13 +156,18 @@ func (c *CloseOrOpenPool) editStatus(ctx context.Context, poolId, chatId uint64,
 	} else {
 		btnId = buttons.BackPoolListId
 	}
+	jettonData, err := c.aws.DataJetton(pool.JettonMaster)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
 
 	if err := util.EditTextMessageMarkup(
 		ctx,
 		c.b,
 		chatId,
 		messageId,
-		util.PoolInfo(pool, c.ss),
+		util.PoolInfo(pool, c.ss, jettonData),
 		util.GenerateOwnerPoolInlineKeyboard(int64(poolId), btnId, pool.IsActive, sufData),
 	); err != nil {
 		log.Error(err)

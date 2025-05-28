@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	appModels "tonclient/internal/models"
 	"tonclient/internal/services"
@@ -39,7 +40,7 @@ func GeneratePoolButtons(pool *[]appModels.Pool, aws *services.AdminWalletServic
 	return res
 }
 
-func PoolInfo(p *appModels.Pool, ss *services.StakeService) string {
+func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModels.JettonData) string {
 	allStakesPool := ss.GetPoolStakes(uint64(p.Id.Int64))
 	var sumAmount float64
 
@@ -51,7 +52,8 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService) string {
 
 	foramter := message.NewPrinter(language.English)
 	ut := foramter.Sprintf("%.2f", sumAmount)
-	reserve := foramter.Sprintf("%.2f", p.Reserve)
+	reserve := foramter.Sprintf("%.2f", p.Reserve*0.1)
+	fullReserve := foramter.Sprintf("%.2f", p.Reserve)
 
 	var status string
 	if p.IsActive {
@@ -74,8 +76,26 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService) string {
 		}
 	}
 
+	reliability := (p.Reserve / jettonData.TotalSupply) / 0.72 * 100
+	reliability = math.Min(reliability, 100)
+	reliabilityRounded := math.Round(reliability)
+
+	var emoj string
+	var level string
+
+	if reliability < 5 {
+		emoj = "🟥"
+		level = "низкий"
+	} else if reliability < 20 {
+		emoj = "🟨"
+		level = "средний"
+	} else {
+		emoj = "🟩"
+		level = "высокий"
+	}
+
 	i := `
-<b> Описание пула %v: </b>
+<b> 📦 Описание пула %v: </b>
 
 <b>Статус</b>: %v
 <b>Текущая цена токена:</b> %.6f$
@@ -95,9 +115,31 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService) string {
 🔒 Резерв пула:
  •	Заблокировано участниками: %v токенов
  •	Доступно для новых стейков: %v токенов
+ •  Общий резерв: %v
+
+🔐 <b>Надежность пула</b>: %v %v%% из 100%%
+Уровень: %v, резерв составляет %.0f из %.0f токенов
+
 `
 
-	res := fmt.Sprintf(i, jettonInfo.DisplayName, status, price, p.Reward, p.Period, SuffixDay(int(p.Period)), p.InsuranceCoating, ut, reserve)
+	res := fmt.Sprintf(
+		i,
+		jettonInfo.DisplayName,
+		status,
+		price,
+		p.Reward,
+		p.Period,
+		SuffixDay(int(p.Period)),
+		p.InsuranceCoating,
+		ut,
+		reserve,
+		fullReserve,
+		emoj,
+		reliabilityRounded,
+		level,
+		p.Reserve,
+		jettonData.TotalSupply,
+	)
 	return res
 }
 

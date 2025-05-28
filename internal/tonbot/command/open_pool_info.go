@@ -15,20 +15,22 @@ import (
 )
 
 type OpenPoolInfoCommand struct {
-	b  *bot.Bot
-	ps *services.PoolService
-	us *services.UserService
-	ss *services.StakeService
+	b   *bot.Bot
+	ps  *services.PoolService
+	us  *services.UserService
+	ss  *services.StakeService
+	aws *services.AdminWalletService
 }
 
 func NewPoolInfo(b *bot.Bot, ps *services.PoolService, us *services.UserService,
-	ss *services.StakeService) *OpenPoolInfoCommand {
+	ss *services.StakeService, aws *services.AdminWalletService) *OpenPoolInfoCommand {
 
 	return &OpenPoolInfoCommand{
-		b:  b,
-		ps: ps,
-		us: us,
-		ss: ss,
+		b:   b,
+		ps:  ps,
+		us:  us,
+		ss:  ss,
+		aws: aws,
 	}
 }
 
@@ -86,7 +88,13 @@ func (c *OpenPoolInfoCommand) Execute(ctx context.Context, callback *models.Call
 		return
 	}
 
-	poolInfo := util.PoolInfo(pool, c.ss)
+	jettonData, err := c.aws.DataJetton(pool.JettonMaster)
+	if err != nil {
+		log.Error("[OpenPoolInfoCommand.Execute]", err)
+		return
+	}
+
+	poolInfo := util.PoolInfo(pool, c.ss, jettonData)
 	dataBtn := fmt.Sprintf("%v:%v", buttons.CreateStakeId, poolId)
 	btn := util.CreateDefaultButton(dataBtn, buttons.StakePoolTokensText)
 	var markup *models.InlineKeyboardMarkup

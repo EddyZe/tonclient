@@ -9,8 +9,6 @@ import (
 	"strings"
 	appModels "tonclient/internal/models"
 	"tonclient/internal/services"
-	"tonclient/internal/tonbot/buttons"
-	"tonclient/internal/tonbot/callbacksuf"
 	"tonclient/internal/util"
 
 	"github.com/go-telegram/bot"
@@ -139,7 +137,14 @@ func (c *TakeProfitFromStake) Execute(ctx context.Context, callback *models.Call
 	}
 
 	if stake.Balance > pool.Reserve {
-		c.sendMessageOwnerAndUserIfBadReserve(uint64(chatId), pool.OwnerId, uint64(pool.Id.Int64), jettonaData.Name)
+		util.SendMessageOwnerAndUserIfBadReserve(
+			uint64(chatId),
+			pool.OwnerId,
+			uint64(pool.Id.Int64),
+			jettonaData.Name,
+			c.b,
+			c.ts,
+		)
 		return
 	}
 
@@ -183,32 +188,6 @@ func (c *TakeProfitFromStake) Execute(ctx context.Context, callback *models.Call
 		fmt.Sprintf("Снятие токенов. %f %v. Hash: %v", stake.Balance, jettonaData.Name, hash),
 	); err != nil {
 		log.Error("create op err: ", err.Error())
-	}
-}
-
-func (c *TakeProfitFromStake) sendMessageOwnerAndUserIfBadReserve(chatId, ownerPoolId, poolId uint64, jettonName string) {
-	if _, err := util.SendTextMessage(
-		c.b,
-		chatId,
-		"❌ Не хватает резерва пула. Мы отправили владельцу пула уведомление. Попробуйте позже!",
-	); err != nil {
-		log.Println(err)
-	}
-	ownerPoolTelegram, er := c.ts.GetByUserId(ownerPoolId)
-	if er != nil {
-		return
-	}
-	idButton := fmt.Sprintf("%v:%v:%v", buttons.PoolDataButton, poolId, callbacksuf.My)
-	btn := util.CreateDefaultButton(idButton, "Открыть пул")
-	markup := util.CreateInlineMarup(1, btn)
-	textMessage := fmt.Sprintf("В вашем пуле с токеном %v кончается резерв! Пополните его!", jettonName)
-	if _, err := util.SendTextMessageMarkup(
-		c.b,
-		ownerPoolTelegram.TelegramId,
-		textMessage,
-		markup,
-	); err != nil {
-		log.Println(err)
 	}
 }
 

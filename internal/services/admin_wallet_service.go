@@ -286,7 +286,7 @@ func (s *AdminWalletService) CheckValidAddr(addr string) error {
 
 func getContent(any *jetton.Data) *models.JettonData {
 	decimals := 9
-	totalSupply := any.TotalSupply.Uint64()
+	totalSupply, _ := any.TotalSupply.Float64()
 	mintable := any.Mintable
 	adminAddr := any.AdminAddr
 	name := ""

@@ -9,6 +9,7 @@ import (
 	appModel "tonclient/internal/models"
 	"tonclient/internal/services"
 	"tonclient/internal/tonbot/buttons"
+	"tonclient/internal/tonbot/callbacksuf"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
@@ -203,4 +204,35 @@ func RequestRepeatTonConnect(b *bot.Bot, chatId int64, markup *models.InlineKeyb
 		return err
 	}
 	return nil
+}
+
+func SendMessageOwnerAndUserIfBadReserve(
+	chatId, ownerPoolId, poolId uint64,
+	jettonName string,
+	b *bot.Bot,
+	ts *services.TelegramService,
+) {
+	if _, err := SendTextMessage(
+		b,
+		chatId,
+		"❌ Не хватает резерва пула. Мы отправили владельцу пула уведомление. Попробуйте позже!",
+	); err != nil {
+		log.Println(err)
+	}
+	ownerPoolTelegram, er := ts.GetByUserId(ownerPoolId)
+	if er != nil {
+		return
+	}
+	idButton := fmt.Sprintf("%v:%v:%v", buttons.PoolDataButton, poolId, callbacksuf.My)
+	btn := CreateDefaultButton(idButton, "Открыть пул")
+	markup := CreateInlineMarup(1, btn)
+	textMessage := fmt.Sprintf("В вашем пуле с токеном %v кончается резерв! Пополните его!", jettonName)
+	if _, err := SendTextMessageMarkup(
+		b,
+		ownerPoolTelegram.TelegramId,
+		textMessage,
+		markup,
+	); err != nil {
+		log.Println(err)
+	}
 }
