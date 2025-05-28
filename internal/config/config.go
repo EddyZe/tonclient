@@ -10,7 +10,7 @@ import (
 
 const (
 	CONFIG_TON_TESTNET_URL string = "https://ton-blockchain.github.io/testnet-global.config.json"
-	CONFIG_TON_MAINNET_URL string = "https://ton.org/global.config.json"
+	CONFIG_TON_MAINNET_URL string = "https://ton-blockchain.github.io/global.config.json"
 )
 
 var WALLET_SEED []string

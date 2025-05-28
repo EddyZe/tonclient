@@ -69,10 +69,12 @@ func (c *OpenStakeInfo) Execute(ctx context.Context, callback *models.CallbackQu
 		procientEditPrice := util.CalculateProcientEditPrice(stake.JettonPriceClosed, stake.DepositCreationPrice)
 		log.Infoln(procientEditPrice)
 		if procientEditPrice <= -30 {
-			btnInsurance := util.CreateDefaultButton("test", "test")
+			idbtn := fmt.Sprintf("%v:%v", buttons.TakeInsuranceId, stake.Id.Int64)
+			btnInsurance := util.CreateDefaultButton(idbtn, buttons.TakeInsurance)
 			btns = append(btns, btnInsurance)
 		} else {
-			btn := util.CreateDefaultButton("test2", "test2")
+			idBtn := fmt.Sprintf("%v:%v", buttons.TakeProfitId, stake.Id.Int64)
+			btn := util.CreateDefaultButton(idBtn, buttons.TakeProfit)
 			btns = append(btns, btn)
 		}
 	}

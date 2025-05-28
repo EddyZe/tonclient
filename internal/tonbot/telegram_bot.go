@@ -425,6 +425,11 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 		command.NewPoolInfo(b, t.ps, t.us, t.ss).Execute(ctx, callback)
 		return
 	}
+
+	if strings.HasPrefix(data, buttons.TakeProfitId) {
+		command.NewTakeProfitFromStake(b, t.us, t.ps, t.ws, t.aws, t.ss, t.opS).Execute(ctx, callback)
+		return
+	}
 }
 
 func (t *TgBot) handleState(ctx context.Context, state int, b *bot.Bot, msg *models.Message) {

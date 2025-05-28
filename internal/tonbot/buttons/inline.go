@@ -43,7 +43,11 @@ const (
 	ClosePoolId      = "CLOSE_POOL"
 
 	//stakes
-	CreateStakeId = "CREATE_STAKE"
+	CreateStakeId   = "CREATE_STAKE"
+	TakeProfit      = "💸 Получить награды"
+	TakeProfitId    = "TAKE_PROFIT"
+	TakeInsurance   = "🏦 Получить страховку"
+	TakeInsuranceId = "TAKE_INSURANCE"
 
 	//profile
 	SetNumberWallet   = "👛 Привязать кошелек"

@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"math/big"
 	"os"
 	"os/signal"
 	"strconv"
@@ -168,13 +169,14 @@ func (s *AdminWalletService) processOperation(op uint64, amount float64, senderA
 func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment string, amount float64, decimal int) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
+
+	amountTok := tlb.MustFromDecimal(fmt.Sprint(amount), decimal)
+
 	tokenWallet, err := s.TokenWalletAddress(ctx, jettonMaster, s.wallet.WalletAddress())
 	if err != nil {
 		log.Errorf("Failed to get jetton token: %v", err)
 		return nil, err
 	}
-
-	amountTok := tlb.MustFromDecimal(fmt.Sprint(amount), decimal)
 
 	balance, err := tokenWallet.GetBalance(ctx)
 	if err != nil {
@@ -353,4 +355,24 @@ func getWalletFromSeed(api *ton.APIClient, seed []string) (*wallet.Wallet, error
 
 func (s *AdminWalletService) GetAdminWalletAddr() *address.Address {
 	return s.wallet.WalletAddress()
+}
+
+func (s *AdminWalletService) GetJettonBalance(ctx context.Context, wallAddr, jettonMaster string) (*big.Int, error) {
+	addr, err := address.ParseAddr(wallAddr)
+	if err != nil {
+		return nil, err
+	}
+	tokenWallet, err := s.TokenWalletAddress(ctx, jettonMaster, addr)
+	if err != nil {
+		log.Errorf("Failed to get jetton token: %v", err)
+		return nil, err
+	}
+
+	balance, err := tokenWallet.GetBalance(ctx)
+	if err != nil {
+		log.Errorf("Failed to get balance: %v", err)
+		return nil, err
+	}
+
+	return balance, nil
 }
