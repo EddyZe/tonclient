@@ -427,7 +427,7 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 	}
 
 	if strings.HasPrefix(data, buttons.TakeProfitId) {
-		command.NewTakeProfitFromStake(b, t.us, t.ps, t.ws, t.aws, t.ss, t.opS).Execute(ctx, callback)
+		command.NewTakeProfitFromStake(b, t.us, t.ps, t.ws, t.aws, t.ss, t.opS, t.ts).Execute(ctx, callback)
 		return
 	}
 }
