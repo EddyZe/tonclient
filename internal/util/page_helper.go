@@ -48,8 +48,8 @@ func NextPageV2(callback *models.CallbackQuery, pages map[int64]int, totalPages 
 	}
 	if page < totalPages {
 		page++
-		pages[chatId] = page
 	}
+	pages[chatId] = page
 	f()
 	return pages
 }
@@ -103,7 +103,7 @@ func CloseList(ctx context.Context, callback *models.CallbackQuery, pages map[in
 	}
 	msg := callback.Message.Message
 	chatId := msg.Chat.ID
-	pages[chatId] = 0
+	delete(pages, chatId)
 
 	if err := DeleteMessage(ctx, b, uint64(chatId), msg.ID); err != nil {
 		log.Error(err)

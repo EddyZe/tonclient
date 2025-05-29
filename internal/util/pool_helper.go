@@ -19,7 +19,14 @@ func generateNamePool(pool *appModels.Pool, aws *services.AdminWalletService) st
 	if err != nil {
 		return "Без названия"
 	}
-	return fmt.Sprintf("%v (%d %v / %d%% / резерв %v)", jettonData.Name, pool.Period, SuffixDay(int(pool.Period)), pool.Reward, pool.Reserve)
+	return fmt.Sprintf(
+		"%v (%d %v / %d%% / резерв %.0f)",
+		jettonData.Name,
+		pool.Period,
+		SuffixDay(int(pool.Period)),
+		pool.Reward,
+		pool.Reserve,
+	)
 }
 
 func GeneratePoolButtons(pool *[]appModels.Pool, aws *services.AdminWalletService, suf string) []models.InlineKeyboardButton {
@@ -76,9 +83,8 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 		}
 	}
 
-	reliability := (p.Reserve / jettonData.TotalSupply) / 0.72 * 100
+	reliability := (p.Reserve / (jettonData.TotalSupply / 10e+9)) / 0.72 * 100
 	reliability = math.Min(reliability, 100)
-	reliabilityRounded := math.Round(reliability)
 
 	var emoj string
 	var level string
@@ -117,7 +123,7 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
  •	Доступно для новых стейков: %v токенов
  •  Общий резерв: %v
 
-🔐 <b>Надежность пула</b>: %v %v%% из 100%%
+🔐 <b>Надежность пула</b>: %v %.1f%% из 100%%
 Уровень: %v, резерв составляет %.0f из %.0f токенов
 
 `
@@ -135,10 +141,10 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 		reserve,
 		fullReserve,
 		emoj,
-		reliabilityRounded,
+		reliability,
 		level,
 		p.Reserve,
-		jettonData.TotalSupply,
+		jettonData.TotalSupply/10e+9,
 	)
 	return res
 }

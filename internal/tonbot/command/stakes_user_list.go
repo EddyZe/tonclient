@@ -2,12 +2,9 @@ package command
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math"
-	"strings"
 	"time"
-	appModels "tonclient/internal/models"
 	"tonclient/internal/services"
 	"tonclient/internal/tonbot/buttons"
 	"tonclient/internal/util"
@@ -58,7 +55,7 @@ func (c *StakesUserList[T]) executeCallback(callback *models.CallbackQuery) {
 		return
 	}
 
-	jettonName, err := c.getJettonNameFromCallbackData(uint64(chatId), callbackData)
+	jettonName, err := util.GetJettonNameFromCallbackData(c.b, uint64(chatId), callbackData)
 	if err != nil {
 		log.Error(err)
 		return
@@ -89,7 +86,7 @@ func (c *StakesUserList[T]) executeCallback(callback *models.CallbackQuery) {
 		fmt.Sprintf("%v:%v", buttons.NextPageStakesFromGroupJettonName, jettonName),
 		fmt.Sprintf("%v:%v", buttons.BackPageStakesFromGroupJettonName, jettonName),
 		buttons.CloseListStakesGroupId,
-		c.generateStakeListByGroup(*stakes, jettonName)...,
+		util.GenerateStakeListByGroup(*stakes, jettonName, buttons.OpenStakeInfo)...,
 	)
 
 	btns := markup.InlineKeyboard
@@ -156,7 +153,7 @@ func (c *StakesUserList[T]) getGroupList(chatId int64) (*models.InlineKeyboardMa
 		buttons.NextListStakesGroupId,
 		buttons.BackListStakesGroupId,
 		buttons.CloseListStakesGroupId,
-		c.generateGroupButtons(groups)...,
+		util.GenerateGroupButtons(groups, buttons.OpenGroupId)...,
 	)
 
 	return markup, nil
@@ -176,30 +173,6 @@ func (c *StakesUserList[T]) getPageGroupStakesJetton(chatId int64) int {
 		pageJetton = 0
 	}
 	return pageJetton
-}
-
-func (c *StakesUserList[T]) generateGroupButtons(groups *[]appModels.GroupElements) []models.InlineKeyboardButton {
-	res := make([]models.InlineKeyboardButton, 0, 5)
-	for _, g := range *groups {
-		idButton := fmt.Sprintf("%v:%v", buttons.OpenGroupId, g.Name)
-		text := fmt.Sprintf("%v. Стейков: %v", g.Name, g.Count)
-		btn := util.CreateDefaultButton(idButton, text)
-		res = append(res, btn)
-	}
-
-	return res
-}
-
-func (c *StakesUserList[T]) generateStakeListByGroup(stakes []appModels.Stake, jettonName string) []models.InlineKeyboardButton {
-	res := make([]models.InlineKeyboardButton, 0, 5)
-	for _, s := range stakes {
-		idButton := fmt.Sprintf("%v:%v:%v", buttons.OpenStakeInfo, jettonName, s.Id.Int64)
-		text := fmt.Sprintf("Стейк от %v", s.StartDate.Format("02.01.2006 15:04"))
-		btn := util.CreateDefaultButton(idButton, text)
-		res = append(res, btn)
-	}
-
-	return res
 }
 
 func (c *StakesUserList[T]) BackStakesGroup(callback *models.CallbackQuery) {
@@ -239,7 +212,7 @@ func (c *StakesUserList[T]) CloseGroupList(callback *models.CallbackQuery) {
 	currentPageGroupStakes = util.CloseList(ctx, callback, currentPageGroupStakes, c.b)
 }
 
-// Открывает следующую страницу сгруперованных стейков
+// NextGroupPage открывает следующую страницу сгруперованных стейков
 func (c *StakesUserList[T]) NextGroupPage(callback *models.CallbackQuery) {
 	if err := util.CheckTypeMessage(c.b, callback); err != nil {
 		return
@@ -266,7 +239,7 @@ func (c *StakesUserList[T]) NextGroupPage(callback *models.CallbackQuery) {
 	)
 }
 
-// Открывает предыдущую страницу сгруперованных стейков
+// BackGroupPage Открывает предыдущую страницу сгруперованных стейков
 func (c *StakesUserList[T]) BackGroupPage(callback *models.CallbackQuery) {
 	if err := util.CheckTypeMessage(c.b, callback); err != nil {
 		return
@@ -303,7 +276,7 @@ func (c *StakesUserList[T]) backOrNextPageGroupStakes(chatId int64, messageId in
 	}
 }
 
-// Перевлючает следующую страницу стейков открытой группы
+// NextPageStakesFromGroup Перевлючает следующую страницу стейков открытой группы
 func (c *StakesUserList[T]) NextPageStakesFromGroup(callback *models.CallbackQuery) {
 	if err := util.CheckTypeMessage(c.b, callback); err != nil {
 		return
@@ -316,7 +289,7 @@ func (c *StakesUserList[T]) NextPageStakesFromGroup(callback *models.CallbackQue
 		return
 	}
 
-	jettonName, err := c.getJettonNameFromCallbackData(uint64(chatId), callback.Data)
+	jettonName, err := util.GetJettonNameFromCallbackData(c.b, uint64(chatId), callback.Data)
 
 	totalPage := c.totalPageStakesFromGroup(uint64(u.Id.Int64), jettonName)
 	currentPageGroupStakesJettonName = util.NextPageV2(
@@ -329,7 +302,7 @@ func (c *StakesUserList[T]) NextPageStakesFromGroup(callback *models.CallbackQue
 		})
 }
 
-// Перевлючает предыдущую страницу стейков открытой группы
+// BackStakesFromGroup Перевлючает предыдущую страницу стейков открытой группы
 func (c *StakesUserList[T]) BackStakesFromGroup(callback *models.CallbackQuery) {
 	if err := util.CheckTypeMessage(c.b, callback); err != nil {
 		return
@@ -349,21 +322,4 @@ func (c *StakesUserList[T]) totalPageGroupsStakes(userId uint64) int {
 
 func (c *StakesUserList[T]) totalPageStakesFromGroup(userId uint64, jettonName string) int {
 	return int(math.Ceil(float64(c.ss.CountGroupsStakesByUserIdAndJettonName(userId, jettonName)) / float64(numberElementPage)))
-}
-
-func (c *StakesUserList[T]) getJettonNameFromCallbackData(chatId uint64, data string) (string, error) {
-	splitDat := strings.Split(data, ":")
-
-	if len(splitDat) != 2 {
-		if _, err := util.SendTextMessage(
-			c.b,
-			chatId,
-			"❌ Не могу обработать эту кнопку!",
-		); err != nil {
-			log.Error(err)
-		}
-		return "", errors.New("invalid callback data")
-	}
-
-	return splitDat[1], nil
 }

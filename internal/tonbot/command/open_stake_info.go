@@ -17,16 +17,18 @@ import (
 )
 
 type OpenStakeInfo struct {
-	b  *bot.Bot
-	ss *services.StakeService
-	ps *services.PoolService
+	b       *bot.Bot
+	ss      *services.StakeService
+	ps      *services.PoolService
+	backBtn string
 }
 
-func NewOpenStakeInfoCommand(b *bot.Bot, ss *services.StakeService, ps *services.PoolService) *OpenStakeInfo {
+func NewOpenStakeInfoCommand(b *bot.Bot, ss *services.StakeService, ps *services.PoolService, backbtn string) *OpenStakeInfo {
 	return &OpenStakeInfo{
-		b:  b,
-		ss: ss,
-		ps: ps,
+		b:       b,
+		ss:      ss,
+		ps:      ps,
+		backBtn: backbtn,
 	}
 }
 
@@ -46,7 +48,11 @@ func (c *OpenStakeInfo) Execute(ctx context.Context, callback *models.CallbackQu
 	stake, err := c.ss.GetById(stakeId)
 	if err != nil {
 		log.Error(err)
-		if _, err := util.SendTextMessage(c.b, uint64(chatId), "❌ Стейк не найден. Возможно он был удален!"); err != nil {
+		if _, err := util.SendTextMessage(
+			c.b,
+			uint64(chatId),
+			"❌ Стейк не найден. Возможно он был удален!",
+		); err != nil {
 			log.Error(err)
 		}
 		return
@@ -61,10 +67,9 @@ func (c *OpenStakeInfo) Execute(ctx context.Context, callback *models.CallbackQu
 	info := c.generateInfo(stake, jettonName, p)
 	btns := make([]models.InlineKeyboardButton, 0, 3)
 
-	buttonId := fmt.Sprintf("%v:%v", buttons.OpenGroupId, jettonName)
+	buttonId := fmt.Sprintf("%v:%v", c.backBtn, jettonName)
 	backBtn := util.CreateDefaultButton(buttonId, buttons.BackStakesFromGroup)
 
-	//TODO реализовать кнопки для сбора страховки и получения наград
 	if !stake.IsActive {
 		procientEditPrice := util.CalculateProcientEditPrice(stake.JettonPriceClosed, stake.DepositCreationPrice)
 		log.Infoln(procientEditPrice)
@@ -157,6 +162,10 @@ func (c *OpenStakeInfo) generateInfo(stake *appModels.Stake, jettonName string, 
 			stake.JettonPriceClosed,
 			util.CalculateProcientEditPrice(stake.JettonPriceClosed, stake.DepositCreationPrice),
 		)
+	}
+
+	if stake.IsRewardPaid || stake.IsInsurancePaid {
+		formatText += "\n\nВыплачено ✅"
 	}
 
 	return formatText

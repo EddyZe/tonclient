@@ -12,7 +12,7 @@ const (
 	//owner pools menu
 	CreatePool = "➕ Создать пул"
 	MyPools    = "📃 Мои пулы"
-	LearnMore  = "❓ Узнать больше"
+	LearnMore  = "❓ Инфо"
 
 	//default btns
 	Setting      = "⚙️ Настройки"

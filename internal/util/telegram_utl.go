@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 	"tonclient/internal/config"
 	appModel "tonclient/internal/models"
@@ -235,4 +236,76 @@ func SendMessageOwnerAndUserIfBadReserve(
 	); err != nil {
 		log.Println(err)
 	}
+}
+
+func GetJettonNameFromCallbackData(b *bot.Bot, chatId uint64, data string) (string, error) {
+	splitDat := strings.Split(data, ":")
+
+	if len(splitDat) != 2 {
+		if _, err := SendTextMessage(
+			b,
+			chatId,
+			"❌ Не могу обработать эту кнопку!",
+		); err != nil {
+			log.Error(err)
+		}
+		return "", errors.New("invalid callback data")
+	}
+
+	return splitDat[1], nil
+}
+
+func GetCurrentPage(chatId int64, pages map[int64]int) int {
+	page, ok := pages[chatId]
+	if !ok {
+		page = 0
+	}
+	pages[chatId] = page
+	return page
+}
+
+func GenerateGroupButtons(groups *[]appModel.GroupElements, idButton string) []models.InlineKeyboardButton {
+	res := make([]models.InlineKeyboardButton, 0, 5)
+	for _, g := range *groups {
+		idButton := fmt.Sprintf("%v:%v", idButton, g.Name)
+		text := fmt.Sprintf("%v. Стейков: %v", g.Name, g.Count)
+		btn := CreateDefaultButton(idButton, text)
+		res = append(res, btn)
+	}
+
+	return res
+}
+
+func GenerateStakeListByGroup(stakes []appModel.Stake, jettonName, idButton string) []models.InlineKeyboardButton {
+	res := make([]models.InlineKeyboardButton, 0, 5)
+	for _, s := range stakes {
+		idButton := fmt.Sprintf("%v:%v:%v", idButton, jettonName, s.Id.Int64)
+		text := fmt.Sprintf("Стейк от %v", s.StartDate.Format("02.01.2006 15:04"))
+		btn := CreateDefaultButton(idButton, text)
+		res = append(res, btn)
+	}
+
+	return res
+}
+
+func FilterProcientStakes(stakes []appModel.Stake, procient int, isMore bool) *[]appModel.Stake {
+	res := make([]appModel.Stake, 0)
+
+	if isMore {
+		for _, s := range stakes {
+			t := CalculateProcientEditPrice(s.JettonPriceClosed, s.DepositCreationPrice)
+			if t > procient {
+				res = append(res, s)
+			}
+		}
+	} else {
+		for _, s := range stakes {
+			t := CalculateProcientEditPrice(s.JettonPriceClosed, s.DepositCreationPrice)
+			if t < procient {
+				res = append(res, s)
+			}
+		}
+	}
+
+	return &res
 }

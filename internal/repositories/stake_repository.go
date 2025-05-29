@@ -512,7 +512,53 @@ func (r *StakeRepository) GroupFromPoolNameByUserIdLimit(userId uint64, offset, 
 	if err := r.db.SelectContext(
 		ctx,
 		&res,
-		"select p.jetton_name as name, count(*) as count from stake s join pool p on s.pool_id = p.id where s.user_id = $1 group by p.jetton_name order by max(p.created_at) desc limit $2 offset $3", userId, limit, offset); err != nil {
+		"select p.jetton_name as name, count(*) as count from stake s join pool p on s.pool_id = p.id where s.user_id = $1 group by p.jetton_name order by max(p.created_at) desc limit $2 offset $3",
+		userId,
+		limit,
+		offset,
+	); err != nil {
+		log.Error("Failed froup stakes: ", err)
+	}
+	return &res
+}
+
+func (r *StakeRepository) GroupFromPoolNameByUserIdLimitIsInsurancePaid(userId uint64, offset, limit int, b bool, isActive bool) *[]models.GroupElements {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	res := make([]models.GroupElements, 0)
+
+	if err := r.db.SelectContext(
+		ctx,
+		&res,
+		"select p.jetton_name as name, count(*) as count from stake s join pool p on s.pool_id = p.id where s.user_id = $1 and s.is_insurance_paid=$2 and s.is_active=$5 group by p.jetton_name order by max(p.created_at) desc limit $3 offset $4",
+		userId,
+		b,
+		limit,
+		offset,
+		isActive,
+	); err != nil {
+		log.Error("Failed froup stakes: ", err)
+	}
+	return &res
+}
+
+func (r *StakeRepository) GroupFromPoolNameByUserIdLimitIsProfitPaid(userId uint64, offset, limit int, b bool, isActive bool) *[]models.GroupElements {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	res := make([]models.GroupElements, 0)
+
+	if err := r.db.SelectContext(
+		ctx,
+		&res,
+		"select p.jetton_name as name, count(*) as count from stake s join pool p on s.pool_id = p.id where s.user_id = $1 and s.is_reward_paid=$2 and s.is_active=$5 group by p.jetton_name order by max(p.created_at) desc limit $3 offset $4",
+		userId,
+		b,
+		limit,
+		offset,
+		isActive,
+	); err != nil {
 		log.Error("Failed froup stakes: ", err)
 	}
 	return &res
@@ -524,7 +570,13 @@ func (r *StakeRepository) FindByJettonNameAndUserId(userId uint64, jettonName st
 
 	res := make([]models.Stake, 0)
 
-	if err := r.db.SelectContext(ctx, &res, "select s.* from stake s join pool p on s.pool_id = p.id where s.user_id = $1 and p.jetton_name = $2", userId, jettonName); err != nil {
+	if err := r.db.SelectContext(
+		ctx,
+		&res,
+		"select s.* from stake s join pool p on s.pool_id = p.id where s.user_id = $1 and p.jetton_name = $2",
+		userId,
+		jettonName,
+	); err != nil {
 		log.Error("Failed to get stake: ", err)
 	}
 
@@ -537,7 +589,73 @@ func (r *StakeRepository) FindByJettonNameAndUserIdLimit(userId uint64, jettonNa
 
 	res := make([]models.Stake, 0)
 
-	if err := r.db.SelectContext(ctx, &res, "select s.* from stake s join pool p on s.pool_id = p.id where s.user_id = $1 and p.jetton_name = $2 offset $3 limit $4", userId, jettonName, offset, limit); err != nil {
+	if err := r.db.SelectContext(
+		ctx,
+		&res,
+		"select s.* from stake s join pool p on s.pool_id = p.id where s.user_id = $1 and p.jetton_name = $2 offset $3 limit $4",
+		userId,
+		jettonName,
+		offset,
+		limit,
+	); err != nil {
+		log.Error("Failed to get stake: ", err)
+	}
+
+	return &res
+}
+
+func (r *StakeRepository) FindByJettonNameAndUserIdLimitIsInsurancePaid(
+	userId uint64,
+	jettonName string,
+	offset, limit int,
+	b bool,
+	isActive bool,
+) *[]models.Stake {
+	ctx, cacel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cacel()
+
+	res := make([]models.Stake, 0)
+
+	if err := r.db.SelectContext(
+		ctx,
+		&res,
+		"select s.* from stake s join pool p on s.pool_id = p.id where s.user_id = $1 and p.jetton_name = $2 and s.is_insurance_paid=$3 and s.is_active=$6 offset $4 limit $5",
+		userId,
+		jettonName,
+		b,
+		offset,
+		limit,
+		isActive,
+	); err != nil {
+		log.Error("Failed to get stake: ", err)
+	}
+
+	return &res
+}
+
+func (r *StakeRepository) FindByJettonNameAndUserIdLimitIsProfitPaid(
+	userId uint64,
+	jettonName string,
+	offset, limit int,
+	b bool,
+	isActive bool,
+) *[]models.Stake {
+	ctx, cacel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cacel()
+
+	res := make([]models.Stake, 0)
+
+	if err := r.db.SelectContext(
+		ctx,
+		&res,
+		"select s.* from stake s join pool p on s.pool_id = p.id where s.user_id = $1 and p.jetton_name = $2 and s.is_reward_paid=$3 and s.is_active=$6 offset $4 limit $5",
+		userId,
+		jettonName,
+		b,
+		offset,
+		limit,
+		isActive,
+	); err != nil {
 		log.Error("Failed to get stake: ", err)
 	}
 
@@ -551,7 +669,45 @@ func (r *StakeRepository) CountGroupsStakesUserId(userId uint64) int {
 	res := 0
 	if err := r.db.QueryRowxContext(
 		ctx,
-		"select count(distinct p.jetton_name) from stake s join pool p on s.pool_id = p.id where s.user_id=$1", userId).Scan(&res); err != nil {
+		"select count(distinct p.jetton_name) from stake s join pool p on s.pool_id = p.id where s.user_id=$1",
+		userId,
+	).Scan(&res); err != nil {
+		log.Error("Failed to get stake: ", err)
+	}
+
+	return res
+}
+
+func (r *StakeRepository) CountGroupsStakesUserIdIsInsurancePaid(userId uint64, b bool, isActive bool) int {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	res := 0
+	if err := r.db.QueryRowxContext(
+		ctx,
+		"select count(distinct p.jetton_name) from stake s join pool p on s.pool_id = p.id where s.user_id=$1 and s.is_insurance_paid=$2 and s.is_active=$3",
+		userId,
+		b,
+		isActive,
+	).Scan(&res); err != nil {
+		log.Error("Failed to get stake: ", err)
+	}
+
+	return res
+}
+
+func (r *StakeRepository) CountGroupsStakesUserIdIsProfitPaid(userId uint64, b bool, isActive bool) int {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	res := 0
+	if err := r.db.QueryRowxContext(
+		ctx,
+		"select count(distinct p.jetton_name) from stake s join pool p on s.pool_id = p.id where s.user_id=$1 and s.is_reward_paid=$2 and s.is_active=$3",
+		userId,
+		b,
+		isActive,
+	).Scan(&res); err != nil {
 		log.Error("Failed to get stake: ", err)
 	}
 
@@ -566,7 +722,50 @@ func (r *StakeRepository) CountGroupsStakesByUserIdAndJettonName(userId uint64, 
 
 	if err := r.db.QueryRowxContext(
 		ctx,
-		"select count(*) from stake s join pool p on s.pool_id = p.id where s.user_id=$1 and jetton_name = $2", userId, jettonName).Scan(&res); err != nil {
+		"select count(*) from stake s join pool p on s.pool_id = p.id where s.user_id=$1 and jetton_name = $2",
+		userId,
+		jettonName,
+	).Scan(&res); err != nil {
+		log.Error("Failed to get stake: ", err)
+	}
+
+	return res
+}
+
+func (r *StakeRepository) CountGroupsStakesByUserIdAndJettonNameIsInsurancePaid(userId uint64, jettonName string, b bool, isActive bool) int {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	res := 0
+
+	if err := r.db.QueryRowxContext(
+		ctx,
+		"select count(*) from stake s join pool p on s.pool_id = p.id where s.user_id=$1 and jetton_name = $2 and s.is_insurance_paid=$3 and s.is_active=$4",
+		userId,
+		jettonName,
+		b,
+		isActive,
+	).Scan(&res); err != nil {
+		log.Error("Failed to get stake: ", err)
+	}
+
+	return res
+}
+
+func (r *StakeRepository) CountGroupsStakesByUserIdAndJettonNameIsProfitPaid(userId uint64, jettonName string, b bool, isActive bool) int {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	res := 0
+
+	if err := r.db.QueryRowxContext(
+		ctx,
+		"select count(*) from stake s join pool p on s.pool_id = p.id where s.user_id=$1 and jetton_name = $2 and s.is_reward_paid=$3 and s.is_active=$4",
+		userId,
+		jettonName,
+		b,
+		isActive,
+	).Scan(&res); err != nil {
 		log.Error("Failed to get stake: ", err)
 	}
 

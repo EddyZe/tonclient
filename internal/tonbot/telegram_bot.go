@@ -214,6 +214,13 @@ func (t *TgBot) handleMessage(ctx context.Context, b *bot.Bot, msg *models.Messa
 			return
 		}
 
+		if text == buttons.TakeAwards {
+			userstate.ResetState(chatId)
+			cmd := command.NewStakeProfitList[*models.Message](b, t.us, t.ss)
+			cmd.Execute(ctx, msg)
+			return
+		}
+
 		if state, ok := userstate.CurrentState[msg.Chat.ID]; ok {
 			if state != -1 {
 				t.handleState(ctx, state, b, msg)
@@ -313,8 +320,33 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 	}
 
 	if strings.HasPrefix(data, buttons.OpenStakeInfo) {
-		cmd := command.NewOpenStakeInfoCommand(b, t.ss, t.ps)
+		cmd := command.NewOpenStakeInfoCommand(b, t.ss, t.ps, buttons.BackStakesFromGroup)
 		cmd.Execute(ctx, callback)
+		return
+	}
+
+	if strings.HasPrefix(data, buttons.ProfitOpenStakeInfo) {
+		command.NewOpenStakeInfoCommand(b, t.ss, t.ps, buttons.ProfitBackListGroup).Execute(ctx, callback)
+		return
+	}
+
+	if strings.HasPrefix(data, buttons.ProfitOpenGroupId) {
+		command.NewStakeProfitList[*models.CallbackQuery](b, t.us, t.ss).Execute(ctx, callback)
+		return
+	}
+
+	if strings.HasPrefix(data, buttons.ProfitNextPageJettonName) {
+		command.NewStakeProfitList[*models.CallbackQuery](b, t.us, t.ss).NextPageProfitStake(ctx, callback)
+		return
+	}
+
+	if strings.HasPrefix(data, buttons.ProfitBackPageJettonName) {
+		command.NewStakeProfitList[*models.CallbackQuery](b, t.us, t.ss).BackPageProfitStake(ctx, callback)
+		return
+	}
+
+	if strings.HasPrefix(data, buttons.ProfitBackListGroup) {
+		command.NewStakeProfitList[*models.CallbackQuery](b, t.us, t.ss).Execute(ctx, callback)
 		return
 	}
 
@@ -442,6 +474,23 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 
 	if strings.HasPrefix(data, buttons.TakeProfitId) {
 		command.NewTakeProfitFromStake(b, t.us, t.ps, t.ws, t.aws, t.ss, t.opS, t.ts).Execute(ctx, callback)
+		return
+	}
+
+	//профит лист
+	if strings.HasPrefix(data, buttons.ProfitNextPageGroup) {
+		cmd := command.NewStakeProfitList[*models.CallbackQuery](b, t.us, t.ss)
+		cmd.NextPageGroup(ctx, callback)
+		return
+	}
+	if strings.HasPrefix(data, buttons.ProfitBackPageGroup) {
+		cmd := command.NewStakeProfitList[*models.CallbackQuery](b, t.us, t.ss)
+		cmd.BackPageGroup(ctx, callback)
+		return
+	}
+	if strings.HasPrefix(data, buttons.ProfitCloseGroup) {
+		cmd := command.NewStakeProfitList[*models.CallbackQuery](b, t.us, t.ss)
+		cmd.CloseList(ctx, callback)
 		return
 	}
 }

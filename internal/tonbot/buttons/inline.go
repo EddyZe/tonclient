@@ -85,5 +85,15 @@ const (
 	BackListGroupId                   = "BACK_LIST_GROUP_ID"
 	OpenGroupId                       = "OPEN_GROUP_ID"
 	OpenStakeInfo                     = "OPEN_STAKE_INFO"
-	BackStakesFromGroup               = "Вернуться к списку стейков ⏮️"
+
+	ProfitOpenGroupId   = "PROFIT_OPEN_GROUP_ID"
+	ProfitOpenStakeInfo = "PROFIT_OPEN_STAKE_INFO"
+	ProfitNextPageGroup = "PROFIT_NEXT_PAGE_GROUP"
+	ProfitBackPageGroup = "PROFIT_BACK_PAGE_GROUP"
+	ProfitBackListGroup
+	ProfitCloseGroup         = "PROFIT_CLOSE_GROUP"
+	ProfitNextPageJettonName = "PROFIT_NEXT_PAGE_JETTON_NAME"
+	ProfitBackPageJettonName = "PROFIT_BACK_PAGE_JETTON_NAME"
+
+	BackStakesFromGroup = "Вернуться к списку стейков ⏮️"
 )
