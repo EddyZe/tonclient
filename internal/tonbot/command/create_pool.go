@@ -270,11 +270,11 @@ func (c *CreatePool[T]) enterInsuranceCoating(msg *models.Message) {
 		return
 	}
 
-	if num < 1 || num > 30 {
+	if num < 1 || num > 50 {
 		if _, err := util.SendTextMessage(
 			c.b,
 			uint64(chatId),
-			"❌ Страховое покрытие не может быть меньше чем 1 и не больше 30",
+			"❌ Страховое покрытие не может быть меньше чем 1 и не больше 50",
 		); err != nil {
 			log.Error(err)
 		}
@@ -355,11 +355,11 @@ func (c *CreatePool[T]) enterCustomPeriodHold(msg *models.Message) {
 		return
 	}
 
-	if numPeriod < 1 {
+	if numPeriod < 7 {
 		if _, err := util.SendTextMessage(
 			c.b,
 			uint64(chatId),
-			"❌ Период не может быть меньше чем 1!",
+			"❌ Период не может быть меньше чем 7!",
 		); err != nil {
 			log.Error(err)
 		}

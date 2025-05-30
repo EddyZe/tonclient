@@ -83,7 +83,8 @@ func (t *TgBot) StartBot(ch chan appModels.SubmitTransaction) error {
 func (t *TgBot) createCron(ctx context.Context, b *bot.Bot) {
 	stakes := make(chan *appModels.NotificationStake)
 	c := cron.New()
-	_, err := c.AddFunc("* 0 * * *", schedulers.AddStakeBonusActiveStakes(t.ss, t.ps, stakes))
+	//TODO изменить на каждый день!
+	_, err := c.AddFunc("* * * * *", schedulers.AddStakeBonusActiveStakes(t.ss, t.ps, stakes))
 	if err != nil {
 		log.Fatal(err)
 	}

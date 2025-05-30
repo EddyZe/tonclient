@@ -152,8 +152,15 @@ func ConnectingTonConnect(b *bot.Bot, chatId uint64, tcs *services.TonConnectSer
 
 	btns := make([]models.InlineKeyboardButton, 0, 2)
 	for k, v := range urls {
-		btn := CreateUrlInlineButton(k, v)
-		btns = append(btns, btn)
+		btn := CreateUrlInlineButton(
+			fmt.Sprintf("%v: %v", buttons.OpenBrowser, k),
+			v,
+		)
+		btn2 := CreateWebAppButton(
+			fmt.Sprintf("%v: %v", buttons.OpenWallet, k),
+			v,
+		)
+		btns = append(btns, btn, btn2)
 	}
 
 	markup := MenuWithBackButton(buttons.DefCloseId, buttons.DefCloseText, btns...)

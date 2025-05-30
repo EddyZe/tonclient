@@ -50,8 +50,8 @@ func AddStakeBonusActiveStakes(s *services.StakeService, ps *services.PoolServic
 				}
 				continue
 			}
-			bonusPrecient := pool.Reward / 100
-			amountBonus := stake.Amount * float64(bonusPrecient)
+			bonusPercent := float64(pool.Reward) / 100
+			amountBonus := stake.Amount * bonusPercent
 			stake.Balance += amountBonus
 			if err := s.Update(&stake); err != nil {
 				continue
