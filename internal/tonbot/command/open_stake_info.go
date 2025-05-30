@@ -118,7 +118,7 @@ func (c *OpenStakeInfo) generateInfo(stake *appModels.Stake, jettonName string, 
 	<b>Стейк с токеном %v</b>
 
 	<b>Ставка:</b> +%v%% за %v %v
-	<b>Гарантия:</b> Компенсация при снижении цены %v более чем на 30%%
+	<b>Гарантия:</b> Компенсация при снижении цены %v более чем на %v%%
 
 	<b>Сумма стейка:</b> %v
 	<b>Цена на момент стейка:</b> %f $
@@ -147,6 +147,7 @@ func (c *OpenStakeInfo) generateInfo(stake *appModels.Stake, jettonName string, 
 		pool.Period,
 		util.SuffixDay(int(pool.Period)),
 		jettonName,
+		pool.InsuranceCoating,
 		stake.Amount,
 		stake.DepositCreationPrice,
 		currentPrice,
