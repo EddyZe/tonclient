@@ -165,6 +165,12 @@ func (t *TgBot) handleMessage(ctx context.Context, b *bot.Bot, msg *models.Messa
 			return
 		}
 
+		if text == buttons.LearnMore {
+			cmd := command.NewInfoCommand(b)
+			cmd.Execute(ctx, msg)
+			return
+		}
+
 		if text == buttons.InviteFriend {
 			userstate.ResetState(chatId)
 			cmd := command.NewInviteFriendCommand(b, t.us)
