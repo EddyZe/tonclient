@@ -20,13 +20,15 @@ type StakeProfitList[T CommandType] struct {
 	b  *bot.Bot
 	us *services.UserService
 	ss *services.StakeService
+	ps *services.PoolService
 }
 
-func NewStakeProfitList[T CommandType](b *bot.Bot, us *services.UserService, ss *services.StakeService) *StakeProfitList[T] {
+func NewStakeProfitList[T CommandType](b *bot.Bot, us *services.UserService, ss *services.StakeService, ps *services.PoolService) *StakeProfitList[T] {
 	return &StakeProfitList[T]{
 		b:  b,
 		us: us,
 		ss: ss,
+		ps: ps,
 	}
 }
 
@@ -87,7 +89,7 @@ func (c *StakeProfitList[T]) executeCallback(ctx context.Context, callback *mode
 		false,
 	)
 
-	stakes = util.FilterProcientStakes(*stakes, -30, true)
+	stakes = util.FilterProcientStakes(*stakes, true, c.ps)
 
 	markup := util.GenerateNextBackMenu(
 		page,
@@ -127,7 +129,7 @@ func (c *StakeProfitList[T]) exc(ctx context.Context, chatId int64, messageId in
 		return
 	}
 
-	groups := c.getGroups(uint64(chatId), uint64(u.Id.Int64), false, 30)
+	groups := c.getGroups(uint64(chatId), uint64(u.Id.Int64), false)
 	makup := c.generateMarkup(chatId, u, groups)
 
 	if messageId != 0 {
@@ -207,7 +209,7 @@ func (c *StakeProfitList[T]) NextPageGroup(ctx context.Context, callback *models
 		return
 	}
 
-	totalPage := c.totalPageGroupsStakes(uint64(u.Id.Int64), -30)
+	totalPage := c.totalPageGroupsStakes(uint64(u.Id.Int64))
 
 	currentPageGroupProfit = util.NextPageV2(
 		callback,
@@ -247,7 +249,7 @@ func (c *StakeProfitList[T]) CloseList(ctx context.Context, callback *models.Cal
 
 func (c *StakeProfitList[T]) generateMarkup(chatId int64, u *appModels.User, groups *[]appModels.GroupElements) *models.InlineKeyboardMarkup {
 	page := util.GetCurrentPage(chatId, currentPageGroupProfit)
-	totalPage := c.totalPageGroupsStakes(uint64(u.Id.Int64), -30)
+	totalPage := c.totalPageGroupsStakes(uint64(u.Id.Int64))
 
 	markup := util.GenerateNextBackMenu(
 		page,
@@ -260,18 +262,18 @@ func (c *StakeProfitList[T]) generateMarkup(chatId int64, u *appModels.User, gro
 	return markup
 }
 
-func (c *StakeProfitList[T]) getGroups(chatId, userId uint64, b bool, procient float64) *[]appModels.GroupElements {
+func (c *StakeProfitList[T]) getGroups(chatId, userId uint64, b bool) *[]appModels.GroupElements {
 	page := util.GetCurrentPage(int64(chatId), currentPageGroupProfit)
 	offset := page * numberElementPage
 	limit := numberElementPage
 
-	return c.ss.GroupFromPoolByUserIdLimitIsProfitPaid(userId, limit, offset, b, false, procient)
+	return c.ss.GroupFromPoolByUserIdLimitIsProfitPaid(userId, limit, offset, b, false)
 }
 
-func (c *StakeProfitList[T]) totalPageGroupsStakes(userId uint64, procient float64) int {
-	return int(math.Ceil(float64(c.ss.CountGroupsStakesUserIdProfitPaid(userId, false, false, procient)) / float64(numberElementPage)))
+func (c *StakeProfitList[T]) totalPageGroupsStakes(userId uint64) int {
+	return int(math.Ceil(float64(c.ss.CountGroupsStakesUserIdProfitPaid(userId, false, false)) / float64(numberElementPage)))
 }
 
 func (c *StakeProfitList[T]) totalPageStakesFromGroup(userId uint64, jettonName string) int {
-	return int(math.Ceil(float64(c.ss.CountGroupsStakesByUserIdAndJettonNameIsProfitPaid(userId, jettonName, false, false, -30)) / float64(numberElementPage)))
+	return int(math.Ceil(float64(c.ss.CountGroupsStakesByUserIdAndJettonNameIsProfitPaid(userId, jettonName, false, false)) / float64(numberElementPage)))
 }

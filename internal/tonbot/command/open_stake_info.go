@@ -138,7 +138,7 @@ func (c *OpenStakeInfo) generateInfo(stake *appModels.Stake, jettonName string, 
 	if leftdays < 0 {
 		leftdays = 0
 	}
-	procientPriceEdit := util.CalculateProcientEditPrice(currentPrice, stake.DepositCreationPrice)
+	procientPriceEdit := int(util.CalculateProcientEditPrice(currentPrice, stake.DepositCreationPrice))
 	timeFormat := "02 January 2006 15:04:05"
 	formatText := fmt.Sprintf(
 		text,
@@ -165,7 +165,7 @@ func (c *OpenStakeInfo) generateInfo(stake *appModels.Stake, jettonName string, 
 		formatText += fmt.Sprintf(
 			"\n\n<b>Цена на момент закрытия стейка</b>: %f$ (%v%%)",
 			stake.JettonPriceClosed,
-			util.CalculateProcientEditPrice(stake.JettonPriceClosed, stake.DepositCreationPrice),
+			int(util.CalculateProcientEditPrice(stake.JettonPriceClosed, stake.DepositCreationPrice)),
 		)
 	}
 

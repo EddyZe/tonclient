@@ -522,7 +522,7 @@ func (r *StakeRepository) GroupFromPoolNameByUserIdLimit(userId uint64, offset, 
 	return &res
 }
 
-func (r *StakeRepository) GroupFromPoolNameByUserIdLimitIsInsurancePaid(userId uint64, offset, limit int, b bool, isActive bool, procient float64) *[]models.GroupElements {
+func (r *StakeRepository) GroupFromPoolNameByUserIdLimitIsInsurancePaid(userId uint64, offset, limit int, b bool, isActive bool) *[]models.GroupElements {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -539,7 +539,7 @@ where s.user_id = $1
   and s.is_insurance_paid=$2
   and s.is_active=$5 
   and (((s.jetton_price_closed - s.deposit_creation_price)
-            / nullif(s.deposit_creation_price, 0)) * 100) < $6
+            / nullif(s.deposit_creation_price, 0)) * 100) < p.insurance_coating
 group by p.jetton_name
 order by max(s.start_date) desc
 limit $3 
@@ -549,14 +549,13 @@ offset $4`,
 		limit,
 		offset,
 		isActive,
-		procient,
 	); err != nil {
 		log.Error("Failed froup stakes: ", err)
 	}
 	return &res
 }
 
-func (r *StakeRepository) GroupFromPoolNameByUserIdLimitIsProfitPaid(userId uint64, offset, limit int, b bool, isActive bool, procient float64) *[]models.GroupElements {
+func (r *StakeRepository) GroupFromPoolNameByUserIdLimitIsProfitPaid(userId uint64, offset, limit int, b bool, isActive bool) *[]models.GroupElements {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -573,7 +572,7 @@ where s.user_id = $1
   and s.is_reward_paid=$2
   and s.is_active=$5
   and (((s.jetton_price_closed - s.deposit_creation_price)
-            / nullif(s.deposit_creation_price, 0)) * 100) > $6
+            / nullif(s.deposit_creation_price, 0)) * 100) > p.insurance_coating
 group by p.jetton_name
 order by max(s.start_date) desc
 limit $3
@@ -583,7 +582,6 @@ offset $4`,
 		limit,
 		offset,
 		isActive,
-		procient,
 	); err != nil {
 		log.Error("Failed froup stakes: ", err)
 	}
@@ -704,7 +702,7 @@ func (r *StakeRepository) CountGroupsStakesUserId(userId uint64) int {
 	return res
 }
 
-func (r *StakeRepository) CountGroupsStakesUserIdIsInsurancePaid(userId uint64, b bool, isActive bool, procient float64) int {
+func (r *StakeRepository) CountGroupsStakesUserIdIsInsurancePaid(userId uint64, b bool, isActive bool) int {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -719,12 +717,11 @@ where s.user_id=$1
   and s.is_active=$3
   and(
     (s.jetton_price_closed - s.deposit_creation_price) / 
-    NULLIF(s.deposit_creation_price, 0) * 100 < $4
+    NULLIF(s.deposit_creation_price, 0) * 100 < p.insurance_coating
   )`,
 		userId,
 		b,
 		isActive,
-		procient,
 	).Scan(&res); err != nil {
 		log.Error("Failed to get stake: ", err)
 	}
@@ -732,7 +729,7 @@ where s.user_id=$1
 	return res
 }
 
-func (r *StakeRepository) CountGroupsStakesUserIdIsProfitPaid(userId uint64, b bool, isActive bool, procient float64) int {
+func (r *StakeRepository) CountGroupsStakesUserIdIsProfitPaid(userId uint64, b bool, isActive bool) int {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -747,12 +744,11 @@ where s.user_id=$1
   and s.is_active=$3 
   and(
     (s.jetton_price_closed - s.deposit_creation_price) / 
-    NULLIF(s.deposit_creation_price, 0) * 100 > $4
+    NULLIF(s.deposit_creation_price, 0) * 100 > p.insurance_coating
   )`,
 		userId,
 		b,
 		isActive,
-		procient,
 	).Scan(&res); err != nil {
 		log.Error("Failed to get stake: ", err)
 	}
@@ -778,7 +774,7 @@ func (r *StakeRepository) CountGroupsStakesByUserIdAndJettonName(userId uint64, 
 	return res
 }
 
-func (r *StakeRepository) CountGroupsStakesByUserIdAndJettonNameIsInsurancePaid(userId uint64, jettonName string, b bool, isActive bool, procient float64) int {
+func (r *StakeRepository) CountGroupsStakesByUserIdAndJettonNameIsInsurancePaid(userId uint64, jettonName string, b bool, isActive bool) int {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -796,13 +792,12 @@ where s.user_id=$1
   and s.is_active=$4
   and (
       ((s.jetton_price_closed - s.deposit_creation_price) /
-       NULLIF(s.deposit_creation_price, 0)) * 100 < $5
+       NULLIF(s.deposit_creation_price, 0)) * 100 < p.insurance_coating
       )`,
 		userId,
 		jettonName,
 		b,
 		isActive,
-		procient,
 	).Scan(&res); err != nil {
 		log.Error("Failed to get stake: ", err)
 	}
@@ -810,7 +805,7 @@ where s.user_id=$1
 	return res
 }
 
-func (r *StakeRepository) CountGroupsStakesByUserIdAndJettonNameIsProfitPaid(userId uint64, jettonName string, b bool, isActive bool, procient float64) int {
+func (r *StakeRepository) CountGroupsStakesByUserIdAndJettonNameIsProfitPaid(userId uint64, jettonName string, b bool, isActive bool) int {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -827,12 +822,11 @@ where s.user_id=$1
   and s.is_reward_paid=$3
   and s.is_active=$4 
   and (((s.jetton_price_closed - s.deposit_creation_price)
-            / nullif(s.deposit_creation_price, 0)) * 100) > $5`,
+            / nullif(s.deposit_creation_price, 0)) * 100) > p.insurance_coating`,
 		userId,
 		jettonName,
 		b,
 		isActive,
-		procient,
 	).Scan(&res); err != nil {
 		log.Error("Failed to get stake: ", err)
 	}

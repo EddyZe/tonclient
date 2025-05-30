@@ -288,20 +288,28 @@ func GenerateStakeListByGroup(stakes []appModel.Stake, jettonName, idButton stri
 	return res
 }
 
-func FilterProcientStakes(stakes []appModel.Stake, procient int, isMore bool) *[]appModel.Stake {
+func FilterProcientStakes(stakes []appModel.Stake, isMore bool, ps *services.PoolService) *[]appModel.Stake {
 	res := make([]appModel.Stake, 0)
 
 	if isMore {
 		for _, s := range stakes {
+			p, err := ps.GetId(s.PoolId)
+			if err != nil {
+				continue
+			}
 			t := CalculateProcientEditPrice(s.JettonPriceClosed, s.DepositCreationPrice)
-			if t > procient {
+			if t > float64(p.InsuranceCoating) {
 				res = append(res, s)
 			}
 		}
 	} else {
 		for _, s := range stakes {
+			p, err := ps.GetId(s.PoolId)
+			if err != nil {
+				continue
+			}
 			t := CalculateProcientEditPrice(s.JettonPriceClosed, s.DepositCreationPrice)
-			if t < procient {
+			if t < float64(p.InsuranceCoating) {
 				res = append(res, s)
 			}
 		}

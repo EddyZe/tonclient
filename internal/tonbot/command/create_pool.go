@@ -289,7 +289,7 @@ func (c *CreatePool[T]) enterInsuranceCoating(msg *models.Message) {
 		return
 	}
 
-	resp := fmt.Sprintf("✅ Отлично! Вы указали %v%% за страховое покрытие.\nУкажите кол-во токенов, которое будет заморожены для резерва:", num)
+	resp := fmt.Sprintf("✅ Отлично! Вы указали %v%% за страховое покрытие.\n\nУкажите кол-во токенов, которое будет заморожены для резерва:", num)
 	if _, err := util.SendTextMessage(
 		c.b,
 		uint64(chatId),
@@ -315,11 +315,11 @@ func (c *CreatePool[T]) enterProfit(msg *models.Message) {
 		return
 	}
 
-	if num < 1 {
+	if num < 1 || num > 3 {
 		if _, err := util.SendTextMessage(
 			c.b,
 			uint64(chatId),
-			"❌ Доходность не может быть меньше чем 1!",
+			"❌ Доходность не может быть меньше чем 1 и больше чем 3!",
 		); err != nil {
 			log.Error(err)
 		}
@@ -381,7 +381,7 @@ func (c *CreatePool[T]) installPeriodPool(chatId, period int64) {
 	pool.Period = uint(period)
 	currentCreatingPool[chatId] = pool
 	text := fmt.Sprintf(
-		"✅ Отлично. Вы выбрали <b>%v %v</b>. Укажите <b>доходность для участников</b> (%% в день). Например: 1.\n",
+		"✅ Отлично. Вы выбрали <b>%v %v</b>.\n\n Укажите <b>доходность для участников</b> (%% в день). Например: 1.\n",
 		period,
 		util.SuffixDay(int(period)),
 	)
@@ -508,7 +508,7 @@ func (c *CreatePool[T]) getHoldPeriod(data string, chatId uint64) int {
 	case buttons.SixtyDaysId:
 		return 60
 	case buttons.EnterCustomPeriodId:
-		if _, err := util.SendTextMessage(c.b, chatId, "Введите свое срок холда в днях: "); err != nil {
+		if _, err := util.SendTextMessage(c.b, chatId, "Введите свой срок холда в днях: "); err != nil {
 			log.Error(err)
 			return 0
 		}
