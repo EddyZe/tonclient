@@ -193,6 +193,14 @@ func (c *TakeInsuranceFromStake) Execute(ctx context.Context, callback *models.C
 		return
 	}
 
+	if _, err := util.SendTextMessage(
+		c.b,
+		uint64(chatId),
+		fmt.Sprintf("✅ Вам отправлено %v %v\nHash операции: %v", amount, jettonData.Name, hash),
+	); err != nil {
+		log.Error(err)
+	}
+
 }
 
 func (c *TakeInsuranceFromStake) calculateInsurance(pool *appModels.Pool, stake *appModels.Stake) float64 {

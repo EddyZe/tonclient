@@ -134,6 +134,10 @@ func (c *OpenStakeInfo) generateInfo(stake *appModels.Stake, jettonName string, 
 	`
 	profit := stake.Balance - stake.Amount
 	leftDay := stake.StartDate.Add(time.Duration(pool.Period) * 24 * time.Hour).Sub(time.Now())
+	leftdays := int(leftDay.Hours() / 24)
+	if leftdays < 0 {
+		leftdays = 0
+	}
 	procientPriceEdit := util.CalculateProcientEditPrice(currentPrice, stake.DepositCreationPrice)
 	timeFormat := "02 January 2006 15:04:05"
 	formatText := fmt.Sprintf(
@@ -149,7 +153,7 @@ func (c *OpenStakeInfo) generateInfo(stake *appModels.Stake, jettonName string, 
 		procientPriceEdit,
 		stake.StartDate.Format(timeFormat),
 		stake.StartDate.Add(time.Duration(pool.Period)*24*time.Hour).Format(timeFormat),
-		int(leftDay.Hours()/24),
+		leftdays,
 		util.SuffixDay(int(leftDay.Hours()/24)),
 		profit,
 		jettonName,

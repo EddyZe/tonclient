@@ -145,8 +145,9 @@ func (c *PaidCommission) Execute(ctx context.Context, callback *models.CallbackQ
 		urlWallet = "https://tonhub.com/"
 	}
 
-	btn := util.CreateUrlInlineButton("Открыть кошелек", urlWallet)
-	markup := util.CreateInlineMarup(1, btn)
+	btn := util.CreateUrlInlineButton(buttons.OpenBrowser, urlWallet)
+	btn2 := util.CreateWebAppButton(buttons.OpenWallet, urlWallet)
+	markup := util.CreateInlineMarup(1, btn, btn2)
 	if _, err := util.SendTextMessageMarkup(
 		c.b,
 		uint64(chatId),

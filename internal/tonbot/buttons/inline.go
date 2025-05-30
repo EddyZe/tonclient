@@ -105,4 +105,8 @@ const (
 	InsuranceBackPageJettonName = "INSURANCE_BACK_PAGE_JETTON_NAME"
 
 	BackStakesFromGroup = "Вернуться к списку стейков ⏮️"
+
+	//tonconnect
+	OpenBrowser = "Открыть в браузере"
+	OpenWallet  = "Открыть кошелек"
 )

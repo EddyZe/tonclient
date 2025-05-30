@@ -10,6 +10,7 @@ import (
 	"time"
 	appModels "tonclient/internal/models"
 	"tonclient/internal/services"
+	"tonclient/internal/tonbot/buttons"
 	"tonclient/internal/tonbot/userstate"
 	"tonclient/internal/util"
 
@@ -144,8 +145,9 @@ func (c *AddReserve[T]) executeMessage(ctx context.Context, msg *models.Message)
 		urlWallet = "https://tonhub.com/"
 	}
 
-	btn := util.CreateUrlInlineButton("Открыть кошелек", urlWallet)
-	markup := util.CreateInlineMarup(1, btn)
+	btn := util.CreateUrlInlineButton(buttons.OpenBrowser, urlWallet)
+	btn2 := util.CreateWebAppButton(buttons.OpenWallet, urlWallet)
+	markup := util.CreateInlineMarup(1, btn, btn2)
 	if _, err := util.SendTextMessageMarkup(
 		c.b,
 		uint64(chatId),

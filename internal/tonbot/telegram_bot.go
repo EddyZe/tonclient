@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -59,8 +60,7 @@ func NewTgBot(token string, us *services.UserService, ts *services.TelegramServi
 }
 
 func (t *TgBot) StartBot(ch chan appModels.SubmitTransaction) error {
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer cancel()
+	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
 
 	opts := []bot.Option{
 		bot.WithDefaultHandler(t.handler),
@@ -72,7 +72,7 @@ func (t *TgBot) StartBot(ch chan appModels.SubmitTransaction) error {
 		return err
 	}
 
-	go t.checkingOperation(ctx, tgbot, ch)
+	go t.checkingOperation(tgbot, ch)
 	go t.createCron(ctx, tgbot)
 
 	tgbot.Start(ctx)
@@ -108,7 +108,6 @@ func (t *TgBot) checkMessageBonusStakes(ctx context.Context, b *bot.Bot, ch chan
 	for {
 		select {
 		case <-ctx.Done():
-			return
 		case notification, ok := <-ch:
 			if !ok {
 				continue
@@ -565,17 +564,24 @@ func (t *TgBot) handleState(ctx context.Context, state int, b *bot.Bot, msg *mod
 	}
 }
 
-func (t *TgBot) checkingOperation(ctx context.Context, b *bot.Bot, ch chan appModels.SubmitTransaction) {
+func (t *TgBot) checkingOperation(b *bot.Bot, ch chan appModels.SubmitTransaction) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Errorf("PANIC in checkingOperation: %v\n%s", r, debug.Stack())
+			go t.checkingOperation(b, ch)
+		} else {
+			log.Infoln("Channel operation handler exited normally")
+		}
+	}()
 	for {
 		select {
-		case <-ctx.Done():
-			return
 		case v, ok := <-ch:
 			if !ok {
 				log.Infoln("Channel operation is closed")
-				return
+				continue
 			}
-			t.processOperation(b, v)
+			log.Infoln(v)
+			go t.processOperation(b, v)
 		}
 	}
 }
@@ -660,28 +666,29 @@ func (t *TgBot) commissionStakePaid(payload *appModels.Payload, b *bot.Bot) {
 		urlWallet = "https://tonhub.com/"
 	}
 
-	btn := util.CreateUrlInlineButton("Открыть кошелек", urlWallet)
-	markup := util.CreateInlineMarup(1, btn)
+	btn := util.CreateUrlInlineButton(buttons.OpenBrowser, urlWallet)
+	btn2 := util.CreateWebAppButton(buttons.OpenWallet, urlWallet)
+	markup := util.CreateInlineMarup(1, btn, btn2)
 	if _, err := util.SendTextMessageMarkup(
 		b,
 		tg.TelegramId,
-		fmt.Sprintf("✅ Комиссия принята. Подтвердите свой стейк в кошельке. %f %v", stake.Amount, pool.JettonName),
+		fmt.Sprintf("✅ Комиссия принята. Подтвердите свой стейк в кошельке. %v %v", stake.Amount, pool.JettonName),
 		markup,
 	); err != nil {
 		log.Error(err)
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	cxt, cancel := context.WithTimeout(context.Background(), time.Minute*5)
 	defer cancel()
 
-	jettonAddr, err := t.aws.TokenWalletAddress(ctx, pool.JettonMaster, address.MustParseAddr(w.Addr))
+	jettonAddr, err := t.aws.TokenWalletAddress(cxt, pool.JettonMaster, address.MustParseAddr(w.Addr))
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	s, err := t.tcs.LoadSession(ctx, fmt.Sprint(tg.TelegramId))
+	s, err := t.tcs.LoadSession(cxt, fmt.Sprint(tg.TelegramId))
 	if err != nil {
 		if _, err := util.SendTextMessage(
 			b,
@@ -694,7 +701,7 @@ func (t *TgBot) commissionStakePaid(payload *appModels.Payload, b *bot.Bot) {
 	}
 
 	if _, err := t.tcs.SendJettonTransaction(
-		ctx,
+		cxt,
 		jettonAddr.Address().String(),
 		t.aws.GetAdminWalletAddr().String(),
 		w.Addr,
@@ -703,14 +710,6 @@ func (t *TgBot) commissionStakePaid(payload *appModels.Payload, b *bot.Bot) {
 		s,
 	); err != nil {
 		log.Error(err)
-		if _, err := util.SendTextMessage(
-			b,
-			tg.TelegramId,
-			"❌ Что-то пошло не так!",
-		); err != nil {
-			log.Error(err)
-			return
-		}
 		return
 	}
 	if _, err := t.opS.Create(
@@ -729,8 +728,10 @@ func (t *TgBot) stake(payload *appModels.Payload, b *bot.Bot) {
 		log.Error("Failed to unmarshal stake data:", err)
 		return
 	}
+	log.Infoln("начало создания стейка")
 	stake.IsCommissionPaid = true
 
+	log.Infoln("Поиск пула")
 	pool, err := t.ps.GetId(stake.PoolId)
 	if err != nil {
 		log.Error("Failed to get pool id:", err)
@@ -740,6 +741,7 @@ func (t *TgBot) stake(payload *appModels.Payload, b *bot.Bot) {
 		return
 	}
 
+	log.Infoln("Сохранение стейка")
 	_, err = t.ss.CreateStake(&stake)
 	if err != nil {
 		log.Error("Failed to create stake:", err)
@@ -748,18 +750,22 @@ func (t *TgBot) stake(payload *appModels.Payload, b *bot.Bot) {
 		}
 		return
 	}
+
+	log.Infoln("Получение инфы о стейке")
 	jettodData, err := t.aws.DataJetton(pool.JettonMaster)
 	if err != nil {
 		log.Error("Failed to get jettod data:", err)
 		return
 	}
 
+	log.Infoln("Поиск создателя стейка")
 	u, err := t.us.GetById(stake.UserId)
 	if err != nil {
 		log.Error("Failed to get user:", err)
 		return
 	}
 
+	log.Infoln("поиск телеграмов")
 	tg, err := t.ts.GetByUserId(pool.OwnerId)
 	if err != nil {
 		log.Error("Failed to get user wall:", err)
@@ -769,18 +775,24 @@ func (t *TgBot) stake(payload *appModels.Payload, b *bot.Bot) {
 		log.Error("Failed to get user wall:", err)
 	}
 
+	log.Infoln("проверка кол-во стейкаов")
 	stakesCountUser := t.ss.CountUser(stake.UserId)
 	if stakesCountUser == 0 && u.RefererId.Valid {
+		log.Infoln("отправка бонуса")
 		t.sendBonus(b, pool, &stake, tgStaker, tg)
 	}
+	log.Infoln("стейков", stakesCountUser)
 
 	description := fmt.Sprintf("Стейк в jetton: %v. Кол-во: %v", jettodData.Name, stake.Amount)
 
+	log.Infoln("Создание операции")
 	_, err = t.opS.Create(stake.UserId, appModels.OP_STAKE, description)
 	if err != nil {
 		log.Error("Failed to create stake:", err)
 		return
 	}
+
+	log.Infoln("Отправка сообщений в ТГ")
 
 	if tg != nil {
 		if _, err := util.SendTextMessage(b, tg.TelegramId, "✅ Новый стейк"); err != nil {
@@ -794,6 +806,8 @@ func (t *TgBot) stake(payload *appModels.Payload, b *bot.Bot) {
 			return
 		}
 	}
+
+	log.Infoln("Создание стейка завершено")
 }
 
 func (t *TgBot) sendBonus(b *bot.Bot, pool *appModels.Pool, stake *appModels.Stake, tgStaker, tgOwnerPool *appModels.Telegram) {

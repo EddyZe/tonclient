@@ -225,12 +225,13 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 		urlWallet = "https://tonhub.com/"
 	}
 
-	btn := util.CreateUrlInlineButton("Открыть кошелек", urlWallet)
-	markup := util.CreateInlineMarup(1, btn)
+	btn := util.CreateUrlInlineButton(buttons.OpenBrowser, urlWallet)
+	btn2 := util.CreateWebAppButton(buttons.OpenWallet, urlWallet)
+	markup := util.CreateInlineMarup(1, btn, btn2)
 	if _, err := util.SendTextMessageMarkup(
 		c.b,
 		uint64(chatId),
-		fmt.Sprintf("✅ Оплатите комиссию. %f %v", commission, os.Getenv("JETTON_NAME_COIN")),
+		fmt.Sprintf("✅ Оплатите комиссию. %v %v", commission, os.Getenv("JETTON_NAME_COIN")),
 		markup,
 	); err != nil {
 		log.Error(err)
@@ -247,14 +248,6 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 		s,
 	); err != nil {
 		log.Error(err)
-		if _, err := util.SendTextMessage(
-			c.b,
-			uint64(chatId),
-			"❌ Что-то пошло не так!",
-		); err != nil {
-			log.Error(err)
-			return
-		}
 		return
 	}
 

@@ -136,7 +136,7 @@ func (s *AdminWalletService) StartSubscribeTransaction(ch chan models.SubmitTran
 					continue
 				}
 
-				s.processOperation(op, amount, transfer.Sender.String(), payloadDataBase64, ch)
+				go s.processOperation(op, amount, transfer.Sender.String(), payloadDataBase64, ch)
 			}
 
 			if ti.Amount.Nano().Sign() > 0 {
@@ -152,10 +152,6 @@ func (s *AdminWalletService) processOperation(op uint64, amount float64, senderA
 		log.Infoln("Failed to decode payload data:", err)
 		return
 	}
-
-	log.Infoln(op)
-	log.Infoln(string(data))
-
 	tr := models.SubmitTransaction{
 		OperationType: op,
 		Amount:        amount,
@@ -163,7 +159,9 @@ func (s *AdminWalletService) processOperation(op uint64, amount float64, senderA
 		SenderAddr:    senderAddr,
 	}
 
+	log.Infoln("запись в канал")
 	ch <- tr
+	log.Infoln("запись добавлена")
 }
 
 func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment string, amount float64, decimal int) ([]byte, error) {

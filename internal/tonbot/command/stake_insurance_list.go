@@ -145,7 +145,7 @@ func (c *StakeInsuranceList[T]) exc(ctx context.Context, chatId int64, messageId
 	if _, err := util.SendTextMessageMarkup(
 		c.b,
 		uint64(chatId),
-		"Список стейков в которых вы можете получить награду:",
+		"Список стейков в которых вы можете получить компенсацию:",
 		makup); err != nil {
 		log.Error(err)
 	}

@@ -164,9 +164,6 @@ func (c *CreatePool[T]) sendTransactionCreatingPool(pool *appModels.Pool, chatId
 	)
 	if err != nil {
 		log.Error(err)
-		if _, err := util.SendTextMessageMarkup(c.b, uint64(chatId), "❌ Перевод резерва не был подтвержден", markup); err != nil {
-			log.Error(err)
-		}
 		return err
 	}
 
@@ -239,8 +236,9 @@ func (c *CreatePool[T]) enterAmountToken(msg *models.Message, w *appModels.Walle
 		urlWallet = "https://tonhub.com/"
 	}
 
-	btn := util.CreateUrlInlineButton("Открыть кошелек", urlWallet)
-	markup := util.CreateInlineMarup(1, btn)
+	btn2 := util.CreateUrlInlineButton(buttons.OpenBrowser, urlWallet)
+	btn := util.CreateWebAppButton(buttons.OpenWallet, urlWallet)
+	markup := util.CreateInlineMarup(1, btn2, btn)
 	if _, err := util.SendTextMessageMarkup(
 		c.b,
 		uint64(chatId),

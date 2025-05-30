@@ -36,7 +36,7 @@ func TestSendJetton(t *testing.T) {
 		"EQAJKTfw3qP0OFUba-1l7rtA7_TzXd9Cbm4DjNCaioCdofF_",
 		"UQAdpNJR-hZ72cPb70eFuQU3VDx8EcLsOEgm7K0Puh9cHA1d",
 		"test",
-		5,
+		50,
 		9,
 	)
 	if err != nil {

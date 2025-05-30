@@ -106,6 +106,15 @@ func CreateUrlInlineButton(text, url string) models.InlineKeyboardButton {
 	}
 }
 
+func CreateWebAppButton(text, url string) models.InlineKeyboardButton {
+	return models.InlineKeyboardButton{
+		Text: text,
+		WebApp: &models.WebAppInfo{
+			URL: url,
+		},
+	}
+}
+
 func MenuWithBackButton(buttonBackId, buttonBackText string, buttons ...models.InlineKeyboardButton) *models.InlineKeyboardMarkup {
 	mainMarkup := CreateInlineMarup(1, buttons...)
 	elements := mainMarkup.InlineKeyboard
