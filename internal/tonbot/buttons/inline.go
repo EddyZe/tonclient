@@ -86,14 +86,23 @@ const (
 	OpenGroupId                       = "OPEN_GROUP_ID"
 	OpenStakeInfo                     = "OPEN_STAKE_INFO"
 
-	ProfitOpenGroupId   = "PROFIT_OPEN_GROUP_ID"
-	ProfitOpenStakeInfo = "PROFIT_OPEN_STAKE_INFO"
-	ProfitNextPageGroup = "PROFIT_NEXT_PAGE_GROUP"
-	ProfitBackPageGroup = "PROFIT_BACK_PAGE_GROUP"
-	ProfitBackListGroup
+	ProfitOpenGroupId        = "PROFIT_OPEN_GROUP_ID"
+	ProfitOpenStakeInfo      = "PROFIT_OPEN_STAKE_INFO"
+	ProfitNextPageGroup      = "PROFIT_NEXT_PAGE_GROUP"
+	ProfitBackPageGroup      = "PROFIT_BACK_PAGE_GROUP"
+	ProfitBackListGroup      = "PROFIT_BACK_LIST_GROUP"
 	ProfitCloseGroup         = "PROFIT_CLOSE_GROUP"
 	ProfitNextPageJettonName = "PROFIT_NEXT_PAGE_JETTON_NAME"
 	ProfitBackPageJettonName = "PROFIT_BACK_PAGE_JETTON_NAME"
+
+	InsuranceOpenGroupId        = "INSURANCE_OPEN_GROUP_ID"
+	InsuranceOpenStakeInfo      = "INSURANCE_OPEN_STAKE_INFO"
+	InsuranceNextPageGroup      = "INSURANCE_NEXT_PAGE_GROUP"
+	InsuranceBackPageGroup      = "INSURANCE_BACK_PAGE_GROUP"
+	InsuranceCloseGroup         = "INSURANCE_CLOSE_GROUP"
+	InsuranceBackListGroup      = "INSURANCE_BACK_LIST_GROUP"
+	InsuranceNextPageJettonName = "INSURANCE_NEXT_PAGE_JETTON_NAME"
+	InsuranceBackPageJettonName = "INSURANCE_BACK_PAGE_JETTON_NAME"
 
 	BackStakesFromGroup = "Вернуться к списку стейков ⏮️"
 )

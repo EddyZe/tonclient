@@ -96,6 +96,7 @@ func (c *OpenStakeInfo) Execute(ctx context.Context, callback *models.CallbackQu
 		info,
 		markup,
 	); err != nil {
+		log.Error(markup)
 		log.Error(err)
 		return
 	}

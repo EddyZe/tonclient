@@ -279,9 +279,9 @@ func GenerateGroupButtons(groups *[]appModel.GroupElements, idButton string) []m
 func GenerateStakeListByGroup(stakes []appModel.Stake, jettonName, idButton string) []models.InlineKeyboardButton {
 	res := make([]models.InlineKeyboardButton, 0, 5)
 	for _, s := range stakes {
-		idButton := fmt.Sprintf("%v:%v:%v", idButton, jettonName, s.Id.Int64)
+		idbtn := fmt.Sprintf("%v:%v:%v", idButton, jettonName, s.Id.Int64)
 		text := fmt.Sprintf("Стейк от %v", s.StartDate.Format("02.01.2006 15:04"))
-		btn := CreateDefaultButton(idButton, text)
+		btn := CreateDefaultButton(idbtn, text)
 		res = append(res, btn)
 	}
 

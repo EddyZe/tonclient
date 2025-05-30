@@ -100,12 +100,12 @@ func (s *StakeService) GroupFromPoolByUserIdLimit(userId uint64, limit, offset i
 	return s.stakeRepo.GroupFromPoolNameByUserIdLimit(userId, offset, limit)
 }
 
-func (s *StakeService) GroupFromPoolByUserIdLimitIsInsurancePaid(userId uint64, limit, offset int, b bool, isActive bool) *[]models.GroupElements {
-	return s.stakeRepo.GroupFromPoolNameByUserIdLimitIsInsurancePaid(userId, offset, limit, b, isActive)
+func (s *StakeService) GroupFromPoolByUserIdLimitIsInsurancePaid(userId uint64, limit, offset int, b bool, isActive bool, procient float64) *[]models.GroupElements {
+	return s.stakeRepo.GroupFromPoolNameByUserIdLimitIsInsurancePaid(userId, offset, limit, b, isActive, procient)
 }
 
-func (s *StakeService) GroupFromPoolByUserIdLimitIsProfitPaid(userId uint64, limit, offset int, b bool, isAcive bool) *[]models.GroupElements {
-	return s.stakeRepo.GroupFromPoolNameByUserIdLimitIsProfitPaid(userId, offset, limit, b, isAcive)
+func (s *StakeService) GroupFromPoolByUserIdLimitIsProfitPaid(userId uint64, limit, offset int, b bool, isAcive bool, procient float64) *[]models.GroupElements {
+	return s.stakeRepo.GroupFromPoolNameByUserIdLimitIsProfitPaid(userId, offset, limit, b, isAcive, procient)
 }
 
 func (s *StakeService) GetByJettonNameAndUserId(userId uint64, jettonName string) *[]models.Stake {
@@ -128,24 +128,24 @@ func (s *StakeService) CountGroupsStakesUserId(userId uint64) int {
 	return s.stakeRepo.CountGroupsStakesUserId(userId)
 }
 
-func (s *StakeService) CountGroupsStakesUserIdIsInsurancePaid(userId uint64, b bool, isActive bool) int {
-	return s.stakeRepo.CountGroupsStakesUserIdIsInsurancePaid(userId, b, isActive)
+func (s *StakeService) CountGroupsStakesUserIdIsInsurancePaid(userId uint64, b bool, isActive bool, procient float64) int {
+	return s.stakeRepo.CountGroupsStakesUserIdIsInsurancePaid(userId, b, isActive, procient)
 }
 
-func (s *StakeService) CountGroupsStakesUserIdProfitPaid(userId uint64, b, isActive bool) int {
-	return s.stakeRepo.CountGroupsStakesUserIdIsProfitPaid(userId, b, isActive)
+func (s *StakeService) CountGroupsStakesUserIdProfitPaid(userId uint64, b, isActive bool, procient float64) int {
+	return s.stakeRepo.CountGroupsStakesUserIdIsProfitPaid(userId, b, isActive, procient)
 }
 
 func (s *StakeService) CountGroupsStakesByUserIdAndJettonName(userId uint64, jettonName string) int {
 	return s.stakeRepo.CountGroupsStakesByUserIdAndJettonName(userId, jettonName)
 }
 
-func (s *StakeService) CountGroupsStakesByUserIdAndJettonNameIsInsurancePaid(userId uint64, jettonName string, b, isActive bool) int {
-	return s.stakeRepo.CountGroupsStakesByUserIdAndJettonNameIsInsurancePaid(userId, jettonName, b, isActive)
+func (s *StakeService) CountGroupsStakesByUserIdAndJettonNameIsInsurancePaid(userId uint64, jettonName string, b, isActive bool, procient float64) int {
+	return s.stakeRepo.CountGroupsStakesByUserIdAndJettonNameIsInsurancePaid(userId, jettonName, b, isActive, procient)
 }
 
-func (s *StakeService) CountGroupsStakesByUserIdAndJettonNameIsProfitPaid(userId uint64, jettonName string, b, isActive bool) int {
-	return s.stakeRepo.CountGroupsStakesByUserIdAndJettonNameIsProfitPaid(userId, jettonName, b, isActive)
+func (s *StakeService) CountGroupsStakesByUserIdAndJettonNameIsProfitPaid(userId uint64, jettonName string, b, isActive bool, procient float64) int {
+	return s.stakeRepo.CountGroupsStakesByUserIdAndJettonNameIsProfitPaid(userId, jettonName, b, isActive, procient)
 }
 
 func (s *StakeService) GetById(poolId uint64) (*models.Stake, error) {

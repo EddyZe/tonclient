@@ -221,6 +221,13 @@ func (t *TgBot) handleMessage(ctx context.Context, b *bot.Bot, msg *models.Messa
 			return
 		}
 
+		if text == buttons.CheckInsurance {
+			userstate.ResetState(chatId)
+			cmd := command.NewStakeInsuranceList[*models.Message](b, t.us, t.ss)
+			cmd.Execute(ctx, msg)
+			return
+		}
+
 		if state, ok := userstate.CurrentState[msg.Chat.ID]; ok {
 			if state != -1 {
 				t.handleState(ctx, state, b, msg)
@@ -283,7 +290,7 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 		userstate.ResetState(msg.Chat.ID)
 	}
 
-	if data == buttons.BackListGroupId {
+	if strings.HasPrefix(data, buttons.BackListGroupId) {
 		cmd := command.NewStakesUserList[*models.CallbackQuery](b, t.us, t.ss)
 		cmd.BackStakesGroup(callback)
 		return
@@ -301,7 +308,7 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 		return
 	}
 
-	if data == buttons.BackListStakesGroupId {
+	if strings.HasPrefix(data, buttons.BackListStakesGroupId) {
 		cmd := command.NewStakesUserList[*models.CallbackQuery](b, t.us, t.ss)
 		cmd.BackGroupPage(callback)
 		return
@@ -320,7 +327,7 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 	}
 
 	if strings.HasPrefix(data, buttons.OpenStakeInfo) {
-		cmd := command.NewOpenStakeInfoCommand(b, t.ss, t.ps, buttons.BackStakesFromGroup)
+		cmd := command.NewOpenStakeInfoCommand(b, t.ss, t.ps, buttons.BackListStakesGroupId)
 		cmd.Execute(ctx, callback)
 		return
 	}
@@ -347,6 +354,31 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 
 	if strings.HasPrefix(data, buttons.ProfitBackListGroup) {
 		command.NewStakeProfitList[*models.CallbackQuery](b, t.us, t.ss).Execute(ctx, callback)
+		return
+	}
+
+	if strings.HasPrefix(data, buttons.InsuranceOpenStakeInfo) {
+		command.NewOpenStakeInfoCommand(b, t.ss, t.ps, buttons.InsuranceBackListGroup).Execute(ctx, callback)
+		return
+	}
+
+	if strings.HasPrefix(data, buttons.InsuranceOpenGroupId) {
+		command.NewStakeInsuranceList[*models.CallbackQuery](b, t.us, t.ss).Execute(ctx, callback)
+		return
+	}
+
+	if strings.HasPrefix(data, buttons.InsuranceNextPageJettonName) {
+		command.NewStakeInsuranceList[*models.CallbackQuery](b, t.us, t.ss).NextPageInsuranceStake(ctx, callback)
+		return
+	}
+
+	if strings.HasPrefix(data, buttons.InsuranceBackPageJettonName) {
+		command.NewStakeInsuranceList[*models.CallbackQuery](b, t.us, t.ss).BackPageInsuranceStake(ctx, callback)
+		return
+	}
+
+	if strings.HasPrefix(data, buttons.InsuranceBackListGroup) {
+		command.NewStakeInsuranceList[*models.CallbackQuery](b, t.us, t.ss).Execute(ctx, callback)
 		return
 	}
 
@@ -490,6 +522,22 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 	}
 	if strings.HasPrefix(data, buttons.ProfitCloseGroup) {
 		cmd := command.NewStakeProfitList[*models.CallbackQuery](b, t.us, t.ss)
+		cmd.CloseList(ctx, callback)
+		return
+	}
+
+	if strings.HasPrefix(data, buttons.InsuranceNextPageGroup) {
+		cmd := command.NewStakeInsuranceList[*models.CallbackQuery](b, t.us, t.ss)
+		cmd.NextPageGroup(ctx, callback)
+		return
+	}
+	if strings.HasPrefix(data, buttons.InsuranceBackPageGroup) {
+		cmd := command.NewStakeInsuranceList[*models.CallbackQuery](b, t.us, t.ss)
+		cmd.BackPageGroup(ctx, callback)
+		return
+	}
+	if strings.HasPrefix(data, buttons.InsuranceCloseGroup) {
+		cmd := command.NewStakeInsuranceList[*models.CallbackQuery](b, t.us, t.ss)
 		cmd.CloseList(ctx, callback)
 		return
 	}

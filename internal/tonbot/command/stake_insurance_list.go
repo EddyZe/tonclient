@@ -13,24 +13,24 @@ import (
 	"github.com/go-telegram/bot/models"
 )
 
-var currentPageGroupProfit = make(map[int64]int)
-var currentPageStakeProfit = make(map[int64]int)
+var currentPageGroupInsurance = make(map[int64]int)
+var currentPageStakeInsurance = make(map[int64]int)
 
-type StakeProfitList[T CommandType] struct {
+type StakeInsuranceList[T CommandType] struct {
 	b  *bot.Bot
 	us *services.UserService
 	ss *services.StakeService
 }
 
-func NewStakeProfitList[T CommandType](b *bot.Bot, us *services.UserService, ss *services.StakeService) *StakeProfitList[T] {
-	return &StakeProfitList[T]{
+func NewStakeInsuranceList[T CommandType](b *bot.Bot, us *services.UserService, ss *services.StakeService) *StakeInsuranceList[T] {
+	return &StakeInsuranceList[T]{
 		b:  b,
 		us: us,
 		ss: ss,
 	}
 }
 
-func (c *StakeProfitList[T]) Execute(ctx context.Context, args T) {
+func (c *StakeInsuranceList[T]) Execute(ctx context.Context, args T) {
 	if v, ok := any(args).(*models.Message); ok {
 		c.executeMessage(ctx, v)
 		return
@@ -42,12 +42,12 @@ func (c *StakeProfitList[T]) Execute(ctx context.Context, args T) {
 	}
 }
 
-func (c *StakeProfitList[T]) executeMessage(ctx context.Context, msg *models.Message) {
+func (c *StakeInsuranceList[T]) executeMessage(ctx context.Context, msg *models.Message) {
 	chatId := msg.Chat.ID
 	c.exc(ctx, chatId, 0)
 }
 
-func (c *StakeProfitList[T]) executeCallback(ctx context.Context, callback *models.CallbackQuery) {
+func (c *StakeInsuranceList[T]) executeCallback(ctx context.Context, callback *models.CallbackQuery) {
 	if err := util.CheckTypeMessage(c.b, callback); err != nil {
 		return
 	}
@@ -56,7 +56,7 @@ func (c *StakeProfitList[T]) executeCallback(ctx context.Context, callback *mode
 	chatId := callback.From.ID
 	messageId := msg.ID
 
-	if callback.Data == buttons.ProfitBackListGroup {
+	if callback.Data == buttons.InsuranceBackListGroup {
 		c.exc(ctx, chatId, messageId)
 		return
 	}
@@ -73,12 +73,12 @@ func (c *StakeProfitList[T]) executeCallback(ctx context.Context, callback *mode
 		return
 	}
 
-	page := util.GetCurrentPage(chatId, currentPageStakeProfit)
-	totalPage := c.totalPageStakesFromGroup(uint64(u.Id.Int64), jettonName)
+	page := util.GetCurrentPage(chatId, currentPageStakeInsurance)
+	totalPage := c.totalPageStakesFromGroup(uint64(u.Id.Int64), jettonName, -30)
 	offset := page * numberElementPage
 	limit := numberElementPage
 
-	stakes := c.ss.GetByJettonNameAndUserIdLimitIsProfitPaid(
+	stakes := c.ss.GetByJettonNameAndUserIdLimitIsInsurancePaid(
 		uint64(u.Id.Int64),
 		jettonName,
 		offset,
@@ -87,19 +87,19 @@ func (c *StakeProfitList[T]) executeCallback(ctx context.Context, callback *mode
 		false,
 	)
 
-	stakes = util.FilterProcientStakes(*stakes, -30, true)
+	stakes = util.FilterProcientStakes(*stakes, -30, false)
 
 	markup := util.GenerateNextBackMenu(
 		page,
 		totalPage,
-		fmt.Sprintf("%v:%v", buttons.ProfitNextPageJettonName, jettonName),
-		fmt.Sprintf("%v:%v", buttons.ProfitBackPageJettonName, jettonName),
-		buttons.CloseListStakesGroupId,
-		util.GenerateStakeListByGroup(*stakes, jettonName, buttons.ProfitOpenStakeInfo)...,
+		fmt.Sprintf("%v:%v", buttons.InsuranceNextPageJettonName, jettonName),
+		fmt.Sprintf("%v:%v", buttons.InsuranceBackPageJettonName, jettonName),
+		buttons.InsuranceCloseGroup,
+		util.GenerateStakeListByGroup(*stakes, jettonName, buttons.InsuranceOpenStakeInfo)...,
 	)
 
 	btns := markup.InlineKeyboard
-	btns[len(btns)-1][0] = util.CreateDefaultButton(buttons.ProfitBackListGroup, buttons.BackListGroup)
+	btns[len(btns)-1][0] = util.CreateDefaultButton(buttons.InsuranceBackListGroup, buttons.BackListGroup)
 	markup.InlineKeyboard = btns
 
 	if err := util.EditTextMessageMarkup(
@@ -114,7 +114,7 @@ func (c *StakeProfitList[T]) executeCallback(ctx context.Context, callback *mode
 	}
 }
 
-func (c *StakeProfitList[T]) exc(ctx context.Context, chatId int64, messageId int) {
+func (c *StakeInsuranceList[T]) exc(ctx context.Context, chatId int64, messageId int) {
 	u, err := c.us.GetByTelegramChatId(uint64(chatId))
 	if err != nil {
 		if _, err := util.SendTextMessage(
@@ -127,7 +127,7 @@ func (c *StakeProfitList[T]) exc(ctx context.Context, chatId int64, messageId in
 		return
 	}
 
-	groups := c.getGroups(uint64(chatId), uint64(u.Id.Int64), false, 30)
+	groups := c.getGroups(uint64(chatId), uint64(u.Id.Int64), false, -30)
 	makup := c.generateMarkup(chatId, u, groups)
 
 	if messageId != 0 {
@@ -151,7 +151,7 @@ func (c *StakeProfitList[T]) exc(ctx context.Context, chatId int64, messageId in
 	}
 }
 
-func (c *StakeProfitList[T]) NextPageProfitStake(ctx context.Context, callback *models.CallbackQuery) {
+func (c *StakeInsuranceList[T]) NextPageInsuranceStake(ctx context.Context, callback *models.CallbackQuery) {
 	if err := util.CheckTypeMessage(c.b, callback); err != nil {
 		return
 	}
@@ -168,11 +168,11 @@ func (c *StakeProfitList[T]) NextPageProfitStake(ctx context.Context, callback *
 		return
 	}
 
-	totalPage := c.totalPageStakesFromGroup(uint64(u.Id.Int64), jettonName)
+	totalPage := c.totalPageStakesFromGroup(uint64(u.Id.Int64), jettonName, -30)
 
-	currentPageStakeProfit = util.NextPageV2(
+	currentPageStakeInsurance = util.NextPageV2(
 		callback,
-		currentPageStakeProfit,
+		currentPageStakeInsurance,
 		totalPage,
 		c.b,
 		func() {
@@ -181,14 +181,14 @@ func (c *StakeProfitList[T]) NextPageProfitStake(ctx context.Context, callback *
 	)
 }
 
-func (c *StakeProfitList[T]) BackPageProfitStake(ctx context.Context, callback *models.CallbackQuery) {
+func (c *StakeInsuranceList[T]) BackPageInsuranceStake(ctx context.Context, callback *models.CallbackQuery) {
 	if err := util.CheckTypeMessage(c.b, callback); err != nil {
 		return
 	}
 
-	currentPageStakeProfit = util.BackPageV2(
+	currentPageStakeInsurance = util.BackPageV2(
 		callback,
-		currentPageStakeProfit,
+		currentPageStakeInsurance,
 		c.b,
 		func() {
 			c.executeCallback(ctx, callback)
@@ -196,7 +196,7 @@ func (c *StakeProfitList[T]) BackPageProfitStake(ctx context.Context, callback *
 	)
 }
 
-func (c *StakeProfitList[T]) NextPageGroup(ctx context.Context, callback *models.CallbackQuery) {
+func (c *StakeInsuranceList[T]) NextPageGroup(ctx context.Context, callback *models.CallbackQuery) {
 	if err := util.CheckTypeMessage(c.b, callback); err != nil {
 		return
 	}
@@ -209,28 +209,27 @@ func (c *StakeProfitList[T]) NextPageGroup(ctx context.Context, callback *models
 
 	totalPage := c.totalPageGroupsStakes(uint64(u.Id.Int64), -30)
 
-	currentPageGroupProfit = util.NextPageV2(
+	currentPageGroupInsurance = util.NextPageV2(
 		callback,
-		currentPageGroupProfit,
+		currentPageGroupInsurance,
 		totalPage,
 		c.b,
 		func() {
 			c.exc(ctx, chatId, callback.Message.Message.ID)
 		},
 	)
-
 }
 
-func (c *StakeProfitList[T]) BackPageGroup(ctx context.Context, callback *models.CallbackQuery) {
+func (c *StakeInsuranceList[T]) BackPageGroup(ctx context.Context, callback *models.CallbackQuery) {
 	if err := util.CheckTypeMessage(c.b, callback); err != nil {
 		return
 	}
 
 	chatId := callback.From.ID
 
-	currentPageGroupProfit = util.BackPageV2(
+	currentPageGroupInsurance = util.BackPageV2(
 		callback,
-		currentPageGroupProfit,
+		currentPageGroupInsurance,
 		c.b,
 		func() {
 			c.exc(ctx, chatId, callback.Message.Message.ID)
@@ -238,40 +237,40 @@ func (c *StakeProfitList[T]) BackPageGroup(ctx context.Context, callback *models
 	)
 }
 
-func (c *StakeProfitList[T]) CloseList(ctx context.Context, callback *models.CallbackQuery) {
+func (c *StakeInsuranceList[T]) CloseList(ctx context.Context, callback *models.CallbackQuery) {
 	if err := util.CheckTypeMessage(c.b, callback); err != nil {
 		return
 	}
-	currentPageGroupProfit = util.CloseList(ctx, callback, currentPageGroupProfit, c.b)
+	currentPageGroupInsurance = util.CloseList(ctx, callback, currentPageGroupInsurance, c.b)
 }
 
-func (c *StakeProfitList[T]) generateMarkup(chatId int64, u *appModels.User, groups *[]appModels.GroupElements) *models.InlineKeyboardMarkup {
-	page := util.GetCurrentPage(chatId, currentPageGroupProfit)
+func (c *StakeInsuranceList[T]) generateMarkup(chatId int64, u *appModels.User, groups *[]appModels.GroupElements) *models.InlineKeyboardMarkup {
+	page := util.GetCurrentPage(chatId, currentPageGroupInsurance)
 	totalPage := c.totalPageGroupsStakes(uint64(u.Id.Int64), -30)
 
 	markup := util.GenerateNextBackMenu(
 		page,
 		totalPage,
-		buttons.ProfitNextPageGroup,
-		buttons.ProfitBackPageGroup,
-		buttons.ProfitCloseGroup,
-		util.GenerateGroupButtons(groups, buttons.ProfitOpenGroupId)...,
+		buttons.InsuranceNextPageGroup,
+		buttons.InsuranceBackPageGroup,
+		buttons.InsuranceCloseGroup,
+		util.GenerateGroupButtons(groups, buttons.InsuranceOpenGroupId)...,
 	)
 	return markup
 }
 
-func (c *StakeProfitList[T]) getGroups(chatId, userId uint64, b bool, procient float64) *[]appModels.GroupElements {
-	page := util.GetCurrentPage(int64(chatId), currentPageGroupProfit)
+func (c *StakeInsuranceList[T]) getGroups(chatId, userId uint64, b bool, procient float64) *[]appModels.GroupElements {
+	page := util.GetCurrentPage(int64(chatId), currentPageGroupInsurance)
 	offset := page * numberElementPage
 	limit := numberElementPage
 
-	return c.ss.GroupFromPoolByUserIdLimitIsProfitPaid(userId, limit, offset, b, false, procient)
+	return c.ss.GroupFromPoolByUserIdLimitIsInsurancePaid(userId, limit, offset, b, false, procient)
 }
 
-func (c *StakeProfitList[T]) totalPageGroupsStakes(userId uint64, procient float64) int {
-	return int(math.Ceil(float64(c.ss.CountGroupsStakesUserIdProfitPaid(userId, false, false, procient)) / float64(numberElementPage)))
+func (c *StakeInsuranceList[T]) totalPageGroupsStakes(userId uint64, procient float64) int {
+	return int(math.Ceil(float64(c.ss.CountGroupsStakesUserIdIsInsurancePaid(userId, false, false, procient)) / float64(numberElementPage)))
 }
 
-func (c *StakeProfitList[T]) totalPageStakesFromGroup(userId uint64, jettonName string) int {
-	return int(math.Ceil(float64(c.ss.CountGroupsStakesByUserIdAndJettonNameIsProfitPaid(userId, jettonName, false, false, -30)) / float64(numberElementPage)))
+func (c *StakeInsuranceList[T]) totalPageStakesFromGroup(userId uint64, jettonName string, procient float64) int {
+	return int(math.Ceil(float64(c.ss.CountGroupsStakesByUserIdAndJettonNameIsInsurancePaid(userId, jettonName, false, false, procient)) / float64(numberElementPage)))
 }
