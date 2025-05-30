@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -159,6 +160,7 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 		PoolId:               pooldId,
 		Amount:               tokens,
 		Balance:              tokens,
+		IsCommissionPaid:     false,
 		StartDate:            time.Now(),
 		IsActive:             true,
 		DepositCreationPrice: price,
@@ -190,7 +192,9 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 		return
 	}
 
-	jettonAddr, err := c.aws.TokenWalletAddress(ctx, p.JettonMaster, address.MustParseAddr(w.Addr))
+	adminJettonMaster := os.Getenv("JETTON_CONTRACT_ADMIN_JETTON")
+
+	jettonAddr, err := c.aws.TokenWalletAddress(ctx, adminJettonMaster, address.MustParseAddr(w.Addr))
 	if err != nil {
 		log.Error(err)
 		return
@@ -201,17 +205,33 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 		log.Error(err)
 		return
 	}
+
+	commission, err := strconv.ParseFloat(os.Getenv("COMMISSION_STAKE_AMOUNT"), 64)
+	if err != nil {
+		commission = 1.
+	}
+
 	payload := appModels.Payload{
-		OperationType: appModels.OP_STAKE,
-		JettonMaster:  p.JettonMaster,
-		Amount:        tokens,
+		OperationType: appModels.OP_PAID_COMMISSION_STAKE,
+		JettonMaster:  adminJettonMaster,
+		Amount:        commission,
 		Payload:       string(jsonData),
 	}
 
-	if _, err := util.SendTextMessage(
+	var urlWallet string
+	if w.Name == "tonkeeper" {
+		urlWallet = "https://wallet.tonkeeper.com/"
+	} else {
+		urlWallet = "https://tonhub.com/"
+	}
+
+	btn := util.CreateUrlInlineButton("Открыть кошелек", urlWallet)
+	markup := util.CreateInlineMarup(1, btn)
+	if _, err := util.SendTextMessageMarkup(
 		c.b,
 		uint64(chatId),
-		"Подтвердите транзакцию в привязанном кошельке",
+		fmt.Sprintf("✅ Оплатите комиссию. %f %v", commission, os.Getenv("JETTON_NAME_COIN")),
+		markup,
 	); err != nil {
 		log.Error(err)
 		return
@@ -222,7 +242,7 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 		jettonAddr.Address().String(),
 		c.aws.GetAdminWalletAddr().String(),
 		w.Addr,
-		fmt.Sprint(tokens),
+		fmt.Sprint(commission),
 		&payload,
 		s,
 	); err != nil {

@@ -138,7 +138,21 @@ func (c *PaidCommission) Execute(ctx context.Context, callback *models.CallbackQ
 		Payload:       string(jsonData),
 	}
 
-	if _, err := util.SendTextMessage(c.b, uint64(chatId), "✅ Подтвердите транзакцию на вашем кошельке!"); err != nil {
+	var urlWallet string
+	if w.Name == "tonkeeper" {
+		urlWallet = "https://wallet.tonkeeper.com/"
+	} else {
+		urlWallet = "https://tonhub.com/"
+	}
+
+	btn := util.CreateUrlInlineButton("Открыть кошелек", urlWallet)
+	markup := util.CreateInlineMarup(1, btn)
+	if _, err := util.SendTextMessageMarkup(
+		c.b,
+		uint64(chatId),
+		"✅ Подтвердите транзакцию на вашем кошельке!",
+		markup,
+	); err != nil {
 		log.Error(err)
 		return
 	}

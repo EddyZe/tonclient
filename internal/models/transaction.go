@@ -2,17 +2,18 @@ package models
 
 const (
 	//операции
-	OP_STAKE             = 1 //застейкать токены
-	OP_CLAIM             = 2 //забрать депозит + награду + компенсация
-	OP_CLAIM_INSURANCE   = 3 //забрать компенсацию
-	OP_ADMIN_CREATE_POOL = 4 //создать пул
-	OP_ADMIN_ADD_RESERVE = 5 //добавить резерв
-	OP_ADMIN_CLOSE_POOL  = 6 //закрыть пул
-	OP_GET_USER_STAKES   = 7 // показать список активных стейков пользователя
-	OP_PAY_COMMISION     = 8
-	OP_ADMIN_OPEN_POOL   = 9
-	OP_RETURNING_TOKENS  = 10
-	OP_CLAIM_RESERVE     = 11
+	OP_STAKE                 = 1 //застейкать токены
+	OP_CLAIM                 = 2 //забрать депозит + награду + компенсация
+	OP_CLAIM_INSURANCE       = 3 //забрать компенсацию
+	OP_ADMIN_CREATE_POOL     = 4 //создать пул
+	OP_ADMIN_ADD_RESERVE     = 5 //добавить резерв
+	OP_ADMIN_CLOSE_POOL      = 6 //закрыть пул
+	OP_GET_USER_STAKES       = 7 // показать список активных стейков пользователя
+	OP_PAY_COMMISION         = 8
+	OP_ADMIN_OPEN_POOL       = 9
+	OP_RETURNING_TOKENS      = 10
+	OP_CLAIM_RESERVE         = 11
+	OP_PAID_COMMISSION_STAKE = 12
 )
 
 type SubmitTransaction struct {

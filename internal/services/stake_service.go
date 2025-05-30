@@ -156,3 +156,7 @@ func (s *StakeService) GetById(poolId uint64) (*models.Stake, error) {
 
 	return stake, nil
 }
+
+func (s *StakeService) SetCommissionPaid(stakeId uint64, isPaid bool) error {
+	return s.stakeRepo.SetCommissionPaid(stakeId, isPaid)
+}

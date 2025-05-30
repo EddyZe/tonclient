@@ -38,6 +38,7 @@ func (c *TonConnectRepeat) Execute(ctx context.Context, callback *models.Callbac
 		"‼️ Подключайте уже привязанный кошелек! Так как все выводы будут идти на него!",
 	); err != nil {
 		log.Error(err)
+		return
 	}
 
 	if _, err := util.ConnectingTonConnect(c.b, uint64(chatId), c.tcs); err != nil {
@@ -50,6 +51,7 @@ func (c *TonConnectRepeat) Execute(ctx context.Context, callback *models.Callbac
 			log.Error(err)
 			return
 		}
+		return
 	}
 
 	if _, err := util.SendTextMessage(

@@ -29,7 +29,7 @@ func (r *StakeRepository) Save(stake *models.Stake) error {
 	}
 
 	query, args, err := tx.BindNamed(
-		"insert into stake(user_id, pool_id, amount, start_date, is_active, deposit_creation_price, balance, is_insurance_paid, is_reward_paid, jetton_price_closed) values (:user_id, :pool_id, :amount, :start_date, :is_active, :deposit_creation_price, :balance, :is_insurance_paid, :is_reward_paid, :jetton_price_closed) returning id",
+		"insert into stake(user_id, pool_id, amount, start_date, is_active, deposit_creation_price, balance, is_insurance_paid, is_reward_paid, jetton_price_closed, is_commission_paid) values (:user_id, :pool_id, :amount, :start_date, :is_active, :deposit_creation_price, :balance, :is_insurance_paid, :is_reward_paid, :jetton_price_closed, :is_commission_paid) returning id",
 		stake,
 	)
 
@@ -67,7 +67,7 @@ func (r *StakeRepository) Update(stake *models.Stake) error {
 
 	if _, err := tx.NamedExecContext(
 		ctx,
-		"update stake set user_id = :user_id, pool_id = :pool_id, amount = :amount, start_date=:start_date, is_active = :is_active, deposit_creation_price = :deposit_creation_price, balance = :balance, is_insurance_paid = :is_insurance_paid, is_reward_paid = :is_reward_paid, jetton_price_closed = :jetton_price_closed where id=:id",
+		"update stake set user_id = :user_id, pool_id = :pool_id, amount = :amount, start_date=:start_date, is_active = :is_active, deposit_creation_price = :deposit_creation_price, balance = :balance, is_insurance_paid = :is_insurance_paid, is_reward_paid = :is_reward_paid, jetton_price_closed = :jetton_price_closed, is_commission_paid=:is_commission_paid where id=:id",
 		stake,
 	); err != nil {
 		log.Error("Failed to update stake: ", err)
@@ -497,7 +497,7 @@ func (r *StakeRepository) GroupFromPoolNameByUserId(userId uint64) *[]models.Gro
 	if err := r.db.SelectContext(
 		ctx,
 		&res,
-		"select p.jetton_name as name, count(*) as count from stake s join pool p on s.pool_id = p.id where s.user_id = $1 group by p.jetton_name order by max(p.created_at) desc ", userId); err != nil {
+		"select p.jetton_name as name, count(*) as count from stake s join pool p on s.pool_id = p.id where s.user_id = $1 group by p.jetton_name order by max(s.start_date) desc ", userId); err != nil {
 		log.Error("Failed froup stakes: ", err)
 	}
 	return &res
@@ -512,7 +512,7 @@ func (r *StakeRepository) GroupFromPoolNameByUserIdLimit(userId uint64, offset, 
 	if err := r.db.SelectContext(
 		ctx,
 		&res,
-		"select p.jetton_name as name, count(*) as count from stake s join pool p on s.pool_id = p.id where s.user_id = $1 group by p.jetton_name order by max(p.created_at) desc limit $2 offset $3",
+		"select p.jetton_name as name, count(*) as count from stake s join pool p on s.pool_id = p.id where s.user_id = $1 group by p.jetton_name order by max(s.start_date) desc limit $2 offset $3",
 		userId,
 		limit,
 		offset,
@@ -531,7 +531,19 @@ func (r *StakeRepository) GroupFromPoolNameByUserIdLimitIsInsurancePaid(userId u
 	if err := r.db.SelectContext(
 		ctx,
 		&res,
-		"select p.jetton_name as name, count(*) as count from stake s join pool p on s.pool_id = p.id where s.user_id = $1 and s.is_insurance_paid=$2 and s.is_active=$5 and (((s.jetton_price_closed - s.deposit_creation_price) / s.deposit_creation_price) * 100) < $6 group by p.jetton_name order by max(p.created_at) desc limit $3 offset $4",
+		`
+select p.jetton_name as name, count(*) as count
+from stake s 
+    join pool p on s.pool_id = p.id 
+where s.user_id = $1 
+  and s.is_insurance_paid=$2
+  and s.is_active=$5 
+  and (((s.jetton_price_closed - s.deposit_creation_price)
+            / nullif(s.deposit_creation_price, 0)) * 100) < $6
+group by p.jetton_name
+order by max(s.start_date) desc
+limit $3 
+offset $4`,
 		userId,
 		b,
 		limit,
@@ -553,7 +565,19 @@ func (r *StakeRepository) GroupFromPoolNameByUserIdLimitIsProfitPaid(userId uint
 	if err := r.db.SelectContext(
 		ctx,
 		&res,
-		"select p.jetton_name as name, count(*) as count from stake s join pool p on s.pool_id = p.id where s.user_id = $1 and s.is_reward_paid=$2 and s.is_active=$5 and (((s.jetton_price_closed - s.deposit_creation_price) / s.deposit_creation_price) * 100) > $6 group by p.jetton_name order by max(p.created_at) desc limit $3 offset $4",
+		`
+select p.jetton_name as name, count(*) as count
+from stake s
+    join pool p on s.pool_id = p.id
+where s.user_id = $1
+  and s.is_reward_paid=$2
+  and s.is_active=$5
+  and (((s.jetton_price_closed - s.deposit_creation_price)
+            / nullif(s.deposit_creation_price, 0)) * 100) > $6
+group by p.jetton_name
+order by max(s.start_date) desc
+limit $3
+offset $4`,
 		userId,
 		b,
 		limit,
@@ -575,7 +599,7 @@ func (r *StakeRepository) FindByJettonNameAndUserId(userId uint64, jettonName st
 	if err := r.db.SelectContext(
 		ctx,
 		&res,
-		"select s.* from stake s join pool p on s.pool_id = p.id where s.user_id = $1 and p.jetton_name = $2",
+		"select s.* from stake s join pool p on s.pool_id = p.id where s.user_id = $1 and p.jetton_name = $2 order by s.start_date desc ",
 		userId,
 		jettonName,
 	); err != nil {
@@ -594,7 +618,7 @@ func (r *StakeRepository) FindByJettonNameAndUserIdLimit(userId uint64, jettonNa
 	if err := r.db.SelectContext(
 		ctx,
 		&res,
-		"select s.* from stake s join pool p on s.pool_id = p.id where s.user_id = $1 and p.jetton_name = $2 offset $3 limit $4",
+		"select s.* from stake s join pool p on s.pool_id = p.id where s.user_id = $1 and p.jetton_name = $2 order by s.start_date desc offset $3 limit $4",
 		userId,
 		jettonName,
 		offset,
@@ -621,7 +645,7 @@ func (r *StakeRepository) FindByJettonNameAndUserIdLimitIsInsurancePaid(
 	if err := r.db.SelectContext(
 		ctx,
 		&res,
-		"select s.* from stake s join pool p on s.pool_id = p.id where s.user_id = $1 and p.jetton_name = $2 and s.is_insurance_paid=$3 and s.is_active=$6 offset $4 limit $5",
+		"select s.* from stake s join pool p on s.pool_id = p.id where s.user_id = $1 and p.jetton_name = $2 and s.is_insurance_paid=$3 and s.is_active=$6 order by s.start_date desc offset $4 limit $5",
 		userId,
 		jettonName,
 		b,
@@ -650,7 +674,7 @@ func (r *StakeRepository) FindByJettonNameAndUserIdLimitIsProfitPaid(
 	if err := r.db.SelectContext(
 		ctx,
 		&res,
-		"select s.* from stake s join pool p on s.pool_id = p.id where s.user_id = $1 and p.jetton_name = $2 and s.is_reward_paid=$3 and s.is_active=$6 offset $4 limit $5",
+		"select s.* from stake s join pool p on s.pool_id = p.id where s.user_id = $1 and p.jetton_name = $2 and s.is_reward_paid=$3 and s.is_active=$6 order by s.start_date desc offset $4 limit $5",
 		userId,
 		jettonName,
 		b,
@@ -687,7 +711,16 @@ func (r *StakeRepository) CountGroupsStakesUserIdIsInsurancePaid(userId uint64, 
 	res := 0
 	if err := r.db.QueryRowxContext(
 		ctx,
-		"select count(distinct p.jetton_name) from stake s join pool p on s.pool_id = p.id where s.user_id=$1 and s.is_insurance_paid=$2 and s.is_active=$3 and ((s.jetton_price_closed - s.deposit_creation_price) / s.deposit_creation_price) * 100 < $4",
+		`
+select count(distinct p.jetton_name) 
+from stake s join pool p on s.pool_id = p.id
+where s.user_id=$1 
+  and s.is_insurance_paid=$2
+  and s.is_active=$3
+  and(
+    (s.jetton_price_closed - s.deposit_creation_price) / 
+    NULLIF(s.deposit_creation_price, 0) * 100 < $4
+  )`,
 		userId,
 		b,
 		isActive,
@@ -706,7 +739,16 @@ func (r *StakeRepository) CountGroupsStakesUserIdIsProfitPaid(userId uint64, b b
 	res := 0
 	if err := r.db.QueryRowxContext(
 		ctx,
-		"select count(distinct p.jetton_name) from stake s join pool p on s.pool_id = p.id where s.user_id=$1 and s.is_reward_paid=$2 and s.is_active=$3 and ((s.jetton_price_closed - s.deposit_creation_price) / s.deposit_creation_price) * 100 > $4",
+		`
+select count(distinct p.jetton_name)
+from stake s join pool p on s.pool_id = p.id
+where s.user_id=$1
+  and s.is_reward_paid=$2
+  and s.is_active=$3 
+  and(
+    (s.jetton_price_closed - s.deposit_creation_price) / 
+    NULLIF(s.deposit_creation_price, 0) * 100 > $4
+  )`,
 		userId,
 		b,
 		isActive,
@@ -744,7 +786,18 @@ func (r *StakeRepository) CountGroupsStakesByUserIdAndJettonNameIsInsurancePaid(
 
 	if err := r.db.QueryRowxContext(
 		ctx,
-		"select count(*) from stake s join pool p on s.pool_id = p.id where s.user_id=$1 and jetton_name = $2 and s.is_insurance_paid=$3 and s.is_active=$4 and ((s.jetton_price_closed - s.deposit_creation_price) / s.deposit_creation_price) * 100 < $5",
+		`
+select count(*)
+from stake s 
+    join pool p on s.pool_id = p.id
+where s.user_id=$1
+  and jetton_name = $2
+  and s.is_insurance_paid=$3
+  and s.is_active=$4
+  and (
+      ((s.jetton_price_closed - s.deposit_creation_price) /
+       NULLIF(s.deposit_creation_price, 0)) * 100 < $5
+      )`,
 		userId,
 		jettonName,
 		b,
@@ -765,7 +818,16 @@ func (r *StakeRepository) CountGroupsStakesByUserIdAndJettonNameIsProfitPaid(use
 
 	if err := r.db.QueryRowxContext(
 		ctx,
-		"select count(*) from stake s join pool p on s.pool_id = p.id where s.user_id=$1 and jetton_name = $2 and s.is_reward_paid=$3 and s.is_active=$4 and (((s.jetton_price_closed - s.deposit_creation_price) / s.deposit_creation_price) * 100) > $5",
+		`
+select count(*)
+from stake s 
+    join pool p on s.pool_id = p.id
+where s.user_id=$1
+  and jetton_name = $2
+  and s.is_reward_paid=$3
+  and s.is_active=$4 
+  and (((s.jetton_price_closed - s.deposit_creation_price)
+            / nullif(s.deposit_creation_price, 0)) * 100) > $5`,
 		userId,
 		jettonName,
 		b,
@@ -776,4 +838,17 @@ func (r *StakeRepository) CountGroupsStakesByUserIdAndJettonNameIsProfitPaid(use
 	}
 
 	return res
+}
+
+func (r *StakeRepository) SetCommissionPaid(stakeId uint64, isPaid bool) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if err := r.db.QueryRowxContext(
+		ctx,
+		"update stake set is_commission_paid=$1 where id=$2", isPaid, stakeId,
+	).Err(); err != nil {
+		log.Error("Failed to set commission paid: ", err)
+	}
+	return nil
 }

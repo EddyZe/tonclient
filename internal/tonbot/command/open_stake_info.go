@@ -121,7 +121,7 @@ func (c *OpenStakeInfo) generateInfo(stake *appModels.Stake, jettonName string, 
 	<b>Гарантия:</b> Компенсация при снижении цены %v более чем на 30%%
 
 	<b>Сумма стейка:</b> %v
-	<b>Цена на момент стейка:</b> %v $
+	<b>Цена на момент стейка:</b> %f $
 	<b>Текущая цена:</b> %f $ (%v%%)
 
 	<b>Старт:</b> %v

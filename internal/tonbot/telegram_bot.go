@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"time"
 	"tonclient/internal/config"
 	appModels "tonclient/internal/models"
 	"tonclient/internal/schedulers"
@@ -23,6 +24,7 @@ import (
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 	"github.com/robfig/cron/v3"
+	"github.com/xssnick/tonutils-go/address"
 )
 
 var log = config.InitLogger()
@@ -588,6 +590,9 @@ func (t *TgBot) processOperation(b *bot.Bot, tr appModels.SubmitTransaction) {
 	case appModels.OP_STAKE:
 		t.stake(&payload, b)
 		break
+	case appModels.OP_PAID_COMMISSION_STAKE:
+		t.commissionStakePaid(&payload, b)
+		break
 	case appModels.OP_CLAIM:
 		break
 	case appModels.OP_CLAIM_INSURANCE:
@@ -613,12 +618,118 @@ func (t *TgBot) processOperation(b *bot.Bot, tr appModels.SubmitTransaction) {
 	}
 }
 
+func (t *TgBot) commissionStakePaid(payload *appModels.Payload, b *bot.Bot) {
+	var stake appModels.Stake
+	if err := json.Unmarshal([]byte(payload.Payload), &stake); err != nil {
+		log.Error("Failed to unmarshal stake data:", err)
+		return
+	}
+
+	pool, err := t.ps.GetId(stake.PoolId)
+	if err != nil {
+		log.Error("Failed to get pool id:", err)
+		err := t.returnTokens(stake.UserId, payload.JettonMaster, payload.Amount)
+		if err != nil {
+			return
+		}
+		return
+	}
+
+	tg, err := t.ts.GetByUserId(stake.UserId)
+	if err != nil {
+		err := t.returnTokens(stake.UserId, payload.JettonMaster, payload.Amount)
+		if err != nil {
+			return
+		}
+	}
+
+	payload.OperationType = appModels.OP_STAKE
+	payload.JettonMaster = pool.JettonMaster
+	payload.Amount = stake.Amount
+
+	w, err := t.ws.GetByUserId(stake.UserId)
+	if err != nil {
+		log.Error("Failed to get user wallet:", err)
+		return
+	}
+
+	var urlWallet string
+	if w.Name == "tonkeeper" {
+		urlWallet = "https://wallet.tonkeeper.com/"
+	} else {
+		urlWallet = "https://tonhub.com/"
+	}
+
+	btn := util.CreateUrlInlineButton("Открыть кошелек", urlWallet)
+	markup := util.CreateInlineMarup(1, btn)
+	if _, err := util.SendTextMessageMarkup(
+		b,
+		tg.TelegramId,
+		fmt.Sprintf("✅ Комиссия принята. Подтвердите свой стейк в кошельке. %f %v", stake.Amount, pool.JettonName),
+		markup,
+	); err != nil {
+		log.Error(err)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
+	jettonAddr, err := t.aws.TokenWalletAddress(ctx, pool.JettonMaster, address.MustParseAddr(w.Addr))
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	s, err := t.tcs.LoadSession(ctx, fmt.Sprint(tg.TelegramId))
+	if err != nil {
+		if _, err := util.SendTextMessage(
+			b,
+			tg.TelegramId,
+			"❌ Привяжите свой кошелей заново! Потом повторите стейк. Комиссия уже учтена, он будет в списке ваших стейков",
+		); err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	if _, err := t.tcs.SendJettonTransaction(
+		ctx,
+		jettonAddr.Address().String(),
+		t.aws.GetAdminWalletAddr().String(),
+		w.Addr,
+		fmt.Sprintf("%f", stake.Amount),
+		payload,
+		s,
+	); err != nil {
+		log.Error(err)
+		if _, err := util.SendTextMessage(
+			b,
+			tg.TelegramId,
+			"❌ Что-то пошло не так!",
+		); err != nil {
+			log.Error(err)
+			return
+		}
+		return
+	}
+	if _, err := t.opS.Create(
+		stake.UserId,
+		appModels.OP_PAID_COMMISSION_STAKE,
+		fmt.Sprintf("Оплата комиссии за стейк %v", pool.JettonName),
+	); err != nil {
+		log.Error(err)
+		return
+	}
+}
+
 func (t *TgBot) stake(payload *appModels.Payload, b *bot.Bot) {
 	var stake appModels.Stake
 	if err := json.Unmarshal([]byte(payload.Payload), &stake); err != nil {
 		log.Error("Failed to unmarshal stake data:", err)
 		return
 	}
+	stake.IsCommissionPaid = true
 
 	pool, err := t.ps.GetId(stake.PoolId)
 	if err != nil {

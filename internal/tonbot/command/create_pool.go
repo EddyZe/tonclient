@@ -232,7 +232,21 @@ func (c *CreatePool[T]) enterAmountToken(msg *models.Message, w *appModels.Walle
 	pool.IsActive = false
 	currentCreatingPool[chatId] = pool
 
-	if _, err := util.SendTextMessage(c.b, uint64(chatId), "Подтвердите операцию в течении 5 минут в вашем привязанном кошельке, чтобы заморозить резерв."); err != nil {
+	var urlWallet string
+	if w.Name == "tonkeeper" {
+		urlWallet = "https://wallet.tonkeeper.com/"
+	} else {
+		urlWallet = "https://tonhub.com/"
+	}
+
+	btn := util.CreateUrlInlineButton("Открыть кошелек", urlWallet)
+	markup := util.CreateInlineMarup(1, btn)
+	if _, err := util.SendTextMessageMarkup(
+		c.b,
+		uint64(chatId),
+		"✅ Подтвердите транзакцию на вашем кошельке!",
+		markup,
+	); err != nil {
 		log.Error(err)
 		return
 	}

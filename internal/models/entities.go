@@ -48,6 +48,7 @@ type Stake struct {
 	DepositCreationPrice float64       `db:"deposit_creation_price" json:"deposit_creation_price"`
 	IsInsurancePaid      bool          `db:"is_insurance_paid" json:"is_insurance_paid"`
 	IsRewardPaid         bool          `db:"is_reward_paid" json:"is_reward_paid"`
+	IsCommissionPaid     bool          `db:"is_commission_paid" json:"is_commission_paid"`
 }
 
 type Telegram struct {

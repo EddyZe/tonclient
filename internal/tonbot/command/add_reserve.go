@@ -137,7 +137,21 @@ func (c *AddReserve[T]) executeMessage(ctx context.Context, msg *models.Message)
 	}
 	adminAddr := os.Getenv("WALLET_ADDR")
 
-	if _, err := util.SendTextMessage(c.b, uint64(chatId), "Подтвердите ваш перевод в привязанном кошельке!"); err != nil {
+	var urlWallet string
+	if w.Name == "tonkeeper" {
+		urlWallet = "https://wallet.tonkeeper.com/"
+	} else {
+		urlWallet = "https://tonhub.com/"
+	}
+
+	btn := util.CreateUrlInlineButton("Открыть кошелек", urlWallet)
+	markup := util.CreateInlineMarup(1, btn)
+	if _, err := util.SendTextMessageMarkup(
+		c.b,
+		uint64(chatId),
+		"✅ Подтвердите транзакцию на вашем кошельке!",
+		markup,
+	); err != nil {
 		log.Error(err)
 		return
 	}

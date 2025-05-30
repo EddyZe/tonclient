@@ -65,7 +65,7 @@ func OperationName(numOperation int) string {
 	case models.OP_ADMIN_ADD_RESERVE:
 		return "Пополнение резерва"
 	case models.OP_PAY_COMMISION:
-		return "Оплата комиссии"
+		return "Оплата комиссии за пул"
 	case models.OP_STAKE:
 		return "Создание стейка"
 	case models.OP_ADMIN_CLOSE_POOL:
@@ -80,6 +80,8 @@ func OperationName(numOperation int) string {
 		return "Возврат токенов"
 	case models.OP_CLAIM_RESERVE:
 		return "Снятие резерва"
+	case models.OP_PAID_COMMISSION_STAKE:
+		return "Оплата комиссии за стейк"
 	default:
 		return "Неизвестная команда"
 	}

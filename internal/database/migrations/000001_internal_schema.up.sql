@@ -50,7 +50,8 @@ create table if not exists stake
     start_date             timestamp                                                                    default now(),
     is_active              bool                                                                         default true,
     is_insurance_paid      bool                                                                         default false,
-    is_reward_paid         bool                                                                         default false
+    is_reward_paid         bool                                                                         default false,
+    is_commission_paid     bool                                                                         default false
 );
 
 create table if not exists referral
