@@ -137,6 +137,7 @@ func (c *TakeInsuranceFromStake) Execute(ctx context.Context, callback *models.C
 
 	insurance := c.calculateInsurance(pool, stake)
 	amount := stake.Balance + insurance
+	profit := stake.Balance - stake.Amount
 
 	if pool.Reserve < amount {
 		util.SendMessageOwnerAndUserIfBadReserve(
@@ -176,7 +177,7 @@ func (c *TakeInsuranceFromStake) Execute(ctx context.Context, callback *models.C
 		return
 	}
 
-	pool.Reserve -= amount
+	pool.Reserve -= profit + insurance
 	if err := c.ps.Update(pool); err != nil {
 		log.Error(err)
 		return

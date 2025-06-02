@@ -166,7 +166,7 @@ func (c *TakeProfitFromStake) Execute(ctx context.Context, callback *models.Call
 		return
 	}
 
-	pool.Reserve -= stake.Balance
+	pool.Reserve -= stake.Balance - stake.Amount
 	if err := c.ps.Update(pool); err != nil {
 		log.Error("update pool err: ", err.Error())
 		return

@@ -98,6 +98,11 @@ func (c *CloseStake) Execute(ctx context.Context, callback *models.CallbackQuery
 	}
 
 	adminAmount := stake.Balance - stake.Amount
+	p.Reserve -= adminAmount
+
+	if err := c.ps.Update(p); err != nil {
+		log.Println(err)
+	}
 
 	jettonData, err := c.aws.DataJetton(p.JettonMaster)
 	if err != nil {
