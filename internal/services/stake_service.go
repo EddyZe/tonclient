@@ -148,8 +148,8 @@ func (s *StakeService) CountGroupsStakesByUserIdAndJettonNameIsProfitPaid(userId
 	return s.stakeRepo.CountGroupsStakesByUserIdAndJettonNameIsProfitPaid(userId, jettonName, b, isActive)
 }
 
-func (s *StakeService) GetById(poolId uint64) (*models.Stake, error) {
-	stake := s.stakeRepo.GetById(poolId)
+func (s *StakeService) GetById(stakeId uint64) (*models.Stake, error) {
+	stake := s.stakeRepo.GetById(stakeId)
 	if stake == nil {
 		return nil, errors.New("stake not found")
 	}

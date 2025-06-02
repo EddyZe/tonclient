@@ -48,6 +48,8 @@ const (
 	TakeProfitId    = "TAKE_PROFIT"
 	TakeInsurance   = "🏦 Получить страховку"
 	TakeInsuranceId = "TAKE_INSURANCE"
+	CloseStake      = "🔒 Закрыть стейк досрочно"
+	CloseStakeId    = "CLOSE_STAKE"
 
 	//profile
 	SetNumberWallet   = "👛 Привязать кошелек"

@@ -151,6 +151,7 @@ func (c *PaidCommission) Execute(ctx context.Context, callback *models.CallbackQ
 	}
 
 	if _, err := c.tcs.SendJettonTransaction(
+		fmt.Sprint(chatId),
 		jettonAddr.Address().String(),
 		c.aws.GetAdminWalletAddr().String(),
 		w.Addr,

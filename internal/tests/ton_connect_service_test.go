@@ -121,7 +121,6 @@ func TestTonConnectService_SendTransaction(t *testing.T) {
 	}
 
 	boc, err := tcs.SendJettonTransaction(
-		context.Background(),
 		p.JettonWallet,
 		"UQD6A01mB8tAKJVekRrMjoA3l188LSCF2zrIHoH94tWhZGAO",
 		"UQCrciOc9HE341fFtBs-WFuttXeciFDIvFwafCO4QQhAinLG",

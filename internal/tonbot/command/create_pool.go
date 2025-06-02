@@ -154,6 +154,7 @@ func (c *CreatePool[T]) sendTransactionCreatingPool(pool *appModels.Pool, chatId
 	}
 
 	boc, err := c.tcs.SendJettonTransaction(
+		fmt.Sprint(chatId),
 		walJetton.Address().String(),
 		adminWal,
 		w.Addr,
@@ -403,7 +404,6 @@ func (c *CreatePool[T]) enterJettonMaster(msg *models.Message, chatId int64, use
 	}
 	newPool.JettonMaster = jettonAddr
 	newPool.OwnerId = uint64(user.Id.Int64)
-	currentCreatingPool[chatId] = newPool
 	jettonData, err := c.aws.DataJetton(jettonAddr)
 	if err != nil {
 		if _, err := util.SendTextMessage(c.b, uint64(chatId), "❌ Что-то пошло не так. Повторите попытку!"); err != nil {
@@ -412,8 +412,9 @@ func (c *CreatePool[T]) enterJettonMaster(msg *models.Message, chatId int64, use
 		}
 		return
 	}
-
 	newPool.JettonName = jettonData.Name
+	currentCreatingPool[chatId] = newPool
+
 	text := fmt.Sprintf("✅ Отлично! Выбранный токен <b>%v</b>.\n\nВыберите срок холда:", jettonData.Name)
 
 	if _, err := util.SendTextMessageMarkup(

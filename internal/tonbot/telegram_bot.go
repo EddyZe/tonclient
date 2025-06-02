@@ -270,6 +270,11 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 		return
 	}
 
+	if strings.HasPrefix(data, buttons.CloseStakeId) {
+		command.NewCloseStakeCommand(b, t.aws, t.ws, t.ss, t.ps).Execute(ctx, callback)
+		return
+	}
+
 	if data == buttons.BackHistoryListId {
 		if err := util.CheckTypeMessage(b, callback); err != nil {
 			return
@@ -699,6 +704,7 @@ func (t *TgBot) commissionStakePaid(payload *appModels.Payload, b *bot.Bot) {
 	}
 
 	if _, err := t.tcs.SendJettonTransaction(
+		fmt.Sprint(tg.TelegramId),
 		jettonAddr.Address().String(),
 		t.aws.GetAdminWalletAddr().String(),
 		w.Addr,

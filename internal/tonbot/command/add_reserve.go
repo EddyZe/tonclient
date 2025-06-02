@@ -147,6 +147,7 @@ func (c *AddReserve[T]) executeMessage(ctx context.Context, msg *models.Message)
 	}
 
 	if _, err := c.tcs.SendJettonTransaction(
+		fmt.Sprint(chatId),
 		pool.JettonWallet,
 		adminAddr,
 		w.Addr,

@@ -36,6 +36,7 @@ type AdminWalletService struct {
 	acc             *tlb.Account
 	transaction     chan *tlb.Transaction
 	treasuryAddress *address.Address
+	adminWalletAddr string
 }
 
 func NewAdminWalletService(config *config.TonClientConfig, ps *PoolService, ts *TelegramService, ss *StakeService, ws *WalletTonService) (*AdminWalletService, error) {
@@ -44,6 +45,14 @@ func NewAdminWalletService(config *config.TonClientConfig, ps *PoolService, ts *
 	if err != nil {
 		log.Error(err)
 		return nil, err
+	}
+
+	adminAddr := os.Getenv("ADMIN_WALLET_ADDR")
+	if adminAddr == "" {
+		if _, err := address.ParseAddr(adminAddr); err != nil {
+			log.Fatalln(adminAddr + " is not a valid address")
+		}
+		return nil, errors.New("ADMIN_WALLET_ADDR environment variable is not set")
 	}
 
 	master, err := api.CurrentMasterchainInfo(ctx)
@@ -86,6 +95,7 @@ func NewAdminWalletService(config *config.TonClientConfig, ps *PoolService, ts *
 		treasuryAddress: treasuryAddress,
 		acc:             acc,
 		transaction:     transactions,
+		adminWalletAddr: adminAddr,
 	}, nil
 }
 
@@ -377,4 +387,8 @@ func (s *AdminWalletService) GetJettonBalance(wallAddr, jettonMaster string) (*b
 	}
 
 	return balance, nil
+}
+
+func (s *AdminWalletService) GetUserAdminAddr() string {
+	return s.adminWalletAddr
 }

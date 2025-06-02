@@ -70,6 +70,12 @@ func (c *OpenStakeInfo) Execute(ctx context.Context, callback *models.CallbackQu
 	buttonId := fmt.Sprintf("%v:%v", c.backBtn, jettonName)
 	backBtn := util.CreateDefaultButton(buttonId, buttons.BackStakesFromGroup)
 
+	if !stake.EndDate.Before(time.Now()) {
+		idBtn := fmt.Sprintf("%v:%v", buttons.CloseStakeId, stake.Id.Int64)
+		btn := util.CreateDefaultButton(idBtn, buttons.CloseStake)
+		btns = append(btns, btn)
+	}
+
 	if !stake.IsActive {
 		procientEditPrice := util.CalculateProcientEditPrice(stake.JettonPriceClosed, stake.DepositCreationPrice)
 		log.Infoln(procientEditPrice)

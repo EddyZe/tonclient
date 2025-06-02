@@ -147,6 +147,7 @@ func (c *StakesUserList[T]) getGroupList(chatId int64) (*models.InlineKeyboardMa
 	limit := numberElementPage
 
 	groups := c.ss.GroupFromPoolByUserIdLimit(uint64(u.Id.Int64), limit, offset)
+	log.Infoln(groups)
 	markup := util.GenerateNextBackMenu(
 		page,
 		totalPage,

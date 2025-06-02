@@ -17,14 +17,14 @@ func AddStakeBonusActiveStakes(s *services.StakeService, ps *services.PoolServic
 			if err != nil {
 				continue
 			}
-			period := time.Duration(pool.Period) * (time.Hour * 24)
-			if stake.StartDate.Add(period).Before(time.Now()) {
+			if stake.EndDate.Before(time.Now()) {
 				if stake.IsActive {
 					jettonData, err := tonfi.GetAssetByAddr(pool.JettonMaster)
 					if err != nil {
 						continue
 					}
 					stake.IsActive = false
+					stake.CloseDate = time.Now()
 					currentPrice, err := strconv.ParseFloat(jettonData.DexPriceUsd, 64)
 					if err != nil {
 						currentPrice = 0.

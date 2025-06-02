@@ -134,16 +134,23 @@ func (s *TonConnectService) GetTonConnector() (*tonconnect.ConnectRequest, error
 }
 
 func (s *TonConnectService) GetWalletUniversalLink(walletName string) string {
+	w, err := s.GetWallet(walletName)
+	if err != nil {
+		return ""
+	}
+
+	return w.UniversalURL
+}
+
+func (s *TonConnectService) GetWallet(wal string) (*tonconnect.Wallet, error) {
 	for _, w := range tonconnect.Wallets {
 		nameLower := strings.ToLower(w.Name)
-		if nameLower == walletName {
-			link := w.UniversalURL
-			log.Info("Generated link: ", link)
-			return link
+		if nameLower == wal {
+			return &w, nil
 		}
 	}
 
-	return ""
+	return nil, errors.New("wallet not found")
 }
 
 func (s *TonConnectService) GetTonkeeperUrl() string {
@@ -198,7 +205,12 @@ func (s *TonConnectService) CreateSession() (*tonconnect.Session, error) {
 	return tonconnect.NewSession()
 }
 
-func (s *TonConnectService) SendJettonTransaction(jettonAddr, receiverAddr, senderAddr, amount string, payload *models.Payload, session *tonconnect.Session) ([]byte, error) {
+func (s *TonConnectService) SendJettonTransaction(key, jettonAddr, receiverAddr, senderAddr, amount string, payload *models.Payload, session *tonconnect.Session) ([]byte, error) {
+	defer func() {
+		if err := s.SaveSession(key, session); err != nil {
+			log.Error("Error saving session", err)
+		}
+	}()
 
 	payloadJson, err := json.Marshal(payload)
 	if err != nil {
@@ -265,6 +277,17 @@ func (s *TonConnectService) SendJettonTransaction(jettonAddr, receiverAddr, send
 		return nil, err
 	}
 	return boc, nil
+}
+
+func (s *TonConnectService) ConnectSession(ses *tonconnect.Session) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+	_, err := ses.Connect(ctx, tonconnect.Wallets["tonkeeper"])
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *TonConnectService) SendTransaction(ctx context.Context, receiverAddr, amount, comment string, session *tonconnect.Session) ([]byte, error) {

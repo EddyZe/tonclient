@@ -155,14 +155,19 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 		}
 		return
 	}
+
+	createDate := time.Now()
+	endDate := createDate.Add(time.Duration(p.Period) * time.Hour * 24)
+
 	newStake := &appModels.Stake{
 		UserId:               uint64(u.Id.Int64),
 		PoolId:               pooldId,
 		Amount:               tokens,
 		Balance:              tokens,
 		IsCommissionPaid:     false,
-		StartDate:            time.Now(),
+		StartDate:            createDate,
 		IsActive:             true,
+		EndDate:              endDate,
 		DepositCreationPrice: price,
 	}
 
@@ -230,6 +235,7 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 	}
 
 	if _, err := c.tcs.SendJettonTransaction(
+		fmt.Sprint(chatId),
 		jettonAddr.Address().String(),
 		c.aws.GetAdminWalletAddr().String(),
 		w.Addr,

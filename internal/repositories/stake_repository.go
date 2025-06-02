@@ -29,7 +29,11 @@ func (r *StakeRepository) Save(stake *models.Stake) error {
 	}
 
 	query, args, err := tx.BindNamed(
-		"insert into stake(user_id, pool_id, amount, start_date, is_active, deposit_creation_price, balance, is_insurance_paid, is_reward_paid, jetton_price_closed, is_commission_paid) values (:user_id, :pool_id, :amount, :start_date, :is_active, :deposit_creation_price, :balance, :is_insurance_paid, :is_reward_paid, :jetton_price_closed, :is_commission_paid) returning id",
+		`
+insert into
+stake(user_id, pool_id, amount, start_date, is_active, deposit_creation_price, balance, is_insurance_paid, is_reward_paid, jetton_price_closed, is_commission_paid, end_date, close_date) 
+values (:user_id, :pool_id, :amount, :start_date, :is_active, :deposit_creation_price, :balance, :is_insurance_paid, :is_reward_paid, :jetton_price_closed, :is_commission_paid, :end_date, :close_date)
+returning id`,
 		stake,
 	)
 
@@ -67,7 +71,22 @@ func (r *StakeRepository) Update(stake *models.Stake) error {
 
 	if _, err := tx.NamedExecContext(
 		ctx,
-		"update stake set user_id = :user_id, pool_id = :pool_id, amount = :amount, start_date=:start_date, is_active = :is_active, deposit_creation_price = :deposit_creation_price, balance = :balance, is_insurance_paid = :is_insurance_paid, is_reward_paid = :is_reward_paid, jetton_price_closed = :jetton_price_closed, is_commission_paid=:is_commission_paid where id=:id",
+		`
+update stake 
+set user_id = :user_id,
+    pool_id = :pool_id,
+    amount = :amount,
+    start_date=:start_date,
+    is_active = :is_active,
+    deposit_creation_price = :deposit_creation_price,
+    balance = :balance, 
+    is_insurance_paid = :is_insurance_paid, 
+    is_reward_paid = :is_reward_paid,
+    jetton_price_closed = :jetton_price_closed,
+    is_commission_paid=:is_commission_paid,
+    end_date =:end_date,
+    close_date =:close_date
+where id=:id`,
 		stake,
 	); err != nil {
 		log.Error("Failed to update stake: ", err)
@@ -512,7 +531,13 @@ func (r *StakeRepository) GroupFromPoolNameByUserIdLimit(userId uint64, offset, 
 	if err := r.db.SelectContext(
 		ctx,
 		&res,
-		"select p.jetton_name as name, count(*) as count from stake s join pool p on s.pool_id = p.id where s.user_id = $1 group by p.jetton_name order by max(s.start_date) desc limit $2 offset $3",
+		`
+select p.jetton_name as name, count(*) as count
+from stake s join pool p on s.pool_id = p.id
+where s.user_id = $1
+group by p.jetton_name
+order by max(s.start_date)
+    desc limit $2 offset $3`,
 		userId,
 		limit,
 		offset,
