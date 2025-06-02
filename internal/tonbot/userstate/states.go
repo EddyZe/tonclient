@@ -22,5 +22,5 @@ const (
 )
 
 func ResetState(chatId int64) {
-	CurrentState[chatId] = -1
+	delete(CurrentState, chatId)
 }

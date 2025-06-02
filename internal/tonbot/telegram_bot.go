@@ -11,7 +11,6 @@ import (
 	"runtime/debug"
 	"strconv"
 	"strings"
-	"time"
 	"tonclient/internal/config"
 	appModels "tonclient/internal/models"
 	"tonclient/internal/schedulers"
@@ -73,14 +72,14 @@ func (t *TgBot) StartBot(ch chan appModels.SubmitTransaction) error {
 	}
 
 	go t.checkingOperation(tgbot, ch)
-	go t.createCron(ctx, tgbot)
+	go t.createCron(tgbot)
 
 	tgbot.Start(ctx)
 
 	return nil
 }
 
-func (t *TgBot) createCron(ctx context.Context, b *bot.Bot) {
+func (t *TgBot) createCron(b *bot.Bot) {
 	stakes := make(chan *appModels.NotificationStake)
 	c := cron.New()
 	//TODO изменить на каждый день!
@@ -89,6 +88,8 @@ func (t *TgBot) createCron(ctx context.Context, b *bot.Bot) {
 		log.Fatal(err)
 	}
 	c.Start()
+
+	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
 
 	go t.checkMessageBonusStakes(ctx, b, stakes)
 
@@ -666,36 +667,7 @@ func (t *TgBot) commissionStakePaid(payload *appModels.Payload, b *bot.Bot) {
 		return
 	}
 
-	var urlWallet string
-	if w.Name == "tonkeeper" {
-		urlWallet = "https://wallet.tonkeeper.com/"
-	} else {
-		urlWallet = "https://tonhub.com/"
-	}
-
-	btn := util.CreateUrlInlineButton(buttons.OpenBrowser, urlWallet)
-	btn2 := util.CreateWebAppButton(buttons.OpenWallet, urlWallet)
-	markup := util.CreateInlineMarup(1, btn, btn2)
-	if _, err := util.SendTextMessageMarkup(
-		b,
-		tg.TelegramId,
-		fmt.Sprintf("✅ Комиссия принята. Подтвердите свой стейк в кошельке. %v %v", stake.Amount, pool.JettonName),
-		markup,
-	); err != nil {
-		log.Error(err)
-		return
-	}
-
-	cxt, cancel := context.WithTimeout(context.Background(), time.Minute*5)
-	defer cancel()
-
-	jettonAddr, err := t.aws.TokenWalletAddress(cxt, pool.JettonMaster, address.MustParseAddr(w.Addr))
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
-	s, err := t.tcs.LoadSession(cxt, fmt.Sprint(tg.TelegramId))
+	s, err := t.tcs.LoadSession(fmt.Sprint(tg.TelegramId))
 	if err != nil {
 		if _, err := util.SendTextMessage(
 			b,
@@ -707,8 +679,26 @@ func (t *TgBot) commissionStakePaid(payload *appModels.Payload, b *bot.Bot) {
 		return
 	}
 
+	btns := util.GenerateButtonWallets(w, t.tcs)
+
+	markup := util.CreateInlineMarup(1, btns...)
+	if _, err := util.SendTextMessageMarkup(
+		b,
+		tg.TelegramId,
+		fmt.Sprintf("✅ Комиссия принята. Подтвердите свой стейк в кошельке. %v %v", stake.Amount, pool.JettonName),
+		markup,
+	); err != nil {
+		log.Error(err)
+		return
+	}
+
+	jettonAddr, err := t.aws.TokenWalletAddress(pool.JettonMaster, address.MustParseAddr(w.Addr))
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
 	if _, err := t.tcs.SendJettonTransaction(
-		cxt,
 		jettonAddr.Address().String(),
 		t.aws.GetAdminWalletAddr().String(),
 		w.Addr,

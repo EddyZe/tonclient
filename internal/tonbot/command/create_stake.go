@@ -165,8 +165,6 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 		IsActive:             true,
 		DepositCreationPrice: price,
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	defer cancel()
 
 	w, err := c.ws.GetByUserId(uint64(u.Id.Int64))
 	if err != nil {
@@ -180,7 +178,7 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 		return
 	}
 
-	s, err := c.tcs.LoadSession(ctx, fmt.Sprint(chatId))
+	s, err := c.tcs.LoadSession(fmt.Sprint(chatId))
 	if err != nil {
 		if _, err := util.SendTextMessage(
 			c.b,
@@ -194,7 +192,7 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 
 	adminJettonMaster := os.Getenv("JETTON_CONTRACT_ADMIN_JETTON")
 
-	jettonAddr, err := c.aws.TokenWalletAddress(ctx, adminJettonMaster, address.MustParseAddr(w.Addr))
+	jettonAddr, err := c.aws.TokenWalletAddress(adminJettonMaster, address.MustParseAddr(w.Addr))
 	if err != nil {
 		log.Error(err)
 		return
@@ -218,16 +216,9 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 		Payload:       string(jsonData),
 	}
 
-	var urlWallet string
-	if w.Name == "tonkeeper" {
-		urlWallet = "https://wallet.tonkeeper.com/"
-	} else {
-		urlWallet = "https://tonhub.com/"
-	}
+	btns := util.GenerateButtonWallets(w, c.tcs)
 
-	btn := util.CreateUrlInlineButton(buttons.OpenBrowser, urlWallet)
-	btn2 := util.CreateWebAppButton(buttons.OpenWallet, urlWallet)
-	markup := util.CreateInlineMarup(1, btn, btn2)
+	markup := util.CreateInlineMarup(1, btns...)
 	if _, err := util.SendTextMessageMarkup(
 		c.b,
 		uint64(chatId),
@@ -239,7 +230,6 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 	}
 
 	if _, err := c.tcs.SendJettonTransaction(
-		ctx,
 		jettonAddr.Address().String(),
 		c.aws.GetAdminWalletAddr().String(),
 		w.Addr,

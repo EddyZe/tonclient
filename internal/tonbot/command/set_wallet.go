@@ -146,6 +146,22 @@ func (s *SetWalletCommand[T]) connectWallet(chatId uint64, addr string) {
 		}
 		return
 	}
+	currentWall, err := s.ws.GetByUserId(uint64(user.Id.Int64))
+	if err == nil {
+		currentWall.Addr = addr
+		currentWall.Name = res.WalletName
+		err := s.ws.Update(currentWall)
+		if err != nil {
+			if _, er := util.SendTextMessage(s.b, chatId, "❌ Не удалось обновить кошелк. Повторите попытку!"); er != nil {
+				log.Error(err)
+			}
+		}
+		resp := fmt.Sprintf("✅ Кошелек %v, был успешно изменен. Имя кошелька: %v", addr, currentWall.Name)
+		if _, err := util.SendTextMessage(s.b, chatId, resp); err != nil {
+			log.Error(err)
+		}
+		return
+	}
 	wall, err := s.ws.CreateNewWallet(uint64(user.Id.Int64), addr, res.WalletName)
 	if err != nil {
 		log.Error(err)
@@ -166,5 +182,5 @@ func (s *SetWalletCommand[T]) connectWallet(chatId uint64, addr string) {
 	if _, err := util.SendTextMessage(s.b, chatId, resp); err != nil {
 		log.Error(err)
 	}
-	userstate.CurrentState[int64(chatId)] = -1
+	delete(userstate.CurrentState, int64(chatId))
 }

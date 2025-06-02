@@ -7,7 +7,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 	"tonclient/internal/config"
 	appModels "tonclient/internal/models"
 	"tonclient/internal/services"
@@ -18,6 +17,9 @@ import (
 	"github.com/go-telegram/bot/models"
 	"github.com/xssnick/tonutils-go/address"
 )
+
+const TonkeeperUrl = "https://wallet.tonkeeper.com/ton-connect"
+const TonhubUrl = "https://tonhub.com/ton-connect"
 
 type PaidCommission struct {
 	b   *bot.Bot
@@ -98,12 +100,9 @@ func (c *PaidCommission) Execute(ctx context.Context, callback *models.CallbackQ
 		return
 	}
 
-	servCtx, cancel := context.WithTimeout(context.Background(), time.Minute*5)
-	defer cancel()
-
 	jettonMasterAdmin := os.Getenv("JETTON_CONTRACT_ADMIN_JETTON")
 
-	jettonAddr, err := c.aws.TokenWalletAddress(servCtx, jettonMasterAdmin, address.MustParseAddr(w.Addr))
+	jettonAddr, err := c.aws.TokenWalletAddress(jettonMasterAdmin, address.MustParseAddr(w.Addr))
 	if err != nil {
 		if _, err := util.SendTextMessage(c.b, uint64(chatId), "❌ Что-то пошло не так! Повторите попытку!"); err != nil {
 			log.Error(err)
@@ -111,7 +110,7 @@ func (c *PaidCommission) Execute(ctx context.Context, callback *models.CallbackQ
 		return
 	}
 
-	s, err := c.tcs.LoadSession(servCtx, fmt.Sprint(chatId))
+	s, err := c.tcs.LoadSession(fmt.Sprint(chatId))
 	if err != nil {
 		log.Error(err)
 		repeatBtn := util.CreateDefaultButton(buttons.RepeatCreatePoolId, buttons.Repeat)
@@ -138,16 +137,9 @@ func (c *PaidCommission) Execute(ctx context.Context, callback *models.CallbackQ
 		Payload:       string(jsonData),
 	}
 
-	var urlWallet string
-	if w.Name == "tonkeeper" {
-		urlWallet = "https://wallet.tonkeeper.com/"
-	} else {
-		urlWallet = "https://tonhub.com/"
-	}
+	btns := util.GenerateButtonWallets(w, c.tcs)
 
-	btn := util.CreateUrlInlineButton(buttons.OpenBrowser, urlWallet)
-	btn2 := util.CreateWebAppButton(buttons.OpenWallet, urlWallet)
-	markup := util.CreateInlineMarup(1, btn, btn2)
+	markup := util.CreateInlineMarup(1, btns...)
 	if _, err := util.SendTextMessageMarkup(
 		c.b,
 		uint64(chatId),
@@ -159,7 +151,6 @@ func (c *PaidCommission) Execute(ctx context.Context, callback *models.CallbackQ
 	}
 
 	if _, err := c.tcs.SendJettonTransaction(
-		servCtx,
 		jettonAddr.Address().String(),
 		c.aws.GetAdminWalletAddr().String(),
 		w.Addr,

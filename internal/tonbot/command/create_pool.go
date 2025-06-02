@@ -134,8 +134,8 @@ func (c *CreatePool[T]) sendTransactionCreatingPool(pool *appModels.Pool, chatId
 			log.Error(err)
 		}
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*5)
-	defer cancel()
+
+	walJetton, err := c.aws.TokenWalletAddress(pool.JettonMaster, address.MustParseAddr(w.Addr))
 	adminWal := os.Getenv("WALLET_ADDR")
 	payload := appModels.Payload{
 		OperationType: appModels.OP_ADMIN_CREATE_POOL,
@@ -144,7 +144,7 @@ func (c *CreatePool[T]) sendTransactionCreatingPool(pool *appModels.Pool, chatId
 		Payload:       string(poolJson),
 	}
 
-	s, err := c.tcs.LoadSession(ctx, fmt.Sprint(chatId))
+	s, err := c.tcs.LoadSession(fmt.Sprint(chatId))
 	if err != nil {
 		if err := util.RequestRepeatTonConnect(c.b, chatId, markup, c.tcs); err != nil {
 			log.Error(err)
@@ -154,8 +154,7 @@ func (c *CreatePool[T]) sendTransactionCreatingPool(pool *appModels.Pool, chatId
 	}
 
 	boc, err := c.tcs.SendJettonTransaction(
-		ctx,
-		pool.JettonWallet,
+		walJetton.Address().String(),
 		adminWal,
 		w.Addr,
 		fmt.Sprint(pool.Reserve),
@@ -215,9 +214,7 @@ func (c *CreatePool[T]) enterAmountToken(msg *models.Message, w *appModels.Walle
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*5)
-	defer cancel()
-	jettonWallet, err := c.aws.TokenWalletAddress(ctx, pool.JettonMaster, address.MustParseAddr(w.Addr))
+	jettonWallet, err := c.aws.TokenWalletAddress(pool.JettonMaster, address.MustParseAddr(w.Addr))
 	if err != nil {
 		log.Error(err)
 		return
@@ -229,16 +226,9 @@ func (c *CreatePool[T]) enterAmountToken(msg *models.Message, w *appModels.Walle
 	pool.IsActive = false
 	currentCreatingPool[chatId] = pool
 
-	var urlWallet string
-	if w.Name == "tonkeeper" {
-		urlWallet = "https://wallet.tonkeeper.com/"
-	} else {
-		urlWallet = "https://tonhub.com/"
-	}
+	btns := util.GenerateButtonWallets(w, c.tcs)
 
-	btn2 := util.CreateUrlInlineButton(buttons.OpenBrowser, urlWallet)
-	btn := util.CreateWebAppButton(buttons.OpenWallet, urlWallet)
-	markup := util.CreateInlineMarup(1, btn2, btn)
+	markup := util.CreateInlineMarup(1, btns...)
 	if _, err := util.SendTextMessageMarkup(
 		c.b,
 		uint64(chatId),

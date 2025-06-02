@@ -1,7 +1,12 @@
 package util
 
 import (
+	"fmt"
 	"math"
+	"strings"
+	appModels "tonclient/internal/models"
+	"tonclient/internal/services"
+	"tonclient/internal/tonbot/buttons"
 
 	"github.com/go-telegram/bot/models"
 )
@@ -126,4 +131,20 @@ func MenuWithBackButton(buttonBackId, buttonBackText string, buttons ...models.I
 	return &models.InlineKeyboardMarkup{
 		InlineKeyboard: elements,
 	}
+}
+
+func GenerateButtonWallets(w *appModels.WalletTon, tcs *services.TonConnectService) []models.InlineKeyboardButton {
+	lowwerWalletNma := strings.ToLower(w.Name)
+	var btns []models.InlineKeyboardButton
+
+	if lowwerWalletNma == "tonkeeper" {
+		txt := fmt.Sprintf("%v %v", buttons.OpenWallet, w.Name)
+		btn := CreateUrlInlineButton(txt, tcs.GetWalletUniversalLink(lowwerWalletNma))
+		btns = append(btns, btn)
+	} else {
+		btn := CreateUrlInlineButton(buttons.OpenWallet, tcs.GetWalletUniversalLink(lowwerWalletNma))
+		btns = append(btns, btn)
+	}
+
+	return btns
 }

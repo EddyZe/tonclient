@@ -170,7 +170,7 @@ func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment stri
 
 	amountTok := tlb.MustFromDecimal(fmt.Sprint(amount), decimal)
 
-	tokenWallet, err := s.TokenWalletAddress(ctx, jettonMaster, s.wallet.WalletAddress())
+	tokenWallet, err := s.TokenWalletAddress(jettonMaster, s.wallet.WalletAddress())
 	if err != nil {
 		log.Errorf("Failed to get jetton token: %v", err)
 		return nil, err
@@ -240,7 +240,9 @@ func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment stri
 	return tx.Hash, nil
 }
 
-func (s *AdminWalletService) TokenWalletAddress(ctx context.Context, jettonMaster string, walletAddr *address.Address) (*jetton.WalletClient, error) {
+func (s *AdminWalletService) TokenWalletAddress(jettonMaster string, walletAddr *address.Address) (*jetton.WalletClient, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	tokenContract, err := address.ParseAddr(jettonMaster)
 	if err != nil {
 		log.Error("Failed to parse jetton token address:", err)
@@ -355,12 +357,14 @@ func (s *AdminWalletService) GetAdminWalletAddr() *address.Address {
 	return s.wallet.WalletAddress()
 }
 
-func (s *AdminWalletService) GetJettonBalance(ctx context.Context, wallAddr, jettonMaster string) (*big.Int, error) {
+func (s *AdminWalletService) GetJettonBalance(wallAddr, jettonMaster string) (*big.Int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
 	addr, err := address.ParseAddr(wallAddr)
 	if err != nil {
 		return nil, err
 	}
-	tokenWallet, err := s.TokenWalletAddress(ctx, jettonMaster, addr)
+	tokenWallet, err := s.TokenWalletAddress(jettonMaster, addr)
 	if err != nil {
 		log.Errorf("Failed to get jetton token: %v", err)
 		return nil, err

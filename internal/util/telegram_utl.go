@@ -138,10 +138,7 @@ func ConnectingTonConnect(b *bot.Bot, chatId uint64, tcs *services.TonConnectSer
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	defer cancel()
-
-	urls, err := tcs.GenerateConnectUrls(ctx, sessionTonConnect)
+	urls, err := tcs.GenerateConnectUrls(sessionTonConnect)
 	if err != nil {
 		log.Error(err)
 		if _, err := SendTextMessage(b, chatId, "❌ Произошла ошибка генерации ссылок, для подключения кошелька. Повторите попытку!"); err != nil {
@@ -152,15 +149,11 @@ func ConnectingTonConnect(b *bot.Bot, chatId uint64, tcs *services.TonConnectSer
 
 	btns := make([]models.InlineKeyboardButton, 0, 2)
 	for k, v := range urls {
-		btn := CreateUrlInlineButton(
-			fmt.Sprintf("%v: %v", buttons.OpenBrowser, k),
-			v,
-		)
-		btn2 := CreateWebAppButton(
+		btn2 := CreateUrlInlineButton(
 			fmt.Sprintf("%v: %v", buttons.OpenWallet, k),
 			v,
 		)
-		btns = append(btns, btn, btn2)
+		btns = append(btns, btn2)
 	}
 
 	markup := MenuWithBackButton(buttons.DefCloseId, buttons.DefCloseText, btns...)
@@ -169,7 +162,7 @@ func ConnectingTonConnect(b *bot.Bot, chatId uint64, tcs *services.TonConnectSer
 		return nil, err
 	}
 
-	res, err := tcs.Connect(ctx, sessionTonConnect)
+	res, err := tcs.Connect(sessionTonConnect)
 	if err != nil {
 		log.Error(err)
 		if _, err := SendTextMessage(b, chatId, "❌ Произошла ошибка подключения. Повторите попытку!"); err != nil {
@@ -177,7 +170,7 @@ func ConnectingTonConnect(b *bot.Bot, chatId uint64, tcs *services.TonConnectSer
 		}
 		return nil, err
 	}
-	err = tcs.SaveSession(ctx, fmt.Sprint(chatId), sessionTonConnect)
+	err = tcs.SaveSession(fmt.Sprint(chatId), sessionTonConnect)
 	if err != nil {
 		log.Error(err)
 		if _, err := SendTextMessage(b, chatId, "❌ Произошла ошибка при подключении, повторите попытку!"); err != nil {

@@ -83,6 +83,10 @@ func (s *WalletTonService) GetById(id uint64) (*models.WalletTon, error) {
 	return w, nil
 }
 
+func (s *WalletTonService) Update(w *models.WalletTon) error {
+	return s.walletRep.Update(w)
+}
+
 func (s *WalletTonService) CountAll() int {
 	return s.userService.CountAll()
 }

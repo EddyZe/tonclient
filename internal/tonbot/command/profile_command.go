@@ -84,7 +84,7 @@ func (c *ProfileCommand) generateMessage(u *appModels.User, tonAddr string, stak
 <b>TON-адрес</b>: %v
 <b>Дата регистрации</b>: %v
 <b>Стейкнутые токены</b>: %v %v
-<b>Общий застейконый объем</b>: %v токенов
+<b>Общий застейканый объем</b>: %v токенов
 `
 	res := fmt.Sprintf(
 		text,
