@@ -144,7 +144,7 @@ func (t *TgBot) handler(ctx context.Context, b *bot.Bot, update *models.Update) 
 	if update.CallbackQuery != nil {
 		callback := update.CallbackQuery
 
-		go t.handleCallback(ctx, b, callback)
+		t.handleCallback(ctx, b, callback)
 
 		if _, err := b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
 			CallbackQueryID: callback.ID,

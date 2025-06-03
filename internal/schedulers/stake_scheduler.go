@@ -2,11 +2,11 @@ package schedulers
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 	"tonclient/internal/models"
 	"tonclient/internal/services"
 	"tonclient/internal/tonfi"
+	"tonclient/internal/util"
 )
 
 func AddStakeBonusActiveStakes(s *services.StakeService, ps *services.PoolService, closedStake chan *models.NotificationStake) func() {
@@ -25,10 +25,7 @@ func AddStakeBonusActiveStakes(s *services.StakeService, ps *services.PoolServic
 					}
 					stake.IsActive = false
 					stake.CloseDate = time.Now()
-					currentPrice, err := strconv.ParseFloat(jettonData.DexPriceUsd, 64)
-					if err != nil {
-						currentPrice = 0.
-					}
+					currentPrice := util.GetCurrentPriceJettonAddr(pool.JettonMaster)
 					stake.JettonPriceClosed = currentPrice
 					err = s.Update(&stake)
 					if err != nil {
@@ -38,7 +35,7 @@ func AddStakeBonusActiveStakes(s *services.StakeService, ps *services.PoolServic
 						profit := stake.Balance - stake.Amount
 						closedStake <- &models.NotificationStake{
 							Stake: &stake,
-							Msg: fmt.Sprintf("✅ Стейк с токеном %v был закрыт.\n\n Заработано: %v %v.\n Общий баланс: %v %v\n Теперь вы можете вывести токены или возместить ущерб, если он был получен.",
+							Msg: fmt.Sprintf("✅ Стейк с токеном %v был закрыт.\n\n Заработано: %v %v.\n Общий баланс: %v %v\n Теперь вы можете вывести токены или получить компенсацию, если он был получен.",
 								jettonData.DisplayName,
 								profit,
 								jettonData.DisplayName,

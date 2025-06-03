@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"tonclient/internal/dyor"
 	appModels "tonclient/internal/models"
 	"tonclient/internal/services"
 	"tonclient/internal/tonbot/buttons"
@@ -75,11 +76,24 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 		return "-"
 	}
 	price := 0.
-	if jettonInfo.DexPriceUsd != "" {
-		price, err = strconv.ParseFloat(jettonInfo.DexPriceUsd, 64)
+	price, err = strconv.ParseFloat(jettonInfo.DexPriceUsd, 64)
+	if err != nil {
+		log.Error(err)
+		price = 0
+	}
+	if price == 0 {
+		resp, err := dyor.GetPrices(p.JettonMaster)
 		if err != nil {
-			log.Error(err)
-			price = 0
+			price = 0.
+		} else {
+			price, err = strconv.ParseFloat(resp.Currency.Price.Value, 64)
+			if err != nil {
+				log.Infoln(err.Error())
+				price = 0.
+			}
+
+			price = price / math.Pow10(resp.Currency.Price.Decimals)
+			log.Infoln(price)
 		}
 	}
 

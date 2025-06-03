@@ -52,7 +52,7 @@ const (
 	CloseStakeId    = "CLOSE_STAKE"
 
 	//profile
-	SetNumberWallet   = "👛 Привязать кошелек"
+	SetNumberWallet   = "👛 Изменить номер кошелька"
 	SetNumberWalletId = "SET_NUMBER_WALLET"
 
 	//default button
@@ -74,7 +74,7 @@ const (
 	RepeatCreatePoolId = "REPEAT_CREATE_POOL"
 
 	//Tonconnect
-	LinkTonConnect   = "🔁 Переподключить TonConnect"
+	LinkTonConnect   = "🔁 Реконект кошелька"
 	LinkTonConnectId = "LINK_TON_CONNECT"
 
 	//listStakes

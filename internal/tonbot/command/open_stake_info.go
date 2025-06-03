@@ -9,7 +9,6 @@ import (
 	appModels "tonclient/internal/models"
 	"tonclient/internal/services"
 	"tonclient/internal/tonbot/buttons"
-	"tonclient/internal/tonfi"
 	"tonclient/internal/util"
 
 	"github.com/go-telegram/bot"
@@ -70,7 +69,7 @@ func (c *OpenStakeInfo) Execute(ctx context.Context, callback *models.CallbackQu
 	buttonId := fmt.Sprintf("%v:%v", c.backBtn, jettonName)
 	backBtn := util.CreateDefaultButton(buttonId, buttons.BackStakesFromGroup)
 
-	if !stake.EndDate.Before(time.Now()) {
+	if stake.EndDate.After(time.Now()) && p.IsActive {
 		idBtn := fmt.Sprintf("%v:%v", buttons.CloseStakeId, stake.Id.Int64)
 		btn := util.CreateDefaultButton(idBtn, buttons.CloseStake)
 		btns = append(btns, btn)
@@ -79,7 +78,7 @@ func (c *OpenStakeInfo) Execute(ctx context.Context, callback *models.CallbackQu
 	if !stake.IsActive {
 		procientEditPrice := util.CalculateProcientEditPrice(stake.JettonPriceClosed, stake.DepositCreationPrice)
 		log.Infoln(procientEditPrice)
-		if procientEditPrice <= -30 {
+		if procientEditPrice <= float64(p.InsuranceCoating) {
 			idbtn := fmt.Sprintf("%v:%v", buttons.TakeInsuranceId, stake.Id.Int64)
 			btnInsurance := util.CreateDefaultButton(idbtn, buttons.TakeInsurance)
 			btns = append(btns, btnInsurance)
@@ -109,16 +108,7 @@ func (c *OpenStakeInfo) Execute(ctx context.Context, callback *models.CallbackQu
 }
 
 func (c *OpenStakeInfo) generateInfo(stake *appModels.Stake, jettonName string, pool *appModels.Pool) string {
-	jettonData, err := tonfi.GetAssetByAddr(pool.JettonMaster)
-	if err != nil {
-		log.Error(err)
-		return ""
-	}
-
-	currentPrice, err := strconv.ParseFloat(jettonData.DexPriceUsd, 64)
-	if err != nil {
-		currentPrice = 0.
-	}
+	currentPrice := util.GetCurrentPriceJettonAddr(pool.JettonMaster)
 
 	text := `
 	<b>Стейк с токеном %v</b>

@@ -14,7 +14,6 @@ import (
 	"tonclient/internal/tonbot/buttons"
 	"tonclient/internal/tonbot/callbacksuf"
 	"tonclient/internal/tonbot/userstate"
-	"tonclient/internal/tonfi"
 	"tonclient/internal/util"
 
 	"github.com/go-telegram/bot"
@@ -126,35 +125,7 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 		return
 	}
 
-	jettonData, err := tonfi.GetAssetByAddr(p.JettonMaster)
-	if err != nil {
-		if _, err := util.SendTextMessage(
-			c.b,
-			uint64(chatId),
-			"❌ Что-то пошло не так. Повторите операцию сначала!",
-		); err != nil {
-			log.Error(err)
-			return
-		}
-	}
-
-	if jettonData.DexPriceUsd == "" {
-		jettonData.DexPriceUsd = "0."
-	}
-
-	price, err := strconv.ParseFloat(jettonData.DexPriceUsd, 64)
-	if err != nil {
-		log.Error(err)
-		if _, err := util.SendTextMessage(
-			c.b,
-			uint64(chatId),
-			"❌ Что-то пошло не так. Повторите операцию сначала!",
-		); err != nil {
-			log.Error(err)
-			return
-		}
-		return
-	}
+	currentPrice := util.GetCurrentPriceJettonAddr(p.JettonMaster)
 
 	createDate := time.Now()
 	endDate := createDate.Add(time.Duration(p.Period) * time.Hour * 24)
@@ -168,7 +139,7 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 		StartDate:            createDate,
 		IsActive:             true,
 		EndDate:              endDate,
-		DepositCreationPrice: price,
+		DepositCreationPrice: currentPrice,
 	}
 
 	w, err := c.ws.GetByUserId(uint64(u.Id.Int64))

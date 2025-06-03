@@ -41,7 +41,8 @@ func (c *TonConnectRepeat) Execute(ctx context.Context, callback *models.Callbac
 		return
 	}
 
-	if _, err := util.ConnectingTonConnect(c.b, uint64(chatId), c.tcs); err != nil {
+	res, err := util.ConnectingTonConnect(c.b, uint64(chatId), c.tcs)
+	if err != nil {
 		log.Error(err)
 		if _, err := util.SendTextMessage(
 			c.b,
@@ -51,6 +52,24 @@ func (c *TonConnectRepeat) Execute(ctx context.Context, callback *models.Callbac
 			log.Error(err)
 			return
 		}
+		return
+	}
+
+	u, err := c.us.GetByTelegramChatId(uint64(chatId))
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	w, err := c.ws.GetByUserId(uint64(u.Id.Int64))
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	w.Name = res.WalletName
+	if err := c.ws.Update(w); err != nil {
+		log.Error(err)
 		return
 	}
 

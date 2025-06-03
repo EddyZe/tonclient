@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 	"tonclient/internal/services"
-	"tonclient/internal/tonfi"
 	"tonclient/internal/util"
 
 	"github.com/go-telegram/bot"
@@ -73,6 +72,17 @@ func (c *CloseStake) Execute(ctx context.Context, callback *models.CallbackQuery
 		return
 	}
 
+	if stake.IsRewardPaid || stake.IsInsurancePaid {
+		if _, err := util.SendTextMessage(
+			c.b,
+			uint64(chatId),
+			"❌ Токены уже получены!",
+		); err != nil {
+			log.Println(err)
+		}
+		return
+	}
+
 	w, err := c.ws.GetByUserId(stake.UserId)
 	if err != nil {
 		if _, err := util.SendTextMessage(
@@ -130,21 +140,12 @@ func (c *CloseStake) Execute(ctx context.Context, callback *models.CallbackQuery
 		return
 	}
 
-	tonfiInfo, err := tonfi.GetAssetByAddr(p.JettonMaster)
-	if err != nil {
-		log.Println(err)
-		tonfiInfo.DexUsdPrice = "0"
-	}
-
-	closedPrice, err := strconv.ParseFloat(tonfiInfo.DexUsdPrice, 64)
-	if err != nil {
-		closedPrice = 0
-	}
+	closePrice := util.GetCurrentPriceJettonAddr(p.JettonMaster)
 
 	stake.IsActive = false
 	stake.CloseDate = time.Now()
 	stake.IsRewardPaid = true
-	stake.JettonPriceClosed = closedPrice
+	stake.JettonPriceClosed = closePrice
 	if err := c.ss.Update(stake); err != nil {
 		log.Println("error update stake id ", stake.Id.Int64, "error: ", err)
 		return
