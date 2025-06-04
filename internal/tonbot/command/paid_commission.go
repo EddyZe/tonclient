@@ -137,13 +137,16 @@ func (c *PaidCommission) Execute(ctx context.Context, callback *models.CallbackQ
 		Payload:       string(jsonData),
 	}
 
-	btns := util.GenerateButtonWallets(w, c.tcs)
+	btns := util.GenerateButtonWallets(w, c.tcs, true)
 
 	markup := util.CreateInlineMarup(1, btns...)
 	if _, err := util.SendTextMessageMarkup(
 		c.b,
 		uint64(chatId),
-		"✅ Подтвердите транзакцию на вашем кошельке!",
+		fmt.Sprintf("✅ Оплатите комиссию %v %v",
+			os.Getenv("COMMISSION_AMOUNT"),
+			os.Getenv("JETTON_NAME_COIN"),
+		),
 		markup,
 	); err != nil {
 		log.Error(err)

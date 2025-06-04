@@ -106,7 +106,7 @@ func (c *OpenPoolInfoCommand) Execute(ctx context.Context, callback *models.Call
 		} else {
 			buttonId = buttons.BackPoolListId
 		}
-		markup = util.GenerateOwnerPoolInlineKeyboard(poolId, buttonId, pool.IsActive, splitData[2])
+		markup = util.GenerateOwnerPoolInlineKeyboard(poolId, buttonId, pool.IsActive, pool.IsCommissionPaid, splitData[2])
 	} else {
 		markup = util.MenuWithBackButton(buttons.BackPoolListId, buttons.BackPoolList, btn)
 	}

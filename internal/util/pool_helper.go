@@ -54,7 +54,9 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 
 	if allStakesPool != nil {
 		for _, stake := range *allStakesPool {
-			sumAmount += stake.Amount
+			if stake.IsActive {
+				sumAmount += stake.Amount
+			}
 		}
 	}
 
@@ -119,7 +121,7 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 <b> 📦 Описание пула %v: </b>
 
 <b>Статус</b>: %v
-<b>Текущая цена токена:</b> %.6f$
+<b>Текущая цена токена:</b> %.9f$
 
 <b>📈 Доходность: </b>
 %v%% в день начисляется на застейканую сумму.
@@ -159,7 +161,7 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 	return res
 }
 
-func GenerateOwnerPoolInlineKeyboard(poolId int64, backPoolListButtonId string, isActive bool, sufData string) *models.InlineKeyboardMarkup {
+func GenerateOwnerPoolInlineKeyboard(poolId int64, backPoolListButtonId string, isActive, commissionPaid bool, sufData string) *models.InlineKeyboardMarkup {
 	paidCommision := CreateDefaultButton(fmt.Sprintf("%v:%v", buttons.PaidCommissionId, poolId), buttons.PaidCommission)
 	addReserve := CreateDefaultButton(fmt.Sprintf("%v:%v:%v", buttons.AddReserveId, poolId, sufData), buttons.AddReserve)
 	var closePoolText string
@@ -171,6 +173,14 @@ func GenerateOwnerPoolInlineKeyboard(poolId int64, backPoolListButtonId string, 
 	takeTokens := CreateDefaultButton(fmt.Sprintf("%v:%v:%v", buttons.TakeTokensId, poolId, sufData), buttons.TakeTokens)
 	closePool := CreateDefaultButton(fmt.Sprintf("%v:%v:%v", buttons.ClosePoolId, poolId, sufData), closePoolText)
 	backListPools := CreateDefaultButton(backPoolListButtonId, buttons.BackPoolList)
+	btns := make([]models.InlineKeyboardButton, 0, 5)
+	if !commissionPaid {
+		btns = append(btns, paidCommision)
+	}
+	btns = append(btns, addReserve)
+	btns = append(btns, closePool)
+	btns = append(btns, takeTokens)
+	btns = append(btns, backListPools)
 
-	return CreateInlineMarup(1, paidCommision, addReserve, closePool, takeTokens, backListPools)
+	return CreateInlineMarup(1, btns...)
 }

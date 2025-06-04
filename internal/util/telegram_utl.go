@@ -281,6 +281,9 @@ func GenerateStakeListByGroup(stakes []appModel.Stake, jettonName, idButton stri
 	for _, s := range stakes {
 		idbtn := fmt.Sprintf("%v:%v:%v", idButton, jettonName, s.Id.Int64)
 		text := fmt.Sprintf("Стейк от %v", s.StartDate.Format("02.01.2006 15:04"))
+		if !s.IsActive {
+			text += " ❌"
+		}
 		btn := CreateDefaultButton(idbtn, text)
 		res = append(res, btn)
 	}
@@ -288,32 +291,32 @@ func GenerateStakeListByGroup(stakes []appModel.Stake, jettonName, idButton stri
 	return res
 }
 
-func FilterProcientStakes(stakes []appModel.Stake, isMore bool, ps *services.PoolService) *[]appModel.Stake {
-	res := make([]appModel.Stake, 0)
-
-	if isMore {
-		for _, s := range stakes {
-			p, err := ps.GetId(s.PoolId)
-			if err != nil {
-				continue
-			}
-			t := CalculateProcientEditPrice(s.JettonPriceClosed, s.DepositCreationPrice)
-			if t > float64(p.InsuranceCoating) {
-				res = append(res, s)
-			}
-		}
-	} else {
-		for _, s := range stakes {
-			p, err := ps.GetId(s.PoolId)
-			if err != nil {
-				continue
-			}
-			t := CalculateProcientEditPrice(s.JettonPriceClosed, s.DepositCreationPrice)
-			if t < float64(p.InsuranceCoating) {
-				res = append(res, s)
-			}
-		}
-	}
-
-	return &res
-}
+//func FilterProcientStakes(stakes []appModel.Stake, isMore bool, ps *services.PoolService) *[]appModel.Stake {
+//	res := make([]appModel.Stake, 0)
+//
+//	if isMore {
+//		for _, s := range stakes {
+//			p, err := ps.GetId(s.PoolId)
+//			if err != nil {
+//				continue
+//			}
+//			t := CalculateProcientEditPrice(s.JettonPriceClosed, s.DepositCreationPrice)
+//			if t > float64(p.InsuranceCoating) {
+//				res = append(res, s)
+//			}
+//		}
+//	} else {
+//		for _, s := range stakes {
+//			p, err := ps.GetId(s.PoolId)
+//			if err != nil {
+//				continue
+//			}
+//			t := CalculateProcientEditPrice(s.JettonPriceClosed, s.DepositCreationPrice)
+//			if t < float64(p.InsuranceCoating) {
+//				res = append(res, s)
+//			}
+//		}
+//	}
+//
+//	return &res
+//}

@@ -168,7 +168,7 @@ func (c *CloseOrOpenPool) editStatus(
 		chatId,
 		messageId,
 		util.PoolInfo(pool, c.ss, jettonData),
-		util.GenerateOwnerPoolInlineKeyboard(int64(poolId), btnId, pool.IsActive, sufData),
+		util.GenerateOwnerPoolInlineKeyboard(int64(poolId), btnId, pool.IsActive, pool.IsCommissionPaid, sufData),
 	); err != nil {
 		log.Error(err)
 	}

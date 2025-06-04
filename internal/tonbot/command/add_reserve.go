@@ -133,7 +133,7 @@ func (c *AddReserve[T]) executeMessage(ctx context.Context, msg *models.Message)
 	}
 	adminAddr := os.Getenv("WALLET_ADDR")
 
-	btns := util.GenerateButtonWallets(w, c.tcs)
+	btns := util.GenerateButtonWallets(w, c.tcs, false)
 
 	markup := util.CreateInlineMarup(1, btns...)
 	if _, err := util.SendTextMessageMarkup(

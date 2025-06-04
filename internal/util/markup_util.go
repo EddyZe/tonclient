@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"math"
+	"os"
 	"strings"
 	appModels "tonclient/internal/models"
 	"tonclient/internal/services"
@@ -133,7 +134,7 @@ func MenuWithBackButton(buttonBackId, buttonBackText string, buttons ...models.I
 	}
 }
 
-func GenerateButtonWallets(w *appModels.WalletTon, tcs *services.TonConnectService) []models.InlineKeyboardButton {
+func GenerateButtonWallets(w *appModels.WalletTon, tcs *services.TonConnectService, buyJettonBtn bool) []models.InlineKeyboardButton {
 	lowwerWalletNma := strings.ToLower(w.Name)
 	var btns []models.InlineKeyboardButton
 
@@ -143,6 +144,18 @@ func GenerateButtonWallets(w *appModels.WalletTon, tcs *services.TonConnectServi
 		btns = append(btns, btn)
 	} else {
 		btn := CreateUrlInlineButton(buttons.OpenWallet, tcs.GetWalletUniversalLink(lowwerWalletNma))
+		btns = append(btns, btn)
+	}
+
+	if buyJettonBtn {
+		jettonMaster := os.Getenv("JETTON_CONTRACT_ADMIN_JETTON")
+		jettonName := os.Getenv("JETTON_NAME_COIN")
+		urlBuyJetton := fmt.Sprintf(
+			"https://app.ston.fi/swap?chartVisible=true&chartInterval=1w&ft=TON&tt=%v",
+			jettonMaster,
+		)
+		text := fmt.Sprintf("Купить %v", jettonName)
+		btn := CreateUrlInlineButton(text, urlBuyJetton)
 		btns = append(btns, btn)
 	}
 

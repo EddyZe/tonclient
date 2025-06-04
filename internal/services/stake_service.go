@@ -58,6 +58,10 @@ func (s *StakeService) GetPoolStakes(poolId uint64) *[]models.Stake {
 	return s.stakeRepo.FindStakesByPoolId(poolId)
 }
 
+func (s *StakeService) GetPoolStakesIsActive(poolId uint64, isActive bool) *[]models.Stake {
+	return s.stakeRepo.FindStakesByPoolIdIsActive(poolId, isActive)
+}
+
 func (s *StakeService) GetStakesUserIdStatus(userId uint64, b bool) *[]models.Stake {
 	stakes := s.stakeRepo.GetStakeStatusUser(userId, b)
 	if stakes == nil {

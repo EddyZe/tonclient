@@ -175,6 +175,13 @@ func (c *TakeTokens) Execute(ctx context.Context, callback *models.CallbackQuery
 		return
 	}
 
+	currentReserve := p.Reserve
+	p.Reserve = 0
+	if err := c.ps.Update(p); err != nil {
+		log.Error(err)
+		return
+	}
+
 	hash, err := c.aws.SendJetton(
 		p.JettonMaster,
 		w.Addr,
@@ -183,7 +190,11 @@ func (c *TakeTokens) Execute(ctx context.Context, callback *models.CallbackQuery
 		jettonData.Decimals,
 	)
 	if err != nil {
-		log.Error(err)
+		p.Reserve = currentReserve
+		if err := c.ps.Update(p); err != nil {
+			log.Error(err)
+			return
+		}
 		log.Error(err)
 		if _, err := util.SendTextMessage(
 			c.b,
@@ -196,12 +207,7 @@ func (c *TakeTokens) Execute(ctx context.Context, callback *models.CallbackQuery
 	}
 
 	resp := fmt.Sprintf("✅ Снятие средст прошло успешно! Снято: %v %v", p.Reserve, jettonData.Name)
-	p.Reserve = 0
-	err = c.ps.Update(p)
-	if err != nil {
-		log.Error(err)
-		return
-	}
+
 	if _, err := util.SendTextMessage(c.b, uint64(chatId), resp); err != nil {
 		log.Error(err)
 		return

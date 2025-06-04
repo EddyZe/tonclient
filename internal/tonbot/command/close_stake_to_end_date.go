@@ -83,6 +83,12 @@ func (c *CloseStake) Execute(ctx context.Context, callback *models.CallbackQuery
 		return
 	}
 
+	stake.IsRewardPaid = true
+	if err := c.ss.Update(stake); err != nil {
+		log.Error(err)
+		return
+	}
+
 	w, err := c.ws.GetByUserId(stake.UserId)
 	if err != nil {
 		if _, err := util.SendTextMessage(
@@ -127,6 +133,11 @@ func (c *CloseStake) Execute(ctx context.Context, callback *models.CallbackQuery
 		stake.Amount,
 		jettonData.Decimals,
 	); err != nil {
+		stake.IsRewardPaid = false
+		if err := c.ss.Update(stake); err != nil {
+			log.Error(err)
+			return
+		}
 		log.Println(err)
 		return
 	}
@@ -145,6 +156,7 @@ func (c *CloseStake) Execute(ctx context.Context, callback *models.CallbackQuery
 	stake.IsActive = false
 	stake.CloseDate = time.Now()
 	stake.IsRewardPaid = true
+	stake.EndDate = time.Now()
 	stake.JettonPriceClosed = closePrice
 	if err := c.ss.Update(stake); err != nil {
 		log.Println("error update stake id ", stake.Id.Int64, "error: ", err)

@@ -104,7 +104,7 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 		return
 	}
 
-	stakes := c.ss.GetPoolStakes(pooldId)
+	stakes := c.ss.GetPoolStakesIsActive(pooldId, false)
 	if stakes != nil {
 		sumStakes := c.calculateSumStakesFromPool(stakes)
 		newSum := sumStakes + tokens
@@ -192,13 +192,17 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 		Payload:       string(jsonData),
 	}
 
-	btns := util.GenerateButtonWallets(w, c.tcs)
+	btns := util.GenerateButtonWallets(w, c.tcs, true)
 
 	markup := util.CreateInlineMarup(1, btns...)
 	if _, err := util.SendTextMessageMarkup(
 		c.b,
 		uint64(chatId),
-		fmt.Sprintf("✅ Оплатите комиссию. %v %v", commission, os.Getenv("JETTON_NAME_COIN")),
+		fmt.Sprintf(
+			"✅ Оплатите комиссию. %v %v",
+			commission,
+			os.Getenv("JETTON_NAME_COIN"),
+		),
 		markup,
 	); err != nil {
 		log.Error(err)
@@ -266,7 +270,7 @@ func (c *CreateStakeCommand[T]) executeCallback(callback *models.CallbackQuery) 
 		return
 	}
 
-	currentStakesFromPool := c.ss.GetPoolStakes(uint64(poolId))
+	currentStakesFromPool := c.ss.GetPoolStakesIsActive(uint64(poolId), false)
 	if currentStakesFromPool != nil {
 		currentSumStakes := c.calculateSumStakesFromPool(currentStakesFromPool)
 		if err := c.checkSumStakes(currentSumStakes, pool, uint64(chatId)); err != nil {

@@ -35,7 +35,7 @@ func AddStakeBonusActiveStakes(s *services.StakeService, ps *services.PoolServic
 						profit := stake.Balance - stake.Amount
 						closedStake <- &models.NotificationStake{
 							Stake: &stake,
-							Msg: fmt.Sprintf("✅ Стейк с токеном %v был закрыт.\n\n Заработано: %v %v.\n Общий баланс: %v %v\n Теперь вы можете вывести токены или получить компенсацию, если он был получен.",
+							Msg: fmt.Sprintf("✅ Стейк с токеном %v был закрыт.\n\n Заработано: %v %v.\n Общий баланс: %v %v\n Теперь вы можете вывести токены или получить компенсацию, если она полагается.",
 								jettonData.DisplayName,
 								profit,
 								jettonData.DisplayName,
@@ -49,7 +49,10 @@ func AddStakeBonusActiveStakes(s *services.StakeService, ps *services.PoolServic
 			}
 			bonusPercent := float64(pool.Reward) / 100
 			amountBonus := stake.Amount * bonusPercent
-			stake.Balance += amountBonus
+			rewardAllTime := amountBonus * float64(pool.Period)
+			if stake.Balance < rewardAllTime+stake.Amount {
+				stake.Balance += amountBonus
+			}
 			if err := s.Update(&stake); err != nil {
 				continue
 			}

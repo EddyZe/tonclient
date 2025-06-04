@@ -69,7 +69,7 @@ func (c *OpenStakeInfo) Execute(ctx context.Context, callback *models.CallbackQu
 	buttonId := fmt.Sprintf("%v:%v", c.backBtn, jettonName)
 	backBtn := util.CreateDefaultButton(buttonId, buttons.BackStakesFromGroup)
 
-	if stake.EndDate.After(time.Now()) && p.IsActive {
+	if stake.EndDate.After(time.Now()) && stake.IsActive {
 		idBtn := fmt.Sprintf("%v:%v", buttons.CloseStakeId, stake.Id.Int64)
 		btn := util.CreateDefaultButton(idBtn, buttons.CloseStake)
 		btns = append(btns, btn)
@@ -78,11 +78,11 @@ func (c *OpenStakeInfo) Execute(ctx context.Context, callback *models.CallbackQu
 	if !stake.IsActive {
 		procientEditPrice := util.CalculateProcientEditPrice(stake.JettonPriceClosed, stake.DepositCreationPrice)
 		log.Infoln(procientEditPrice)
-		if procientEditPrice <= float64(p.InsuranceCoating) {
+		if procientEditPrice < float64(p.InsuranceCoating)*-1 && !stake.IsInsurancePaid && !stake.IsRewardPaid {
 			idbtn := fmt.Sprintf("%v:%v", buttons.TakeInsuranceId, stake.Id.Int64)
 			btnInsurance := util.CreateDefaultButton(idbtn, buttons.TakeInsurance)
 			btns = append(btns, btnInsurance)
-		} else {
+		} else if !stake.IsRewardPaid && !stake.IsInsurancePaid {
 			idBtn := fmt.Sprintf("%v:%v", buttons.TakeProfitId, stake.Id.Int64)
 			btn := util.CreateDefaultButton(idBtn, buttons.TakeProfit)
 			btns = append(btns, btn)
@@ -117,8 +117,8 @@ func (c *OpenStakeInfo) generateInfo(stake *appModels.Stake, jettonName string, 
 	<b>Гарантия:</b> Компенсация при снижении цены %v более чем на %v%%
 
 	<b>Сумма стейка:</b> %v
-	<b>Цена на момент стейка:</b> %f $
-	<b>Текущая цена:</b> %f $ (%v%%)
+	<b>Цена на момент стейка:</b> %.9f $
+	<b>Текущая цена:</b> %.9f $ (%v%%)
 
 	<b>Старт:</b> %v
 	<b>Стоп:</b> %v
@@ -160,7 +160,7 @@ func (c *OpenStakeInfo) generateInfo(stake *appModels.Stake, jettonName string, 
 
 	if !stake.IsActive {
 		formatText += fmt.Sprintf(
-			"\n\n<b>Цена на момент закрытия стейка</b>: %f$ (%v%%)",
+			"\n\n<b>Цена на момент закрытия стейка</b>: %.9f$ (%v%%)",
 			stake.JettonPriceClosed,
 			int(util.CalculateProcientEditPrice(stake.JettonPriceClosed, stake.DepositCreationPrice)),
 		)

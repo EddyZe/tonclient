@@ -79,6 +79,34 @@ func (c *TakeInsuranceFromStake) Execute(ctx context.Context, callback *models.C
 		return
 	}
 
+	if stake.IsActive {
+		if _, err := util.SendTextMessage(
+			c.b,
+			uint64(chatId),
+			"❌ Дождитесь закрытия стейка!",
+		); err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	if stake.IsRewardPaid || stake.IsInsurancePaid {
+		if _, err := util.SendTextMessage(
+			c.b,
+			uint64(chatId),
+			"❌ Страховка или вознаграждение уже было выплачено!",
+		); err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	stake.IsInsurancePaid = true
+	if err := c.ss.Update(stake); err != nil {
+		log.Error(err)
+		return
+	}
+
 	pool, err := c.ps.GetId(stake.PoolId)
 	if err != nil {
 		log.Error(err)
@@ -118,17 +146,6 @@ func (c *TakeInsuranceFromStake) Execute(ctx context.Context, callback *models.C
 		return
 	}
 
-	if stake.IsRewardPaid || stake.IsInsurancePaid {
-		if _, err := util.SendTextMessage(
-			c.b,
-			uint64(chatId),
-			"❌ Страховка или вознаграждение уже было выплачено!",
-		); err != nil {
-			log.Error(err)
-		}
-		return
-	}
-
 	jettonData, err := c.aws.DataJetton(pool.JettonMaster)
 	if err != nil {
 		log.Error(err)
@@ -160,6 +177,11 @@ func (c *TakeInsuranceFromStake) Execute(ctx context.Context, callback *models.C
 	)
 	if err != nil {
 		log.Error(err)
+		stake.IsInsurancePaid = false
+		if err := c.ss.Update(stake); err != nil {
+			log.Error(err)
+			return
+		}
 		if _, err := util.SendTextMessage(
 			c.b,
 			uint64(chatId),
@@ -168,12 +190,6 @@ func (c *TakeInsuranceFromStake) Execute(ctx context.Context, callback *models.C
 			log.Error(err)
 
 		}
-		return
-	}
-
-	stake.IsInsurancePaid = true
-	if err := c.ss.Update(stake); err != nil {
-		log.Error(err)
 		return
 	}
 

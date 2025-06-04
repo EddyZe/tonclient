@@ -89,8 +89,6 @@ func (c *StakeProfitList[T]) executeCallback(ctx context.Context, callback *mode
 		false,
 	)
 
-	stakes = util.FilterProcientStakes(*stakes, true, c.ps)
-
 	markup := util.GenerateNextBackMenu(
 		page,
 		totalPage,

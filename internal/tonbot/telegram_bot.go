@@ -684,7 +684,7 @@ func (t *TgBot) commissionStakePaid(payload *appModels.Payload, b *bot.Bot) {
 		return
 	}
 
-	btns := util.GenerateButtonWallets(w, t.tcs)
+	btns := util.GenerateButtonWallets(w, t.tcs, true)
 
 	markup := util.CreateInlineMarup(1, btns...)
 	if _, err := util.SendTextMessageMarkup(
@@ -905,7 +905,13 @@ func (t *TgBot) createPool(payload *appModels.Payload, b *bot.Bot) {
 		"✅ Пул был успешно создан! Оплатите оплатите комиссию, чтобы активировать его!\n\n",
 		util.PoolInfo(&pool, t.ss, jettonData),
 	)
-	markup := util.GenerateOwnerPoolInlineKeyboard(pool.Id.Int64, buttons.BackMyPoolListId, pool.IsActive, callbacksuf.My)
+	markup := util.GenerateOwnerPoolInlineKeyboard(
+		pool.Id.Int64,
+		buttons.BackMyPoolListId,
+		pool.IsActive,
+		pool.IsCommissionPaid,
+		callbacksuf.My,
+	)
 
 	if _, err := util.SendTextMessageMarkup(b, telegram.TelegramId, text, markup); err != nil {
 		log.Error("Failed to send telegram:", err)

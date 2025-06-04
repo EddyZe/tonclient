@@ -227,7 +227,7 @@ func (c *CreatePool[T]) enterAmountToken(msg *models.Message, w *appModels.Walle
 	pool.IsActive = false
 	currentCreatingPool[chatId] = pool
 
-	btns := util.GenerateButtonWallets(w, c.tcs)
+	btns := util.GenerateButtonWallets(w, c.tcs, true)
 
 	markup := util.CreateInlineMarup(1, btns...)
 	if _, err := util.SendTextMessageMarkup(
