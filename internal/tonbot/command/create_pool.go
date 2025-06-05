@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"tonclient/internal/messages"
 	appModels "tonclient/internal/models"
 	"tonclient/internal/services"
 	"tonclient/internal/tonbot/buttons"
@@ -153,6 +154,11 @@ func (c *CreatePool[T]) sendTransactionCreatingPool(pool *appModels.Pool, chatId
 		return err
 	}
 
+	jettonData, err := c.aws.DataJetton(pool.JettonMaster)
+	if err != nil {
+		return err
+	}
+
 	boc, err := c.tcs.SendJettonTransaction(
 		fmt.Sprint(chatId),
 		walJetton.Address().String(),
@@ -164,6 +170,17 @@ func (c *CreatePool[T]) sendTransactionCreatingPool(pool *appModels.Pool, chatId
 	)
 	if err != nil {
 		log.Error(err)
+		if _, err := util.SendTextMessage(
+			c.b,
+			uint64(chatId),
+			fmt.Sprintf(
+				"❌ Транзакция %f %v при пополнении резерва пула не была подтверждена!",
+				pool.Reserve,
+				jettonData.Name,
+			),
+		); err != nil {
+			log.Error(err)
+		}
 		return err
 	}
 
@@ -233,7 +250,7 @@ func (c *CreatePool[T]) enterAmountToken(msg *models.Message, w *appModels.Walle
 	if _, err := util.SendTextMessageMarkup(
 		c.b,
 		uint64(chatId),
-		"✅ Подтвердите транзакцию на вашем кошельке!",
+		messages.SubmitTransaction,
 		markup,
 	); err != nil {
 		log.Error(err)

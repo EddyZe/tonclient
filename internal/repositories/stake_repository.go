@@ -321,7 +321,14 @@ func (r *StakeRepository) FindStakesByPoolIdIsActive(poolId uint64, status bool)
 	if err := tx.SelectContext(
 		ctx,
 		&stakes,
-		"select s.* from stake as s join pool as p on s.pool_id = p.id where p.id=$1 and (s.is_reward_paid = $2 or s.is_commission_paid = $2)",
+		`
+select s.* 
+from stake as s 
+    join pool as p 
+        on s.pool_id = p.id 
+where p.id=$1
+  and s.is_reward_paid = $2
+  and s.is_insurance_paid = $2`,
 		poolId,
 		status,
 	); err != nil {

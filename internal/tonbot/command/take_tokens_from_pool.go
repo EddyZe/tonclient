@@ -175,13 +175,6 @@ func (c *TakeTokens) Execute(ctx context.Context, callback *models.CallbackQuery
 		return
 	}
 
-	currentReserve := p.Reserve
-	p.Reserve = 0
-	if err := c.ps.Update(p); err != nil {
-		log.Error(err)
-		return
-	}
-
 	hash, err := c.aws.SendJetton(
 		p.JettonMaster,
 		w.Addr,
@@ -190,11 +183,6 @@ func (c *TakeTokens) Execute(ctx context.Context, callback *models.CallbackQuery
 		jettonData.Decimals,
 	)
 	if err != nil {
-		p.Reserve = currentReserve
-		if err := c.ps.Update(p); err != nil {
-			log.Error(err)
-			return
-		}
 		log.Error(err)
 		if _, err := util.SendTextMessage(
 			c.b,
@@ -203,6 +191,12 @@ func (c *TakeTokens) Execute(ctx context.Context, callback *models.CallbackQuery
 		); err != nil {
 			log.Error(err)
 		}
+		return
+	}
+
+	p.Reserve = 0
+	if err := c.ps.Update(p); err != nil {
+		log.Error(err)
 		return
 	}
 

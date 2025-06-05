@@ -94,16 +94,10 @@ func (c *TakeInsuranceFromStake) Execute(ctx context.Context, callback *models.C
 		if _, err := util.SendTextMessage(
 			c.b,
 			uint64(chatId),
-			"❌ Страховка или вознаграждение уже было выплачено!",
+			"❌ Возмещение или вознаграждение уже были выплачены!",
 		); err != nil {
 			log.Error(err)
 		}
-		return
-	}
-
-	stake.IsInsurancePaid = true
-	if err := c.ss.Update(stake); err != nil {
-		log.Error(err)
 		return
 	}
 
@@ -190,6 +184,12 @@ func (c *TakeInsuranceFromStake) Execute(ctx context.Context, callback *models.C
 			log.Error(err)
 
 		}
+		return
+	}
+
+	stake.IsInsurancePaid = true
+	if err := c.ss.Update(stake); err != nil {
+		log.Error(err)
 		return
 	}
 

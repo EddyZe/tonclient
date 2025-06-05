@@ -256,7 +256,7 @@ func (r *PoolRepository) FindByOwnerId(ownerId uint64) *[]models.Pool {
 		log.Error("Error while beginning transaction: ", err)
 		return nil
 	}
-	if err := tx.SelectContext(ctx, &pools, "select p.* from pool as p join usr as u on p.owner_id = u.id where u.id = $1", ownerId); err != nil {
+	if err := tx.SelectContext(ctx, &pools, "select p.* from pool as p join usr as u on p.owner_id = u.id where u.id = $1 order by p.created_at desc", ownerId); err != nil {
 		log.Error("Error while getting pool: ", err)
 		return nil
 	}
@@ -282,7 +282,7 @@ func (r *PoolRepository) FindByOwnerIdLimit(ownerId uint64, offset, limit int) *
 		log.Error("Error while beginning transaction: ", err)
 		return nil
 	}
-	if err := tx.SelectContext(ctx, &pools, "select p.* from pool as p join usr as u on p.owner_id = u.id where u.id = $1 offset $2 limit $3", ownerId, offset, limit); err != nil {
+	if err := tx.SelectContext(ctx, &pools, "select p.* from pool as p join usr as u on p.owner_id = u.id where u.id = $1 order by p.created_at desc offset $2 limit $3", ownerId, offset, limit); err != nil {
 		log.Error("Error while getting pool: ", err)
 		return nil
 	}

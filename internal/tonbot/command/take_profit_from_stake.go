@@ -92,16 +92,10 @@ func (c *TakeProfitFromStake) Execute(ctx context.Context, callback *models.Call
 		if _, err := util.SendTextMessage(
 			c.b,
 			uint64(chatId),
-			"❌ Награда или страховка уже была получена!",
+			"❌ Награда или возмещение уже были получены!",
 		); err != nil {
 			log.Error(err)
 		}
-		return
-	}
-
-	stake.IsRewardPaid = true
-	if err := c.ss.Update(stake); err != nil {
-		log.Error(err)
 		return
 	}
 
@@ -161,11 +155,6 @@ func (c *TakeProfitFromStake) Execute(ctx context.Context, callback *models.Call
 
 	boc, err := c.aws.SendJetton(jettonMaster, w.Addr, "", stake.Balance, jettonaData.Decimals)
 	if err != nil {
-		stake.IsRewardPaid = false
-		if err := c.ss.Update(stake); err != nil {
-			log.Error(err)
-			return
-		}
 		if _, err := util.SendTextMessage(
 			c.b,
 			uint64(chatId),
@@ -173,6 +162,12 @@ func (c *TakeProfitFromStake) Execute(ctx context.Context, callback *models.Call
 		); err != nil {
 			log.Println(err)
 		}
+		return
+	}
+
+	stake.IsRewardPaid = true
+	if err := c.ss.Update(stake); err != nil {
+		log.Error(err)
 		return
 	}
 

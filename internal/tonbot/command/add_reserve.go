@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"tonclient/internal/messages"
 	appModels "tonclient/internal/models"
 	"tonclient/internal/services"
 	"tonclient/internal/tonbot/userstate"
@@ -28,16 +29,19 @@ type AddReserve[T CommandType] struct {
 	tcs *services.TonConnectService
 	us  *services.UserService
 	ws  *services.WalletTonService
+	aws *services.AdminWalletService
 }
 
 func NewAddReserveCommand[T CommandType](b *bot.Bot, ps *services.PoolService,
-	tcs *services.TonConnectService, us *services.UserService, ws *services.WalletTonService) *AddReserve[T] {
+	tcs *services.TonConnectService, us *services.UserService, ws *services.WalletTonService,
+	aws *services.AdminWalletService) *AddReserve[T] {
 	return &AddReserve[T]{
 		b:   b,
 		ps:  ps,
 		tcs: tcs,
 		us:  us,
 		ws:  ws,
+		aws: aws,
 	}
 }
 
@@ -139,9 +143,15 @@ func (c *AddReserve[T]) executeMessage(ctx context.Context, msg *models.Message)
 	if _, err := util.SendTextMessageMarkup(
 		c.b,
 		uint64(chatId),
-		"✅ Подтвердите транзакцию на вашем кошельке!",
+		messages.SubmitTransaction,
 		markup,
 	); err != nil {
+		log.Error(err)
+		return
+	}
+
+	jettonData, err := c.aws.DataJetton(pool.JettonMaster)
+	if err != nil {
 		log.Error(err)
 		return
 	}
@@ -156,6 +166,13 @@ func (c *AddReserve[T]) executeMessage(ctx context.Context, msg *models.Message)
 		s,
 	); err != nil {
 		log.Error(err)
+		if _, err := util.SendTextMessage(
+			c.b,
+			uint64(chatId),
+			fmt.Sprintf("❌ Транзакция %v %v при пополнении резерва не была подтверждена!", amount, jettonData.Name),
+		); err != nil {
+			log.Error(err)
+		}
 		return
 	}
 

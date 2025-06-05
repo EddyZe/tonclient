@@ -28,6 +28,10 @@ import (
 )
 
 var log = config.InitLogger()
+var sendJettonInsurance = make(chan func())
+var sendJettonProfit = make(chan func())
+var sendJettonClosingTimeStake = make(chan func())
+var sendJettonClosePool = make(chan func())
 
 type TgBot struct {
 	token string
@@ -73,6 +77,7 @@ func (t *TgBot) StartBot(ch chan appModels.SubmitTransaction) error {
 
 	go t.checkingOperation(tgbot, ch)
 	go t.createCron(tgbot)
+	go checkSendJettonOperation()
 
 	tgbot.Start(ctx)
 
@@ -144,7 +149,7 @@ func (t *TgBot) handler(ctx context.Context, b *bot.Bot, update *models.Update) 
 	if update.CallbackQuery != nil {
 		callback := update.CallbackQuery
 
-		t.handleCallback(ctx, b, callback)
+		go t.handleCallback(ctx, b, callback)
 
 		if _, err := b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
 			CallbackQueryID: callback.ID,
@@ -271,7 +276,9 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 	}
 
 	if strings.HasPrefix(data, buttons.CloseStakeId) {
-		command.NewCloseStakeCommand(b, t.aws, t.ws, t.ss, t.ps).Execute(ctx, callback)
+		sendJettonClosingTimeStake <- func() {
+			command.NewCloseStakeCommand(b, t.aws, t.ws, t.ss, t.ps).Execute(ctx, callback)
+		}
 		return
 	}
 
@@ -285,7 +292,9 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 	}
 
 	if strings.HasPrefix(data, buttons.TakeTokensId) {
-		command.NewTakeTokensCommand(b, t.us, t.ps, t.ss, t.aws, t.ws, t.opS).Execute(ctx, callback)
+		sendJettonClosePool <- func() {
+			command.NewTakeTokensCommand(b, t.us, t.ps, t.ss, t.aws, t.ws, t.opS).Execute(ctx, callback)
+		}
 		return
 	}
 
@@ -471,7 +480,7 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 	}
 
 	if strings.HasPrefix(data, buttons.AddReserveId) {
-		command.NewAddReserveCommand[*models.CallbackQuery](b, t.ps, t.tcs, t.us, t.ws).Execute(ctx, callback)
+		command.NewAddReserveCommand[*models.CallbackQuery](b, t.ps, t.tcs, t.us, t.ws, t.aws).Execute(ctx, callback)
 		return
 	}
 
@@ -505,21 +514,25 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 	}
 
 	if strings.HasPrefix(data, buttons.TakeInsuranceId) {
-		command.NewTakeInsuranceFromStake(
-			b,
-			t.us,
-			t.ss,
-			t.ps,
-			t.ts,
-			t.opS,
-			t.ws,
-			t.aws,
-		).Execute(ctx, callback)
+		sendJettonInsurance <- func() {
+			command.NewTakeInsuranceFromStake(
+				b,
+				t.us,
+				t.ss,
+				t.ps,
+				t.ts,
+				t.opS,
+				t.ws,
+				t.aws,
+			).Execute(ctx, callback)
+		}
 		return
 	}
 
 	if strings.HasPrefix(data, buttons.TakeProfitId) {
-		command.NewTakeProfitFromStake(b, t.us, t.ps, t.ws, t.aws, t.ss, t.opS, t.ts).Execute(ctx, callback)
+		sendJettonProfit <- func() {
+			command.NewTakeProfitFromStake(b, t.us, t.ps, t.ws, t.aws, t.ss, t.opS, t.ts).Execute(ctx, callback)
+		}
 		return
 	}
 
@@ -566,7 +579,7 @@ func (t *TgBot) handleState(ctx context.Context, state int, b *bot.Bot, msg *mod
 		command.NewCreatePoolCommand[*models.Message](b, t.ps, t.us, t.tcs, t.aws, t.ws).Execute(ctx, msg)
 		break
 	case userstate.EnterAddReserveTokens:
-		command.NewAddReserveCommand[*models.Message](b, t.ps, t.tcs, t.us, t.ws).Execute(ctx, msg)
+		command.NewAddReserveCommand[*models.Message](b, t.ps, t.tcs, t.us, t.ws, t.aws).Execute(ctx, msg)
 		break
 	case userstate.CreateStake:
 		command.NewCreateStackeCommand[*models.Message](b, t.ps, t.us, t.tcs, t.ss, t.ts, t.aws, t.ws).Execute(ctx, msg)
@@ -713,6 +726,13 @@ func (t *TgBot) commissionStakePaid(payload *appModels.Payload, b *bot.Bot) {
 		s,
 	); err != nil {
 		log.Error(err)
+		if _, err := util.SendTextMessage(
+			b,
+			tg.TelegramId,
+			"❌ Транзакция не была подтверждена!",
+		); err != nil {
+			log.Error(err)
+		}
 		return
 	}
 	if _, err := t.opS.Create(
@@ -1046,7 +1066,7 @@ func (t *TgBot) payCommission(payload *appModels.Payload, b *bot.Bot) error {
 	}
 
 	desc := fmt.Sprintf(
-		"Оплата комиссии jetton: %v. Коммисия: %v %v",
+		"Оплата комиссии jetton: %v. Комиссия: %v %v",
 		jettonData.Name,
 		payload.Amount,
 		adminJettonData.Name,
@@ -1091,4 +1111,31 @@ func (t *TgBot) returnTokens(userId uint64, jettonMaster string, amount float64)
 	}
 
 	return nil
+}
+
+func checkSendJettonOperation() {
+	for {
+		select {
+		case f, ok := <-sendJettonInsurance:
+			if !ok {
+				continue
+			}
+			f()
+		case f, ok := <-sendJettonClosePool:
+			if !ok {
+				continue
+			}
+			f()
+		case f, ok := <-sendJettonProfit:
+			if !ok {
+				continue
+			}
+			f()
+		case f, ok := <-sendJettonClosingTimeStake:
+			if !ok {
+				continue
+			}
+			f()
+		}
+	}
 }

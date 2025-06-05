@@ -268,7 +268,7 @@ func (s *TonConnectService) SendJettonTransaction(key, jettonAddr, receiverAddr,
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
 	boc, err := session.SendTransaction(ctx, *tx)

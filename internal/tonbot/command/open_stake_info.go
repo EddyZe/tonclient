@@ -70,6 +70,7 @@ func (c *OpenStakeInfo) Execute(ctx context.Context, callback *models.CallbackQu
 	backBtn := util.CreateDefaultButton(buttonId, buttons.BackStakesFromGroup)
 
 	if stake.EndDate.After(time.Now()) && stake.IsActive {
+		info += "\n\n<b>При досрочном закрытии</b>:\n- Нет компенсации падения цены\n- Процент за стейкинг не начисляется"
 		idBtn := fmt.Sprintf("%v:%v", buttons.CloseStakeId, stake.Id.Int64)
 		btn := util.CreateDefaultButton(idBtn, buttons.CloseStake)
 		btns = append(btns, btn)

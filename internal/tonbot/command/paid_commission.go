@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"tonclient/internal/config"
+	"tonclient/internal/messages"
 	appModels "tonclient/internal/models"
 	"tonclient/internal/services"
 	"tonclient/internal/tonbot/buttons"
@@ -143,7 +144,7 @@ func (c *PaidCommission) Execute(ctx context.Context, callback *models.CallbackQ
 	if _, err := util.SendTextMessageMarkup(
 		c.b,
 		uint64(chatId),
-		fmt.Sprintf("✅ Оплатите комиссию %v %v",
+		fmt.Sprintf(messages.PaidCommission,
 			os.Getenv("COMMISSION_AMOUNT"),
 			os.Getenv("JETTON_NAME_COIN"),
 		),
@@ -163,7 +164,15 @@ func (c *PaidCommission) Execute(ctx context.Context, callback *models.CallbackQ
 		s,
 	); err != nil {
 		log.Error(err)
-		if _, err := util.SendTextMessage(c.b, uint64(chatId), "❌ Что-то пошло не так! Повторите попытку!"); err != nil {
+		if _, err := util.SendTextMessage(
+			c.b,
+			uint64(chatId),
+			fmt.Sprintf(
+				"❌ Транзакция %v %v при оплате комиссии не была подтверждена!",
+				config.COMMISSION_AMOUNT,
+				os.Getenv("JETTON_NAME_COIN"),
+			),
+		); err != nil {
 			log.Error(err)
 		}
 		return
