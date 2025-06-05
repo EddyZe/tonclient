@@ -168,7 +168,6 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 	}
 
 	adminJettonMaster := os.Getenv("JETTON_CONTRACT_ADMIN_JETTON")
-	adminJettonName := os.Getenv("JETTON_NAME_COIN")
 
 	jettonAddr, err := c.aws.TokenWalletAddress(adminJettonMaster, address.MustParseAddr(w.Addr))
 	if err != nil {
@@ -195,11 +194,11 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 	}
 
 	btns := util.GenerateButtonWallets(w, c.tcs, true)
-	jettonData, err := c.aws.DataJetton(p.JettonMaster)
-	if err != nil {
-		log.Error(err)
-		return
-	}
+	//jettonData, err := c.aws.DataJetton(p.JettonMaster)
+	//if err != nil {
+	//	log.Error(err)
+	//	return
+	//}
 
 	markup := util.CreateInlineMarup(1, btns...)
 	if _, err := util.SendTextMessageMarkup(
@@ -216,6 +215,8 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 		return
 	}
 
+	//adminJettonName := os.Getenv("JETTON_NAME_COIN")
+
 	if _, err := c.tcs.SendJettonTransaction(
 		fmt.Sprint(chatId),
 		jettonAddr.Address().String(),
@@ -226,19 +227,19 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 		s,
 	); err != nil {
 		log.Error(err)
-		if _, err := util.SendTextMessage(
-			c.b,
-			uint64(chatId),
-			fmt.Sprintf(
-				`❌ Транзакция %v %v на оплату комиссии при создании стейка %v %v не была подтверждена!`,
-				commission,
-				adminJettonName,
-				newStake.Amount,
-				jettonData.Name,
-			),
-		); err != nil {
-			log.Error(err)
-		}
+		//if _, err := util.SendTextMessage(
+		//	c.b,
+		//	uint64(chatId),
+		//	fmt.Sprintf(
+		//		`❌ Транзакция %v %v на оплату комиссии при создании стейка %v %v не была подтверждена!`,
+		//		commission,
+		//		adminJettonName,
+		//		newStake.Amount,
+		//		jettonData.Name,
+		//	),
+		//); err != nil {
+		//	log.Error(err)
+		//}
 		return
 	}
 

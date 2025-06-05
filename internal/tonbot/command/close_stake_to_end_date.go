@@ -2,10 +2,12 @@ package command
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
+	appModels "tonclient/internal/models"
 	"tonclient/internal/services"
 	"tonclient/internal/util"
 
@@ -19,6 +21,7 @@ type CloseStake struct {
 	ws  *services.WalletTonService
 	ss  *services.StakeService
 	ps  *services.PoolService
+	ops *services.OperationService
 }
 
 func NewCloseStakeCommand(
@@ -27,6 +30,7 @@ func NewCloseStakeCommand(
 	ws *services.WalletTonService,
 	ss *services.StakeService,
 	ps *services.PoolService,
+	ops *services.OperationService,
 ) *CloseStake {
 	return &CloseStake{
 		b:   b,
@@ -34,6 +38,7 @@ func NewCloseStakeCommand(
 		ws:  ws,
 		ss:  ss,
 		ps:  ps,
+		ops: ops,
 	}
 }
 
@@ -120,13 +125,14 @@ func (c *CloseStake) Execute(ctx context.Context, callback *models.CallbackQuery
 		return
 	}
 
-	if _, err := c.aws.SendJetton(
+	hashBytes, err := c.aws.SendJetton(
 		p.JettonMaster,
 		w.Addr,
 		"",
 		stake.Amount,
 		jettonData.Decimals,
-	); err != nil {
+	)
+	if err != nil {
 		log.Println(err)
 		return
 	}
@@ -156,6 +162,16 @@ func (c *CloseStake) Execute(ctx context.Context, callback *models.CallbackQuery
 	if err := c.ss.Update(stake); err != nil {
 		log.Println("error update stake id ", stake.Id.Int64, "error: ", err)
 		return
+	}
+
+	hash := base64.StdEncoding.EncodeToString(hashBytes)
+
+	if _, err := c.ops.Create(
+		stake.UserId,
+		appModels.OP_EARLY_CLOSOURE,
+		fmt.Sprintf("Досрочное закрытие стейка. Hash: %v", hash),
+	); err != nil {
+		log.Println(err)
 	}
 
 	if _, err := c.aws.SendJetton(

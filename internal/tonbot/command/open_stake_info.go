@@ -140,7 +140,7 @@ func (c *OpenStakeInfo) generateInfo(stake *appModels.Stake, jettonName string, 
 	formatText := fmt.Sprintf(
 		text,
 		jettonName,
-		pool.Reward*pool.Period,
+		pool.Reward*float64(pool.Period),
 		pool.Period,
 		util.SuffixDay(int(pool.Period)),
 		jettonName,

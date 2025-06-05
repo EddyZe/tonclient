@@ -194,13 +194,14 @@ func (c *TakeTokens) Execute(ctx context.Context, callback *models.CallbackQuery
 		return
 	}
 
+	currentReserve := p.Reserve
 	p.Reserve = 0
 	if err := c.ps.Update(p); err != nil {
 		log.Error(err)
 		return
 	}
 
-	resp := fmt.Sprintf("✅ Снятие средст прошло успешно! Снято: %v %v", p.Reserve, jettonData.Name)
+	resp := fmt.Sprintf("✅ Снятие средст прошло успешно! Снято: %v %v", currentReserve, jettonData.Name)
 
 	if _, err := util.SendTextMessage(c.b, uint64(chatId), resp); err != nil {
 		log.Error(err)

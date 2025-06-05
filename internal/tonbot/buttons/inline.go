@@ -2,9 +2,9 @@ package buttons
 
 const (
 	RoleButtonUserId          = "ROLE_BUTTON_USER"
-	RoleButtonUserText        = "Я пользователь"
+	RoleButtonUserText        = "Я холдер"
 	RoleButtonOwnerTokensId   = "ROLE_BUTTON_OWNER_TOKENS"
-	RoleButtonOwnerTokensText = "Я владелец токенов"
+	RoleButtonOwnerTokensText = "Я девелопер"
 
 	//next and back pool page
 	NextPagePool   = "NEXT_PAGE_POOL"
@@ -30,6 +30,8 @@ const (
 	BackPoolList        = "⏪ Вернуться к списку пулов"
 	BackPoolListId      = "BACK_POOL_LIST"
 	BackMyPoolListId    = "BACK_MY_POOL_LIST"
+	DeletePool          = "❌ Удалить пул"
+	DeletePoolId        = "DELETE_POOL"
 
 	// pool owner menu
 	PaidCommission   = "💸 Оплатить комиссию"

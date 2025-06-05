@@ -150,11 +150,11 @@ func (c *AddReserve[T]) executeMessage(ctx context.Context, msg *models.Message)
 		return
 	}
 
-	jettonData, err := c.aws.DataJetton(pool.JettonMaster)
-	if err != nil {
-		log.Error(err)
-		return
-	}
+	//jettonData, err := c.aws.DataJetton(pool.JettonMaster)
+	//if err != nil {
+	//	log.Error(err)
+	//	return
+	//}
 
 	if _, err := c.tcs.SendJettonTransaction(
 		fmt.Sprint(chatId),
@@ -166,13 +166,13 @@ func (c *AddReserve[T]) executeMessage(ctx context.Context, msg *models.Message)
 		s,
 	); err != nil {
 		log.Error(err)
-		if _, err := util.SendTextMessage(
-			c.b,
-			uint64(chatId),
-			fmt.Sprintf("❌ Транзакция %v %v при пополнении резерва не была подтверждена!", amount, jettonData.Name),
-		); err != nil {
-			log.Error(err)
-		}
+		//if _, err := util.SendTextMessage(
+		//	c.b,
+		//	uint64(chatId),
+		//	fmt.Sprintf("❌ Транзакция %v %v при пополнении резерва не была подтверждена!", amount, jettonData.Name),
+		//); err != nil {
+		//	log.Error(err)
+		//}
 		return
 	}
 

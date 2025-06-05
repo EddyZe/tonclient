@@ -154,10 +154,10 @@ func (c *CreatePool[T]) sendTransactionCreatingPool(pool *appModels.Pool, chatId
 		return err
 	}
 
-	jettonData, err := c.aws.DataJetton(pool.JettonMaster)
-	if err != nil {
-		return err
-	}
+	//jettonData, err := c.aws.DataJetton(pool.JettonMaster)
+	//if err != nil {
+	//	return err
+	//}
 
 	boc, err := c.tcs.SendJettonTransaction(
 		fmt.Sprint(chatId),
@@ -170,17 +170,17 @@ func (c *CreatePool[T]) sendTransactionCreatingPool(pool *appModels.Pool, chatId
 	)
 	if err != nil {
 		log.Error(err)
-		if _, err := util.SendTextMessage(
-			c.b,
-			uint64(chatId),
-			fmt.Sprintf(
-				"❌ Транзакция %f %v при пополнении резерва пула не была подтверждена!",
-				pool.Reserve,
-				jettonData.Name,
-			),
-		); err != nil {
-			log.Error(err)
-		}
+		//if _, err := util.SendTextMessage(
+		//	c.b,
+		//	uint64(chatId),
+		//	fmt.Sprintf(
+		//		"❌ Транзакция %f %v при пополнении резерва пула не была подтверждена!",
+		//		pool.Reserve,
+		//		jettonData.Name,
+		//	),
+		//); err != nil {
+		//	log.Error(err)
+		//}
 		return err
 	}
 
@@ -315,7 +315,7 @@ func (c *CreatePool[T]) enterInsuranceCoating(msg *models.Message) {
 func (c *CreatePool[T]) enterProfit(msg *models.Message) {
 	chatId := msg.Chat.ID
 	text := msg.Text
-	num, err := strconv.Atoi(text)
+	num, err := strconv.ParseFloat(text, 64)
 	if err != nil {
 		if _, err := util.SendTextMessage(c.b, uint64(chatId), "❌ Укажите число! Например: 1"); err != nil {
 			log.Error(err)
@@ -323,11 +323,11 @@ func (c *CreatePool[T]) enterProfit(msg *models.Message) {
 		return
 	}
 
-	if num < 1 || num > 3 {
+	if num < 0.1 || num > 3 {
 		if _, err := util.SendTextMessage(
 			c.b,
 			uint64(chatId),
-			"❌ Доходность не может быть меньше чем 1 и больше чем 3!",
+			"❌ Доходность не может быть меньше чем 0.1 и больше чем 3!",
 		); err != nil {
 			log.Error(err)
 		}
@@ -347,7 +347,7 @@ func (c *CreatePool[T]) enterProfit(msg *models.Message) {
 		log.Error(err)
 		return
 	}
-	pool.Reward = uint(num)
+	pool.Reward = num
 	currentCreatingPool[chatId] = pool
 	userstate.CurrentState[chatId] = userstate.EnterInsuranceCoating
 }
@@ -389,7 +389,7 @@ func (c *CreatePool[T]) installPeriodPool(chatId, period int64) {
 	pool.Period = uint(period)
 	currentCreatingPool[chatId] = pool
 	text := fmt.Sprintf(
-		"✅ Отлично. Вы выбрали <b>%v %v</b>.\n\n Укажите <b>доходность для участников</b> (%% в день). Например: 1.\n",
+		"✅ Отлично. Вы выбрали <b>%v %v</b>.\n\n Укажите <b>доходность для участников</b> (%% в день). Например: 0.5 или 3.\n",
 		period,
 		util.SuffixDay(int(period)),
 	)

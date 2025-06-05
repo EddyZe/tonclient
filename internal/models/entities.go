@@ -19,7 +19,7 @@ type Pool struct {
 	Reserve          float64       `db:"reserve" json:"reserve"`
 	JettonWallet     string        `db:"jetton_wallet" json:"jetton_wallet"`
 	JettonMaster     string        `db:"jetton_master" json:"jetton_master"`
-	Reward           uint          `db:"reward" json:"reward"`
+	Reward           float64       `db:"reward" json:"reward"`
 	Period           uint          `db:"period" json:"period"`
 	InsuranceCoating uint          `db:"insurance_coating" json:"insurance_coating"`
 	CreatedAt        time.Time     `db:"created_at" json:"created_at"`

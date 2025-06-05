@@ -21,7 +21,7 @@ func generateNamePool(pool *appModels.Pool, aws *services.AdminWalletService) st
 		return "Без названия"
 	}
 	return fmt.Sprintf(
-		"%v (%d %v / %d%% / резерв %.0f)",
+		"%v (%d %v / %v%% / резерв %.0f)",
 		jettonData.Name,
 		pool.Period,
 		SuffixDay(int(pool.Period)),
@@ -124,7 +124,7 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 <b>Текущая цена токена:</b> %.9f$
 
 <b>📈 Доходность: </b>
-%v%% в день начисляется на застейканую сумму.
+%.1f%% в день начисляется на застейканую сумму.
 
 <b>⏳Срок холда:</b>
 %v %v с возможностью досрочного вывода (но тогда без награды за стейкинг).
@@ -173,13 +173,16 @@ func GenerateOwnerPoolInlineKeyboard(poolId int64, backPoolListButtonId string, 
 	takeTokens := CreateDefaultButton(fmt.Sprintf("%v:%v:%v", buttons.TakeTokensId, poolId, sufData), buttons.TakeTokens)
 	closePool := CreateDefaultButton(fmt.Sprintf("%v:%v:%v", buttons.ClosePoolId, poolId, sufData), closePoolText)
 	backListPools := CreateDefaultButton(backPoolListButtonId, buttons.BackPoolList)
+	deletePool := CreateDefaultButton(fmt.Sprintf("%v:%v", buttons.DeletePoolId, poolId), buttons.DeletePool)
 	btns := make([]models.InlineKeyboardButton, 0, 5)
 	if !commissionPaid {
 		btns = append(btns, paidCommision)
 	}
+
 	btns = append(btns, addReserve)
 	btns = append(btns, closePool)
 	btns = append(btns, takeTokens)
+	btns = append(btns, deletePool)
 	btns = append(btns, backListPools)
 
 	return CreateInlineMarup(1, btns...)

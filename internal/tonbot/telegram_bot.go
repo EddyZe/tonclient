@@ -277,7 +277,7 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 
 	if strings.HasPrefix(data, buttons.CloseStakeId) {
 		sendJettonClosingTimeStake <- func() {
-			command.NewCloseStakeCommand(b, t.aws, t.ws, t.ss, t.ps).Execute(ctx, callback)
+			command.NewCloseStakeCommand(b, t.aws, t.ws, t.ss, t.ps, t.opS).Execute(ctx, callback)
 		}
 		return
 	}
@@ -529,6 +529,15 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 		return
 	}
 
+	if strings.HasPrefix(data, buttons.DeletePoolId) {
+		command.NewDeletePool(
+			b,
+			t.ps,
+			t.opS,
+		).Execute(ctx, callback)
+		return
+	}
+
 	if strings.HasPrefix(data, buttons.TakeProfitId) {
 		sendJettonProfit <- func() {
 			command.NewTakeProfitFromStake(b, t.us, t.ps, t.ws, t.aws, t.ss, t.opS, t.ts).Execute(ctx, callback)
@@ -726,13 +735,17 @@ func (t *TgBot) commissionStakePaid(payload *appModels.Payload, b *bot.Bot) {
 		s,
 	); err != nil {
 		log.Error(err)
-		if _, err := util.SendTextMessage(
-			b,
-			tg.TelegramId,
-			"❌ Транзакция не была подтверждена!",
-		); err != nil {
-			log.Error(err)
-		}
+		//if _, err := util.SendTextMessage(
+		//	b,
+		//	tg.TelegramId,
+		//	fmt.Sprintf(
+		//		"❌ Транзакция %f %v стейкинга не была подтверждена!",
+		//		stake.Amount,
+		//		pool.JettonName,
+		//	),
+		//); err != nil {
+		//	log.Error(err)
+		//}
 		return
 	}
 	if _, err := t.opS.Create(

@@ -4,8 +4,8 @@ const (
 	//user menu
 	SelectPool       = "📋 Выбрать пул"
 	Profile          = "🧑‍💼 Профиль"
-	HistoryOperation = "📃 История операций"
-	TakeAwards       = "💵 Забрать награды"
+	HistoryOperation = "📃 История"
+	TakeAwards       = "💵 Награды"
 	CheckInsurance   = "💰 Компенсация"
 	MyStakes         = "📈 Мои стейки"
 

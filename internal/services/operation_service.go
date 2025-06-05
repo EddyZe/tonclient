@@ -82,6 +82,10 @@ func OperationName(numOperation int) string {
 		return "Снятие резерва"
 	case models.OP_PAID_COMMISSION_STAKE:
 		return "Оплата комиссии за стейк"
+	case models.OP_EARLY_CLOSOURE:
+		return "Досрочное закрытие стейка"
+	case models.OP_DELETE_POOL:
+		return "Удаление пула"
 	default:
 		return "Неизвестная команда"
 	}

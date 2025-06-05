@@ -14,6 +14,8 @@ const (
 	OP_RETURNING_TOKENS      = 10
 	OP_CLAIM_RESERVE         = 11
 	OP_PAID_COMMISSION_STAKE = 12
+	OP_EARLY_CLOSOURE        = 13
+	OP_DELETE_POOL           = 14
 )
 
 type SubmitTransaction struct {
