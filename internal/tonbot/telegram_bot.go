@@ -2,6 +2,7 @@ package tonbot
 
 import (
 	"context"
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -43,12 +44,13 @@ type TgBot struct {
 	aws   *services.AdminWalletService
 	tcs   *services.TonConnectService
 	opS   *services.OperationService
+	rs    *services.ReferalService
 }
 
 func NewTgBot(token string, us *services.UserService, ts *services.TelegramService,
 	ps *services.PoolService, aws *services.AdminWalletService, ss *services.StakeService,
 	ws *services.WalletTonService, tcs *services.TonConnectService,
-	opS *services.OperationService) *TgBot {
+	opS *services.OperationService, rs *services.ReferalService) *TgBot {
 	return &TgBot{
 		token: token,
 		us:    us,
@@ -59,6 +61,7 @@ func NewTgBot(token string, us *services.UserService, ts *services.TelegramServi
 		ws:    ws,
 		tcs:   tcs,
 		opS:   opS,
+		rs:    rs,
 	}
 }
 
@@ -801,12 +804,17 @@ func (t *TgBot) stake(payload *appModels.Payload, b *bot.Bot) {
 		if err == nil {
 			log.Infoln("отправка бонуса")
 			if u.RefererId.Valid && u.RefererId.Int64 != 0 {
-				t.sendBonus(
-					b,
-					uint64(u.RefererId.Int64),
-					&stake,
-					tgStaker,
-				)
+				go func() {
+					if err := t.sendBonus(
+						b,
+						uint64(u.RefererId.Int64),
+						&stake,
+						tgStaker,
+					); err != nil {
+						log.Error("Failed to send bonus:", err)
+						return
+					}
+				}()
 			}
 		}
 	}
@@ -847,20 +855,20 @@ func (t *TgBot) stake(payload *appModels.Payload, b *bot.Bot) {
 	log.Infoln("Создание стейка завершено")
 }
 
-func (t *TgBot) sendBonus(b *bot.Bot, referalId uint64, stake *appModels.Stake, tgStaker *appModels.Telegram) {
+func (t *TgBot) sendBonus(b *bot.Bot, referalId uint64, stake *appModels.Stake, tgStaker *appModels.Telegram) error {
 	u, err := t.us.GetByTelegramChatId(referalId)
 	if err != nil {
 		log.Error("Failed to get user :", err)
-		return
+		return err
 	}
 	w, err := t.ws.GetByUserId(uint64(u.Id.Int64))
 	if err != nil {
 		log.Error("Failed to get user:", err)
-		return
+		return err
 	}
 	jettonAdminAddr := os.Getenv("JETTON_CONTRACT_ADMIN_JETTON")
 	if jettonAdminAddr == "" {
-		return
+		return err
 	}
 	bonus := os.Getenv("REFERAL_BONUS")
 	if bonus == "" {
@@ -869,7 +877,7 @@ func (t *TgBot) sendBonus(b *bot.Bot, referalId uint64, stake *appModels.Stake, 
 	bonusNum, err := strconv.ParseFloat(bonus, 64)
 	if err != nil {
 		log.Error("Failed to parse bonus:", err)
-		return
+		return err
 	}
 	decimal := os.Getenv("JETTON_DECIMAL")
 	if decimal == "" {
@@ -878,7 +886,7 @@ func (t *TgBot) sendBonus(b *bot.Bot, referalId uint64, stake *appModels.Stake, 
 	decimalNum, err := strconv.Atoi(decimal)
 	if err != nil {
 		log.Error("Failed to parse decimal:", err)
-		return
+		return err
 	}
 	bonusAmount := stake.Amount * (bonusNum / 100)
 	if _, err := t.aws.SendJetton(
@@ -889,7 +897,7 @@ func (t *TgBot) sendBonus(b *bot.Bot, referalId uint64, stake *appModels.Stake, 
 		decimalNum,
 	); err != nil {
 		log.Error("Failed to send bonus:", err)
-		return
+		return err
 	}
 	tokenName := os.Getenv("JETTON_NAME_COIN")
 	if tokenName == "" {
@@ -903,9 +911,25 @@ func (t *TgBot) sendBonus(b *bot.Bot, referalId uint64, stake *appModels.Stake, 
 			fmt.Sprintf("✅ Вы получили бонус %.2f %v, за пользователя %v. Токены были отправлены на привязанный кошелек", bonusAmount, tokenName, tgStaker.Username),
 		); err != nil {
 			log.Error("Failed to send bonus:", err)
-			return
+			return err
 		}
 	}
+
+	if err := t.rs.Save(&appModels.Referral{
+		ReferrerUserId: u.Id,
+		ReferralUserId: sql.NullInt64{
+			Int64: int64(stake.UserId),
+			Valid: true,
+		},
+		FirstStakeId: stake.Id,
+		RewardGiven:  true,
+		RewardAmount: bonusAmount,
+	}); err != nil {
+		log.Error("Failed to save referral:", err)
+		return err
+	}
+
+	return nil
 }
 
 func (t *TgBot) createPool(payload *appModels.Payload, b *bot.Bot) {

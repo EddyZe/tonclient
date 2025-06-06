@@ -47,8 +47,11 @@ func run() {
 	wr := repositories.NewWalletRepository(db.Db)
 	log.Println("Wallet repository initialized")
 	sr := repositories.NewStakeRepository(db.Db)
+	log.Println("Stake repository initialized")
 	or := repositories.NewOperationRepository(db.Db)
 	log.Println("Operation repository initialized")
+	refr := repositories.NewReferralRepository(db.Db)
+	log.Println("Referral repository initialized")
 
 	log.Println("Repository initialized")
 
@@ -65,6 +68,7 @@ func run() {
 	log.Println("WalletTon service initialized")
 	opS := services.NewOperationService(or)
 	log.Println("Operation service initialized")
+	rs := services.NewReferalService(refr)
 
 	aws, err := services.NewAdminWalletService(
 		config.LoadTonConfig(),
@@ -85,7 +89,7 @@ func run() {
 	tokenBot := os.Getenv("TELEGRAM_BOT_TOKEN")
 
 	logger.Infoln("Telegram bot starting:", tokenBot)
-	tgbot := tonbot.NewTgBot(tokenBot, us, ts, ps, aws, ss, ws, tcs, opS)
+	tgbot := tonbot.NewTgBot(tokenBot, us, ts, ps, aws, ss, ws, tcs, opS, rs)
 
 	transaction := make(chan models.SubmitTransaction)
 

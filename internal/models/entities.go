@@ -69,8 +69,8 @@ type WalletTon struct {
 
 type Referral struct {
 	Id             sql.NullInt64 `db:"id" json:"id"`
-	ReferrerUserId sql.NullInt64 `db:"referrer_user_id" json:"referrer_user_id"`
-	ReferralUserId sql.NullInt64 `db:"referral_user_id" json:"referral_user_id"`
+	ReferrerUserId sql.NullInt64 `db:"referrer_user_id" json:"referrer_user_id"` //прегласивший пользователь
+	ReferralUserId sql.NullInt64 `db:"referral_user_id" json:"referral_user_id"` //приглашенный пользоваель
 	FirstStakeId   sql.NullInt64 `db:"first_stake_id" json:"first_stake_id"`
 	RewardGiven    bool          `db:"reward_given" json:"reward_given"`
 	RewardAmount   float64       `db:"reward_amount" json:"reward_amount"`
