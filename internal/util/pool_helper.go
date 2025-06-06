@@ -99,7 +99,7 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 		}
 	}
 
-	reliability := (p.Reserve / (jettonData.TotalSupply / 10e+9)) / 0.72 * 100
+	reliability := (p.Reserve / (jettonData.TotalSupply / (10e+8))) / 0.72 * 100
 	reliability = math.Min(reliability, 100)
 
 	var emoj string
@@ -156,7 +156,7 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 		reliability,
 		level,
 		p.Reserve,
-		jettonData.TotalSupply/10e+9,
+		jettonData.TotalSupply/(10e+8),
 	)
 	return res
 }

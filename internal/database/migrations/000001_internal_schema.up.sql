@@ -27,7 +27,7 @@ create table if not exists pool
     id                 bigserial primary key,
     owner_id           bigint references usr (id) on delete cascade,
     jetton_name        varchar   default 'Не указано',
-    reserve            numeric(19, 9)                        not null,
+    reserve            numeric(28, 9)                        not null,
     jetton_wallet      varchar(256)                          not null,
     jetton_master      varchar(256)                          not null,
     reward             double precision check ( reward > 0 ) not null,
@@ -43,10 +43,10 @@ create table if not exists stake
     id                     bigserial primary key,
     user_id                bigint references usr (id) on delete cascade  not null,
     pool_id                bigint references pool (id) on delete cascade not null,
-    amount                 numeric(19, 9)                                not null check ( amount > 0 ),
-    deposit_creation_price numeric(19, 9)                                not null,
-    jetton_price_closed    numeric(19, 9)                                                               default 0 not null,
-    balance                numeric(19, 9)                                not null check ( balance > 0 ) default 0,
+    amount                 numeric(28, 9)                                not null check ( amount > 0 ),
+    deposit_creation_price numeric(28, 9)                                not null,
+    jetton_price_closed    numeric(28, 9)                                                               default 0 not null,
+    balance                numeric(28, 9)                                not null check ( balance > 0 ) default 0,
     close_date             timestamp                                                                    default null,
     start_date             timestamp                                                                    default now(),
     end_date               timestamp                                                                    default now(),
@@ -63,7 +63,7 @@ create table if not exists referral
     referral_user_id bigint references usr (id) on delete set null,
     first_stake_id   bigint references stake (id) on delete set null,
     reward_given     bool           default false,
-    reward_amount    numeric(19, 9) default 0
+    reward_amount    numeric(28, 9) default 0
 );
 
 create table if not exists operation

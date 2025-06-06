@@ -171,11 +171,6 @@ func (c *TakeInsuranceFromStake) Execute(ctx context.Context, callback *models.C
 	)
 	if err != nil {
 		log.Error(err)
-		stake.IsInsurancePaid = false
-		if err := c.ss.Update(stake); err != nil {
-			log.Error(err)
-			return
-		}
 		if _, err := util.SendTextMessage(
 			c.b,
 			uint64(chatId),

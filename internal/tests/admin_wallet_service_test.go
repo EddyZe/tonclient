@@ -77,8 +77,8 @@ func InitAdminService() *services.AdminWalletService {
 	s, err := services.NewAdminWalletService(&config.TonClientConfig{
 		Seed:                seeds,
 		WalletAddr:          "UQD6A01mB8tAKJVekRrMjoA3l188LSCF2zrIHoH94tWhZGAO",
-		JettonAddr:          "EQAPVdCkLAHYk0RXty5ucMNZhgX-wKe2mLBXp8A6YHm5z_os",
-		JettonAdminContract: "EQAJKTfw3qP0OFUba-1l7rtA7_TzXd9Cbm4DjNCaioCdofF_",
+		JettonAddr:          "UQD6A01mB8tAKJVekRrMjoA3l188LSCF2zrIHoH94tWhZGAO",
+		JettonAdminContract: "UQD6A01mB8tAKJVekRrMjoA3l188LSCF2zrIHoH94tWhZGAO",
 	},
 		ps,
 		ts,

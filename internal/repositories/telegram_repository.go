@@ -129,7 +129,7 @@ func (r *TelegramRepository) FindByTelegramId(telegramId uint64) *models.Telegra
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	if err := r.db.GetContext(ctx, &telegram, "select * from telegram where id=$1", telegramId); err != nil {
+	if err := r.db.GetContext(ctx, &telegram, "select * from telegram where telegram_id=$1", telegramId); err != nil {
 		log.Error("Failed to get result: ", err)
 		return nil
 	}

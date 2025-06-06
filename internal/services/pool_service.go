@@ -29,16 +29,12 @@ func (s *PoolService) CreatePool(pool *models.Pool) (*models.Pool, error) {
 		return nil, err
 	}
 
-	if pool.Reserve < 1 {
-		return nil, errors.New("reserve must be greater than zero")
-	}
+	//if  pool.Reserve < 1 {
+	//	return nil, errors.New("reserve must be greater than zero")
+	//}
 
 	if pool.JettonWallet == "" {
 		return nil, errors.New("jettonWallet must be set")
-	}
-
-	if pool.Reward < 1 {
-		return nil, errors.New("reward must be greater than zero")
 	}
 
 	if pool.Period < 1 {

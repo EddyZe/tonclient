@@ -777,16 +777,6 @@ func (t *TgBot) stake(payload *appModels.Payload, b *bot.Bot) {
 		return
 	}
 
-	log.Infoln("Сохранение стейка")
-	_, err = t.ss.CreateStake(&stake)
-	if err != nil {
-		log.Error("Failed to create stake:", err)
-		if err := t.returnTokens(stake.UserId, pool.JettonMaster, stake.Amount); err != nil {
-			log.Error("Failed to return tokens:", err)
-		}
-		return
-	}
-
 	log.Infoln("Получение инфы о стейке")
 	jettodData, err := t.aws.DataJetton(pool.JettonMaster)
 	if err != nil {
@@ -794,15 +784,8 @@ func (t *TgBot) stake(payload *appModels.Payload, b *bot.Bot) {
 		return
 	}
 
-	log.Infoln("Поиск создателя стейка")
-	u, err := t.us.GetById(stake.UserId)
-	if err != nil {
-		log.Error("Failed to get user:", err)
-		return
-	}
-
 	log.Infoln("поиск телеграмов")
-	tg, err := t.ts.GetByUserId(pool.OwnerId)
+	tgOwnerPool, err := t.ts.GetByUserId(pool.OwnerId)
 	if err != nil {
 		log.Error("Failed to get user wall:", err)
 	}
@@ -813,11 +796,29 @@ func (t *TgBot) stake(payload *appModels.Payload, b *bot.Bot) {
 
 	log.Infoln("проверка кол-во стейкаов")
 	stakesCountUser := t.ss.CountUser(stake.UserId)
-	if stakesCountUser == 0 && u.RefererId.Valid {
-		log.Infoln("отправка бонуса")
-		t.sendBonus(b, pool, &stake, tgStaker, tg)
+	if stakesCountUser == 0 {
+		u, err := t.us.GetById(stake.UserId)
+		if err == nil {
+			log.Infoln("отправка бонуса")
+			if u.RefererId.Valid && u.RefererId.Int64 != 0 {
+				t.sendBonus(
+					b,
+					uint64(u.RefererId.Int64),
+					&stake,
+					tgStaker,
+				)
+			}
+		}
 	}
-	log.Infoln("стейков", stakesCountUser)
+	log.Infoln("Сохранение стейка")
+	_, err = t.ss.CreateStake(&stake)
+	if err != nil {
+		log.Error("Failed to create stake:", err)
+		if err := t.returnTokens(stake.UserId, pool.JettonMaster, stake.Amount); err != nil {
+			log.Error("Failed to return tokens:", err)
+		}
+		return
+	}
 
 	description := fmt.Sprintf("Стейк в jetton: %v. Кол-во: %v", jettodData.Name, stake.Amount)
 
@@ -830,8 +831,8 @@ func (t *TgBot) stake(payload *appModels.Payload, b *bot.Bot) {
 
 	log.Infoln("Отправка сообщений в ТГ")
 
-	if tg != nil {
-		if _, err := util.SendTextMessage(b, tg.TelegramId, "✅ Новый стейк"); err != nil {
+	if tgOwnerPool != nil {
+		if _, err := util.SendTextMessage(b, tgOwnerPool.TelegramId, "✅ Новый стейк"); err != nil {
 			log.Error("Failed to send message:", err)
 			return
 		}
@@ -846,8 +847,13 @@ func (t *TgBot) stake(payload *appModels.Payload, b *bot.Bot) {
 	log.Infoln("Создание стейка завершено")
 }
 
-func (t *TgBot) sendBonus(b *bot.Bot, pool *appModels.Pool, stake *appModels.Stake, tgStaker, tgOwnerPool *appModels.Telegram) {
-	w, err := t.ws.GetByUserId(pool.OwnerId)
+func (t *TgBot) sendBonus(b *bot.Bot, referalId uint64, stake *appModels.Stake, tgStaker *appModels.Telegram) {
+	u, err := t.us.GetByTelegramChatId(referalId)
+	if err != nil {
+		log.Error("Failed to get user :", err)
+		return
+	}
+	w, err := t.ws.GetByUserId(uint64(u.Id.Int64))
 	if err != nil {
 		log.Error("Failed to get user:", err)
 		return
@@ -860,7 +866,7 @@ func (t *TgBot) sendBonus(b *bot.Bot, pool *appModels.Pool, stake *appModels.Sta
 	if bonus == "" {
 		bonus = "2"
 	}
-	bonusNum, err := strconv.Atoi(bonus)
+	bonusNum, err := strconv.ParseFloat(bonus, 64)
 	if err != nil {
 		log.Error("Failed to parse bonus:", err)
 		return
@@ -874,7 +880,7 @@ func (t *TgBot) sendBonus(b *bot.Bot, pool *appModels.Pool, stake *appModels.Sta
 		log.Error("Failed to parse decimal:", err)
 		return
 	}
-	bonusAmount := stake.Amount * float64(bonusNum/100)
+	bonusAmount := stake.Amount * (bonusNum / 100)
 	if _, err := t.aws.SendJetton(
 		jettonAdminAddr,
 		w.Addr,
@@ -893,8 +899,8 @@ func (t *TgBot) sendBonus(b *bot.Bot, pool *appModels.Pool, stake *appModels.Sta
 	if tgStaker != nil {
 		if _, err := util.SendTextMessage(
 			b,
-			tgOwnerPool.TelegramId,
-			fmt.Sprintf("✅ Вы получили бонус %v %v, за пользователя %v. Токены были отправлены на привязанный кошелек", bonusAmount, tokenName, tgStaker.Username),
+			referalId,
+			fmt.Sprintf("✅ Вы получили бонус %.2f %v, за пользователя %v. Токены были отправлены на привязанный кошелек", bonusAmount, tokenName, tgStaker.Username),
 		); err != nil {
 			log.Error("Failed to send bonus:", err)
 			return
@@ -935,7 +941,7 @@ func (t *TgBot) createPool(payload *appModels.Payload, b *bot.Bot) {
 	}
 
 	text := fmt.Sprint(
-		"✅ Пул был успешно создан! Оплатите оплатите комиссию, чтобы активировать его!\n\n",
+		"✅ Пул был успешно создан! Оплатите комиссию, чтобы активировать его!\n\n",
 		util.PoolInfo(&pool, t.ss, jettonData),
 	)
 	markup := util.GenerateOwnerPoolInlineKeyboard(

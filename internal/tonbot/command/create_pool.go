@@ -357,7 +357,7 @@ func (c *CreatePool[T]) enterCustomPeriodHold(msg *models.Message) {
 	text := msg.Text
 	numPeriod, err := strconv.ParseInt(text, 10, 64)
 	if err != nil {
-		if _, err := util.SendTextMessage(c.b, uint64(chatId), "❌ Укажите срок холда в цифрах! Например: 1"); err != nil {
+		if _, err := util.SendTextMessage(c.b, uint64(chatId), "❌ Укажите срок холда в целых цифрах! Например: 7"); err != nil {
 			log.Error(err)
 		}
 		return
@@ -367,7 +367,7 @@ func (c *CreatePool[T]) enterCustomPeriodHold(msg *models.Message) {
 		if _, err := util.SendTextMessage(
 			c.b,
 			uint64(chatId),
-			"❌ Период не может быть меньше чем 7!",
+			"❌ Срок холда не может быть меньше чем 7!",
 		); err != nil {
 			log.Error(err)
 		}

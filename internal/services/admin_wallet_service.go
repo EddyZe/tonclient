@@ -178,7 +178,11 @@ func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment stri
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
 
-	amountTok := tlb.MustFromDecimal(fmt.Sprint(amount), decimal)
+	amountTok, err := tlb.FromDecimal(fmt.Sprint(amount), decimal)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
 
 	tokenWallet, err := s.TokenWalletAddress(jettonMaster, s.wallet.WalletAddress())
 	if err != nil {
