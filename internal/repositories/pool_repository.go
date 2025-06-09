@@ -30,8 +30,8 @@ func (r *PoolRepository) Save(pool *models.Pool) error {
 
 	query, args, err := tx.BindNamed(
 		`insert into
-pool(owner_id, reserve, jetton_wallet, reward, period, is_active, insurance_coating, is_commission_paid, jetton_master, created_at, jetton_name)
-values (:owner_id, :reserve, :jetton_wallet, :reward, :period, :is_active, :insurance_coating, :is_commission_paid, :jetton_master, :created_at, :jetton_name)
+pool(owner_id, reserve, jetton_wallet, reward, period, is_active, insurance_coating, is_commission_paid, jetton_master, created_at, jetton_name, min_stake_amount)
+values (:owner_id, :reserve, :jetton_wallet, :reward, :period, :is_active, :insurance_coating, :is_commission_paid, :jetton_master, :created_at, :jetton_name, :min_stake_amount)
 returning id`,
 		pool,
 	)
@@ -69,7 +69,7 @@ func (r *PoolRepository) Update(pool *models.Pool) error {
 	}
 	if _, err := tx.NamedExecContext(
 		ctx,
-		"update pool set owner_id = :owner_id, reserve = :reserve, jetton_wallet = :jetton_wallet, reward = :reward, period = :period, is_active = :is_active, is_commission_paid = :is_commission_paid, jetton_master = :jetton_master, created_at = :created_at, jetton_name=:jetton_name where id = :id",
+		"update pool set owner_id = :owner_id, reserve = :reserve, jetton_wallet = :jetton_wallet, reward = :reward, period = :period, is_active = :is_active, is_commission_paid = :is_commission_paid, jetton_master = :jetton_master, created_at = :created_at, jetton_name=:jetton_name, min_stake_amount=:min_take_amount where id = :id",
 		pool); err != nil {
 		log.Error("Error while updating pool: ", err)
 	}
