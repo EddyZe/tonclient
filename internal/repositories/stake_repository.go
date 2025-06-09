@@ -31,7 +31,7 @@ func (r *StakeRepository) Save(stake *models.Stake) error {
 	query, args, err := tx.BindNamed(
 		`
 insert into
-stake(user_id, pool_id, amount, start_date, is_active, deposit_creation_price, balance, is_insurance_paid, is_reward_paid, jetton_price_closed, is_commission_paid, end_date, close_date) 
+stake(user_id, pool_id, amount, start_date, is_active, deposit_creation_price, balance, is_insurance_paid, is_reward_paid, jetton_price_closed, is_commission_paid, end_date, close_date ) 
 values (:user_id, :pool_id, :amount, :start_date, :is_active, :deposit_creation_price, :balance, :is_insurance_paid, :is_reward_paid, :jetton_price_closed, :is_commission_paid, :end_date, :close_date)
 returning id`,
 		stake,
@@ -290,7 +290,7 @@ func (r *StakeRepository) FindStakesByPoolId(poolId uint64) *[]models.Stake {
 	if err := tx.SelectContext(
 		ctx,
 		&stakes,
-		"select s.* from stake as s join pool as p on s.pool_id = p.id where p.id=$1",
+		"select s.* from stake as s join pool as p on s.pool_id = p.id where p.id=$1 order by end_date desc ",
 		poolId); err != nil {
 		log.Error("Failed to get stakes: ", err)
 		return nil
@@ -943,4 +943,124 @@ func (r *StakeRepository) SetCommissionPaid(stakeId uint64, isPaid bool) error {
 		log.Error("Failed to set commission paid: ", err)
 	}
 	return nil
+}
+
+func (r *StakeRepository) FindByJettonNameAndUserIdLimitIsNoPayment(
+	userId uint64,
+	jettonName string,
+	offset,
+	limit int,
+	rewardPaid,
+	insurancePaid,
+	isActive bool,
+) *[]models.Stake {
+	ctx, cacel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cacel()
+
+	var res []models.Stake
+
+	if err := r.db.SelectContext(
+		ctx,
+		&res,
+		`
+select s.*
+from stake s
+        	join pool p on s.pool_id = p.id
+where s.user_id = $1
+and p.jetton_name = $2
+and s.is_reward_paid = $3
+and s.is_insurance_paid = $4
+and s.is_active = $5
+offset $6
+limit $7`,
+		userId,
+		jettonName,
+		rewardPaid,
+		insurancePaid,
+		isActive,
+		offset,
+		limit,
+	); err != nil {
+		log.Error("Failed to get stake: ", err)
+	}
+
+	return &res
+}
+
+func (r *StakeRepository) CountStakeByPaidAndIsActive(stakeId uint64, isPaid, isActive bool) int {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	res := 0
+
+	if err := r.db.QueryRowxContext(
+		ctx,
+		`select count(*) from stake where id=$1 and is_reward_paid=$2 and is_insurance_paid=$2 and is_active=$3`,
+		stakeId,
+		isPaid,
+		isActive).Scan(&res); err != nil {
+		log.Error("Failed to get stake: ", err)
+	}
+
+	return res
+}
+
+func (r *StakeRepository) GroupFromPoolNameByUserIdLimitIsNotPayment(userId uint64, offset, limit int, isPaid bool, isActive bool) *[]models.GroupElements {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	res := make([]models.GroupElements, 0)
+
+	if err := r.db.SelectContext(
+		ctx,
+		&res,
+		`
+select p.jetton_name as name, count(*) as count
+from stake s
+    join pool p on s.pool_id = p.id
+where s.user_id = $1
+  and s.is_reward_paid=$2
+  and s.is_active=$3
+  and s.is_insurance_paid=$2
+group by p.jetton_name
+order by max(s.start_date) desc
+limit $4
+offset $5`,
+		userId,
+		isPaid,
+		isActive,
+		limit,
+		offset,
+	); err != nil {
+		log.Error("Failed froup stakes: ", err)
+	}
+	return &res
+}
+
+func (r *StakeRepository) CountGroupsStakesByUserIdAndJettonNameIsNotPayment(userId uint64, jettonName string, b bool, isActive bool) int {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	res := 0
+
+	if err := r.db.QueryRowxContext(
+		ctx,
+		`
+select count(*)
+from stake s 
+    join pool p on s.pool_id = p.id
+where s.user_id=$1
+  and jetton_name = $2
+  and s.is_reward_paid=$3
+  and s.is_active=$4 
+  and s.is_insurance_paid=$2`,
+		userId,
+		jettonName,
+		b,
+		isActive,
+	).Scan(&res); err != nil {
+		log.Error("Failed to get stake: ", err)
+	}
+
+	return res
 }

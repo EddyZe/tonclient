@@ -1,5 +1,11 @@
 package util
 
+import (
+	"math"
+	"strconv"
+	appModels "tonclient/internal/models"
+)
+
 // отнимает процент от числа
 func SubProcientFromNumber(num1, procient float64) float64 {
 	temp := num1 * (procient / 100)
@@ -16,4 +22,20 @@ func CalculateProcientEditPrice(currentPrice, oldPrice float64) float64 {
 	}
 	subCurrentPriceAndOld := currentPrice - oldPrice
 	return (subCurrentPriceAndOld / oldPrice) * 100
+}
+
+func CalculateInsurance(pool *appModels.Pool, stake *appModels.Stake) float64 {
+	tenProcientFromReserve := pool.Reserve * 0.1
+	ninetyProcientFromReserve := pool.Reserve * 0.9
+
+	share := stake.Amount / tenProcientFromReserve
+
+	insurance := ninetyProcientFromReserve * share
+	insurance = math.Ceil(insurance)
+	return insurance
+}
+
+func RemoveZeroFloat(number float64) string {
+	str := strconv.FormatFloat(number, 'f', -1, 64)
+	return str
 }

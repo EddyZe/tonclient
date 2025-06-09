@@ -17,6 +17,7 @@ type DeletePool struct {
 	b   *bot.Bot
 	ps  *services.PoolService
 	ops *services.OperationService
+	ss  *services.StakeService
 }
 
 func NewDeletePool(b *bot.Bot, ps *services.PoolService, ops *services.OperationService) *DeletePool {
@@ -62,7 +63,26 @@ func (c *DeletePool) Execute(ctx context.Context, callback *models.CallbackQuery
 		if _, err := util.SendTextMessage(
 			c.b,
 			uint64(chatId),
-			"❌ Невозможно удалить резерв. Резерв должен быть пуст и закрыт!",
+			"❌ Невозможно удалить пул. Резерв должен быть пуст и пул закрыт!",
+		); err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	count := 0
+	stakeNoPayment := c.ss.GetPoolStakes(uint64(p.Id.Int64))
+	for _, s := range *stakeNoPayment {
+		if !s.IsRewardPaid && s.IsInsurancePaid {
+			count++
+		}
+	}
+
+	if count > 0 {
+		if _, err := util.SendTextMessage(
+			c.b,
+			uint64(chatId),
+			fmt.Sprintf("❌ Дождитесь пока все заберут свои награды. Пользователей осталось: %d", count),
 		); err != nil {
 			log.Error(err)
 		}

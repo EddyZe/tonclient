@@ -13,6 +13,7 @@ const (
 	EnterProfitOnPercent
 	EnterInsuranceCoating
 	EnterAmountTokens
+	EnterMinAmountStake
 
 	//addreserve
 	EnterAddReserveTokens

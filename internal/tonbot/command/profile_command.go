@@ -47,6 +47,18 @@ func (c *ProfileCommand) Execute(ctx context.Context, msg *models.Message) {
 		return
 	}
 
+	if !user.IsAcceptAgreement {
+		if _, err := util.SendTextMessage(
+			c.b,
+			uint64(chatId),
+			"❌ Вы не приняли пользовательское соглашение!",
+		); err != nil {
+			log.Error(err)
+		}
+		util.SendAgreement(c.b, uint64(chatId))
+		return
+	}
+
 	var tonAddr string
 	w, err := c.ws.GetByUserId(uint64(user.Id.Int64))
 	if err != nil {

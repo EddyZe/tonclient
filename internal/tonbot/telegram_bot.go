@@ -80,7 +80,7 @@ func (t *TgBot) StartBot(ch chan appModels.SubmitTransaction) error {
 
 	go t.checkingOperation(tgbot, ch)
 	go t.createCron(tgbot)
-	go checkSendJettonOperation()
+	go checkSendJettonOperation(ctx)
 
 	tgbot.Start(ctx)
 
@@ -89,9 +89,21 @@ func (t *TgBot) StartBot(ch chan appModels.SubmitTransaction) error {
 
 func (t *TgBot) createCron(b *bot.Bot) {
 	stakes := make(chan *appModels.NotificationStake)
+	sch := schedulers.NewStakScheduler(
+		b,
+		t.ss,
+		t.us,
+		t.ps,
+		t.rs,
+		t.aws,
+		t.ws,
+		t.ts,
+		stakes,
+	)
+
 	c := cron.New()
 	//TODO изменить на каждый день!
-	_, err := c.AddFunc("* * * * *", schedulers.AddStakeBonusActiveStakes(t.ss, t.ps, stakes))
+	_, err := c.AddFunc("* * * * *", sch.AddStakeBonusActiveStakes())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -238,7 +250,14 @@ func (t *TgBot) handleMessage(ctx context.Context, b *bot.Bot, msg *models.Messa
 			return
 		}
 
-		if text == buttons.CheckInsurance {
+		//if text == buttons.CheckInsurance {
+		//	userstate.ResetState(chatId)
+		//	cmd := command.NewStakeInsuranceList[*models.Message](b, t.us, t.ss, t.ps)
+		//	cmd.Execute(ctx, msg)
+		//	return
+		//}
+
+		if text == buttons.Payments {
 			userstate.ResetState(chatId)
 			cmd := command.NewStakeInsuranceList[*models.Message](b, t.us, t.ss, t.ps)
 			cmd.Execute(ctx, msg)
@@ -282,6 +301,11 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 		sendJettonClosingTimeStake <- func() {
 			command.NewCloseStakeCommand(b, t.aws, t.ws, t.ss, t.ps, t.opS).Execute(ctx, callback)
 		}
+		return
+	}
+
+	if data == buttons.AcceptUserAgreementId {
+		command.NewAcceptAgreementCommand(b, t.us).Execute(ctx, callback)
 		return
 	}
 
@@ -587,7 +611,7 @@ func (t *TgBot) handleState(ctx context.Context, state int, b *bot.Bot, msg *mod
 	case userstate.EnterWalletAddr:
 		command.NewSetWalletCommand[*models.Message](b, t.ws, t.us, t.aws, t.tcs).Execute(ctx, msg)
 		break
-	case userstate.EnterCustomPeriodHold, userstate.EnterProfitOnPercent, userstate.EnterJettonMasterAddress, userstate.EnterInsuranceCoating, userstate.EnterAmountTokens:
+	case userstate.EnterCustomPeriodHold, userstate.EnterProfitOnPercent, userstate.EnterJettonMasterAddress, userstate.EnterInsuranceCoating, userstate.EnterAmountTokens, userstate.EnterMinAmountStake:
 		command.NewCreatePoolCommand[*models.Message](b, t.ps, t.us, t.tcs, t.aws, t.ws).Execute(ctx, msg)
 		break
 	case userstate.EnterAddReserveTokens:
@@ -797,27 +821,6 @@ func (t *TgBot) stake(payload *appModels.Payload, b *bot.Bot) {
 		log.Error("Failed to get user wall:", err)
 	}
 
-	log.Infoln("проверка кол-во стейкаов")
-	stakesCountUser := t.ss.CountUser(stake.UserId)
-	if stakesCountUser == 0 {
-		u, err := t.us.GetById(stake.UserId)
-		if err == nil {
-			log.Infoln("отправка бонуса")
-			if u.RefererId.Valid && u.RefererId.Int64 != 0 {
-				go func() {
-					if err := t.sendBonus(
-						b,
-						uint64(u.RefererId.Int64),
-						&stake,
-						tgStaker,
-					); err != nil {
-						log.Error("Failed to send bonus:", err)
-						return
-					}
-				}()
-			}
-		}
-	}
 	log.Infoln("Сохранение стейка")
 	_, err = t.ss.CreateStake(&stake)
 	if err != nil {
@@ -908,7 +911,7 @@ func (t *TgBot) sendBonus(b *bot.Bot, referalId uint64, stake *appModels.Stake, 
 		if _, err := util.SendTextMessage(
 			b,
 			referalId,
-			fmt.Sprintf("✅ Вы получили бонус %.2f %v, за пользователя %v. Токены были отправлены на привязанный кошелек", bonusAmount, tokenName, tgStaker.Username),
+			fmt.Sprintf("✅ Вы получили бонус %v %v, за пользователя %v. Токены были отправлены на привязанный кошелек", util.RemoveZeroFloat(bonusAmount), tokenName, tgStaker.Username),
 		); err != nil {
 			log.Error("Failed to send bonus:", err)
 			return err
@@ -1156,7 +1159,7 @@ func (t *TgBot) returnTokens(userId uint64, jettonMaster string, amount float64)
 	return nil
 }
 
-func checkSendJettonOperation() {
+func checkSendJettonOperation(ctx context.Context) {
 	for {
 		select {
 		case f, ok := <-sendJettonInsurance:
@@ -1179,6 +1182,8 @@ func checkSendJettonOperation() {
 				continue
 			}
 			f()
+		case <-ctx.Done():
+			return
 		}
 	}
 }

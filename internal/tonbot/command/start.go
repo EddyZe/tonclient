@@ -9,7 +9,6 @@ import (
 	"tonclient/internal/config"
 	appModel "tonclient/internal/models"
 	"tonclient/internal/services"
-	"tonclient/internal/tonbot/buttons"
 	"tonclient/internal/util"
 
 	"github.com/go-telegram/bot"
@@ -38,18 +37,16 @@ func (c *StartCommand) Execute(ctx context.Context, msg *models.Message) {
 
 	chatId := msg.Chat.ID
 
-	btn1 := util.CreateDefaultButton(buttons.RoleButtonUserId, buttons.RoleButtonUserText)
-	btn2 := util.CreateDefaultButton(buttons.RoleButtonOwnerTokensId, buttons.RoleButtonOwnerTokensText)
-
-	if _, err := util.SendTextMessageMarkup(
+	if _, err := util.SendTextMessage(
 		c.bt,
 		uint64(chatId),
 		generateStartResponse(),
-		util.CreateInlineMarup(2, btn1, btn2),
 	); err != nil {
 		log.Error(err)
 		return
 	}
+
+	util.SendAgreement(c.bt, uint64(chatId))
 
 	_, err := c.us.GetByTelegramChatId(uint64(chatId))
 	if err != nil {
@@ -147,7 +144,6 @@ func generateStartResponse() string {
 
 🚀 <b>Что мы предлагаем:</b>
 • Стейкинг токенов — замораживайте токены и получайте ежедневные вознаграждения
-• Поддержка при волатильности — специальный пул компенсаций может частично или даже полностью покрыть убытки даже при резком снижении цены токена.
 • Простота и контроль — всё через Telegram и TON-кошелёк.
 
 💡 <b>Как начать:</b>
@@ -156,7 +152,6 @@ func generateStartResponse() string {
 • Стейкайте токены и управляйте своими активами.
 
 🔒 <b>Преимущества:</b>
-• Прозрачность — все действия реализуются через смарт-контракты.
 • Гибкость — создавайте собственные пулы или присоединяйтесь к существующим.
 • Реферальная система — приглашайте друзей и получайте бонусы в токенах NESTRAH.
 `

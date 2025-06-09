@@ -6,6 +6,7 @@ const (
 	Profile          = "🧑‍💼 Профиль"
 	HistoryOperation = "📃 История"
 	TakeAwards       = "💵 Награды"
+	Payments         = "💵 Выплаты"
 	CheckInsurance   = "💰 Компенсация"
 	MyStakes         = "📈 Мои стейки"
 

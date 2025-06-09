@@ -38,8 +38,8 @@ const (
 	PaidCommissionId = "PAID_COMMISSION_POOL"
 	AddReserve       = "➕ Добавить резерв"
 	AddReserveId     = "ADD_RESERVE_POOL"
-	ClosePool        = "🔒 Закрыть пул"
-	OpePool          = "🔓 Открыть пул"
+	ClosePool        = "🔓 Пул открыт"
+	OpePool          = "🔒 Пул закрыт"
 	TakeTokens       = "🏦 Вывести токены"
 	TakeTokensId     = "TAKE_TOKENS"
 	ClosePoolId      = "CLOSE_POOL"
@@ -48,7 +48,7 @@ const (
 	CreateStakeId   = "CREATE_STAKE"
 	TakeProfit      = "💸 Получить награды"
 	TakeProfitId    = "TAKE_PROFIT"
-	TakeInsurance   = "🏦 Получить страховку"
+	TakeInsurance   = "🏦 Получить компенсацию"
 	TakeInsuranceId = "TAKE_INSURANCE"
 	CloseStake      = "🔒 Закрыть стейк досрочно"
 	CloseStakeId    = "CLOSE_STAKE"
@@ -113,4 +113,8 @@ const (
 	//tonconnect
 	OpenBrowser = "Открыть в браузере"
 	OpenWallet  = "Открыть кошелек"
+
+	//
+	AcceptUserAgreement   = "✅ Согласен"
+	AcceptUserAgreementId = "ACCEPT_USER_AGREEMENT"
 )

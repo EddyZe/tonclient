@@ -68,7 +68,7 @@ func (u *UserRepository) Update(user *models.User) error {
 	}
 	_, err = tx.NamedExecContext(
 		ctx,
-		"update usr set username = :username where id=:id",
+		"update usr set username = :username, is_accept_agreement = :is_accept_agreement where id=:id",
 		user,
 	)
 	if err != nil {

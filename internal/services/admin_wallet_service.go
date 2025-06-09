@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"os"
 	"os/signal"
@@ -195,8 +196,10 @@ func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment stri
 		log.Errorf("Failed to get balance: %v", err)
 		return nil, err
 	}
+	pow := math.Pow10(decimal)
 
-	if balance.Int64() < amountTok.Nano().Int64() {
+	log.Infoln(float64(balance.Int64()) / pow)
+	if float64(balance.Int64())/pow < amount {
 		return nil, errors.New("balance is insufficient")
 	}
 

@@ -1,9 +1,10 @@
 create table if not exists usr
 (
-    id         bigserial primary key,
-    username   varchar(250) not null,
-    created_at timestamp default now(),
-    referer_id bigint    default null
+    id                  bigserial primary key,
+    username            varchar(250) not null,
+    created_at          timestamp default now(),
+    referer_id          bigint    default null,
+    is_accept_agreement bool      default false
 );
 
 create table if not exists telegram
@@ -28,6 +29,7 @@ create table if not exists pool
     owner_id           bigint references usr (id) on delete cascade,
     jetton_name        varchar   default 'Не указано',
     reserve            numeric(28, 9)                        not null,
+    min_stake_amount   numeric(28, 9)                        not null,
     jetton_wallet      varchar(256)                          not null,
     jetton_master      varchar(256)                          not null,
     reward             double precision check ( reward > 0 ) not null,

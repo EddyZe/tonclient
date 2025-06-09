@@ -76,3 +76,7 @@ func (s *UserService) DeleteById(id uint64) error {
 func (s *UserService) CountAll() int {
 	return s.userRepo.CountAll()
 }
+
+func (s *UserService) Update(user *models.User) error {
+	return s.userRepo.Update(user)
+}

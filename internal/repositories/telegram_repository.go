@@ -167,7 +167,7 @@ func (r *TelegramRepository) FindAllLimit(offset, limit int) *[]models.Telegram 
 	return &telegrams
 }
 
-func (r *TelegramRepository) FindByUserId(userId uint64) *models.Telegram {
+func (r *TelegramRepository) FindByUserId(userId uint64) (*models.Telegram, error) {
 	var telegram models.Telegram
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -175,7 +175,7 @@ func (r *TelegramRepository) FindByUserId(userId uint64) *models.Telegram {
 	tx, err := r.db.Beginx()
 	if err != nil {
 		log.Error("Failed to begin transaction: ", err)
-		return nil
+		return nil, err
 	}
 	if err := tx.GetContext(
 		ctx,
@@ -183,17 +183,17 @@ func (r *TelegramRepository) FindByUserId(userId uint64) *models.Telegram {
 		"select t.* from telegram as t join usr as u on t.user_id = u.id where u.id = $1",
 		userId); err != nil {
 		log.Error("Failed find telegram", err)
-		return nil
+		return nil, err
 	}
 
 	if err := tx.Commit(); err != nil {
 		log.Error("Failed commiting transaction", err)
 		if er := tx.Rollback(); er != nil {
 			log.Error("Failed to rollback transaction: ", err)
-			return nil
+			return nil, err
 		}
-		return nil
+		return nil, err
 	}
 
-	return &telegram
+	return &telegram, nil
 }

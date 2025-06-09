@@ -6,10 +6,11 @@ import (
 )
 
 type User struct {
-	Id        sql.NullInt64 `db:"id" json:"id"`
-	Username  string        `db:"username" json:"username"`
-	CreatedAt time.Time     `db:"created_at" json:"created_at"`
-	RefererId sql.NullInt64 `db:"referer_id" json:"referer_id"`
+	Id                sql.NullInt64 `db:"id" json:"id"`
+	Username          string        `db:"username" json:"username"`
+	CreatedAt         time.Time     `db:"created_at" json:"created_at"`
+	RefererId         sql.NullInt64 `db:"referer_id" json:"referer_id"`
+	IsAcceptAgreement bool          `db:"is_accept_agreement" json:"is_accept_agreement"`
 }
 
 type Pool struct {
@@ -17,6 +18,7 @@ type Pool struct {
 	OwnerId          uint64        `db:"owner_id" json:"owner_id"`
 	JettonName       string        `db:"jetton_name" json:"jetton_name"`
 	Reserve          float64       `db:"reserve" json:"reserve"`
+	MinStakeAmount   float64       `db:"min_stake_amount" json:"min_stake_amount"`
 	JettonWallet     string        `db:"jetton_wallet" json:"jetton_wallet"`
 	JettonMaster     string        `db:"jetton_master" json:"jetton_master"`
 	Reward           float64       `db:"reward" json:"reward"`

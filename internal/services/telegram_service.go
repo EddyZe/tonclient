@@ -53,13 +53,13 @@ func (s *TelegramService) GetTelegramId(telegramId uint64) (*models.Telegram, er
 }
 
 func (s *TelegramService) GetByUserId(userId uint64) (*models.Telegram, error) {
-	_, err := s.userService.GetById(userId)
+	_, err := s.telegramRepo.FindByUserId(userId)
 	if err != nil {
 		return nil, err
 	}
 
-	tg := s.telegramRepo.FindByUserId(userId)
-	if tg == nil {
+	tg, err := s.telegramRepo.FindByUserId(userId)
+	if err != nil {
 		return nil, errors.New("telegram not found")
 	}
 	return tg, nil

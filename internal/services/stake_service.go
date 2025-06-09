@@ -164,3 +164,19 @@ func (s *StakeService) GetById(stakeId uint64) (*models.Stake, error) {
 func (s *StakeService) SetCommissionPaid(stakeId uint64, isPaid bool) error {
 	return s.stakeRepo.SetCommissionPaid(stakeId, isPaid)
 }
+
+func (s *StakeService) GetByJettonNameAndUserIdLimitIsNotPayment(userId uint64, jettonName string, offset, limit int, insurancePaid, rewardPaid, isActive bool) *[]models.Stake {
+	return s.stakeRepo.FindByJettonNameAndUserIdLimitIsNoPayment(userId, jettonName, offset, limit, rewardPaid, insurancePaid, isActive)
+}
+
+func (s *StakeService) CountStatusPaidAndActive(stakeId uint64, isPaid, isActive bool) int {
+	return s.stakeRepo.CountStakeByPaidAndIsActive(stakeId, isPaid, isActive)
+}
+
+func (s *StakeService) CountGroupsStakesByUserIdAndJettonNameIsNotPayment(userId uint64, jettonName string, b, isActive bool) int {
+	return s.stakeRepo.CountGroupsStakesByUserIdAndJettonNameIsNotPayment(userId, jettonName, b, isActive)
+}
+
+func (s *StakeService) GroupFromPoolByUserIdLimitIsNotPayment(userId uint64, limit, offset int, b bool, isAcive bool) *[]models.GroupElements {
+	return s.stakeRepo.GroupFromPoolNameByUserIdLimitIsNotPayment(userId, offset, limit, b, isAcive)
+}

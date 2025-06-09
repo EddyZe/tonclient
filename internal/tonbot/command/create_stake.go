@@ -91,7 +91,7 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 		if _, err := util.SendTextMessage(
 			c.b,
 			uint64(chatId),
-			"❌ Вводите только цифры! Например: 1.0",
+			"❌ Вводите только цифры! Например: 1.5",
 		); err != nil {
 			log.Error(err)
 			return
@@ -102,6 +102,17 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 	p, err := c.ps.GetId(pooldId)
 	if err != nil {
 		log.Error(err)
+		return
+	}
+
+	if p.MinStakeAmount > tokens {
+		if _, err := util.SendTextMessage(
+			c.b,
+			uint64(chatId),
+			fmt.Sprintf("❌ Сумма стейка должна быть больше чем %v", util.RemoveZeroFloat(p.MinStakeAmount)),
+		); err != nil {
+			log.Error(err)
+		}
 		return
 	}
 
@@ -314,7 +325,11 @@ func (c *CreateStakeCommand[T]) executeCallback(callback *models.CallbackQuery) 
 	if _, err := util.SendTextMessage(
 		c.b,
 		uint64(chatId),
-		"Введите кол-во токенов, которое хотите стейкнуть:",
+		fmt.Sprintf(
+			"Введите кол-во токенов, которое хотите стейкнуть. Минимальный стейк в данном пуле %v %v.",
+			util.RemoveZeroFloat(pool.MinStakeAmount),
+			pool.JettonName,
+		),
 	); err != nil {
 		log.Error(err)
 		return

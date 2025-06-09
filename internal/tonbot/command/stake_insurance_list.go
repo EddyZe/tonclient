@@ -80,11 +80,12 @@ func (c *StakeInsuranceList[T]) executeCallback(ctx context.Context, callback *m
 	offset := page * numberElementPage
 	limit := numberElementPage
 
-	stakes := c.ss.GetByJettonNameAndUserIdLimitIsInsurancePaid(
+	stakes := c.ss.GetByJettonNameAndUserIdLimitIsNotPayment(
 		uint64(u.Id.Int64),
 		jettonName,
 		offset,
 		limit,
+		false,
 		false,
 		false,
 	)
@@ -145,7 +146,7 @@ func (c *StakeInsuranceList[T]) exc(ctx context.Context, chatId int64, messageId
 	if _, err := util.SendTextMessageMarkup(
 		c.b,
 		uint64(chatId),
-		"Список стейков в которых вы можете получить компенсацию:",
+		"Список стейков в которых вы можете получить выплату:",
 		makup); err != nil {
 		log.Error(err)
 	}
@@ -264,13 +265,13 @@ func (c *StakeInsuranceList[T]) getGroups(chatId, userId uint64, b bool) *[]appM
 	offset := page * numberElementPage
 	limit := numberElementPage
 
-	return c.ss.GroupFromPoolByUserIdLimitIsInsurancePaid(userId, limit, offset, b, false)
+	return c.ss.GroupFromPoolByUserIdLimitIsNotPayment(userId, limit, offset, b, false)
 }
 
 func (c *StakeInsuranceList[T]) totalPageGroupsStakes(userId uint64) int {
-	return int(math.Ceil(float64(c.ss.CountGroupsStakesUserIdIsInsurancePaid(userId, false, false)) / float64(numberElementPage)))
+	return int(math.Ceil(float64(c.ss.CountStatusPaidAndActive(userId, false, false)) / float64(numberElementPage)))
 }
 
 func (c *StakeInsuranceList[T]) totalPageStakesFromGroup(userId uint64, jettonName string) int {
-	return int(math.Ceil(float64(c.ss.CountGroupsStakesByUserIdAndJettonNameIsInsurancePaid(userId, jettonName, false, false)) / float64(numberElementPage)))
+	return int(math.Ceil(float64(c.ss.CountGroupsStakesByUserIdAndJettonNameIsNotPayment(userId, jettonName, false, false)) / float64(numberElementPage)))
 }

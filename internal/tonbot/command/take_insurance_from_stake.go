@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"math"
 	"strconv"
 	"strings"
 	appModels "tonclient/internal/models"
@@ -146,7 +145,7 @@ func (c *TakeInsuranceFromStake) Execute(ctx context.Context, callback *models.C
 		return
 	}
 
-	insurance := c.calculateInsurance(pool, stake)
+	insurance := util.CalculateInsurance(pool, stake)
 	amount := stake.Balance + insurance
 	profit := stake.Balance - stake.Amount
 
@@ -213,15 +212,4 @@ func (c *TakeInsuranceFromStake) Execute(ctx context.Context, callback *models.C
 		log.Error(err)
 	}
 
-}
-
-func (c *TakeInsuranceFromStake) calculateInsurance(pool *appModels.Pool, stake *appModels.Stake) float64 {
-	tenProcientFromReserve := pool.Reserve * 0.1
-	ninetyProcientFromReserve := pool.Reserve * 0.9
-
-	share := stake.Amount / tenProcientFromReserve
-
-	insurance := ninetyProcientFromReserve * share
-	insurance = math.Ceil(insurance)
-	return insurance
 }

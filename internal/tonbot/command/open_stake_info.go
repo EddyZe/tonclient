@@ -118,8 +118,8 @@ func (c *OpenStakeInfo) generateInfo(stake *appModels.Stake, jettonName string, 
 	<b>Гарантия:</b> Компенсация при снижении цены %v более чем на %v%%
 
 	<b>Сумма стейка:</b> %v
-	<b>Цена на момент стейка:</b> %.9f $
-	<b>Текущая цена:</b> %.9f $ (%v%%)
+	<b>Цена на момент стейка:</b> %v $
+	<b>Текущая цена:</b> %v $ (%v%%)
 
 	<b>Старт:</b> %v
 	<b>Стоп:</b> %v
@@ -140,29 +140,29 @@ func (c *OpenStakeInfo) generateInfo(stake *appModels.Stake, jettonName string, 
 	formatText := fmt.Sprintf(
 		text,
 		jettonName,
-		pool.Reward*float64(pool.Period),
+		util.RemoveZeroFloat(pool.Reward*float64(pool.Period)),
 		pool.Period,
 		util.SuffixDay(int(pool.Period)),
 		jettonName,
 		pool.InsuranceCoating,
-		stake.Amount,
-		stake.DepositCreationPrice,
-		currentPrice,
+		util.RemoveZeroFloat(stake.Amount),
+		util.RemoveZeroFloat(stake.DepositCreationPrice),
+		util.RemoveZeroFloat(currentPrice),
 		procientPriceEdit,
 		stake.StartDate.Format(timeFormat),
 		stake.StartDate.Add(time.Duration(pool.Period)*24*time.Hour).Format(timeFormat),
 		leftdays,
 		util.SuffixDay(int(leftDay.Hours()/24)),
-		profit,
+		util.RemoveZeroFloat(profit),
 		jettonName,
-		stake.Balance,
+		util.RemoveZeroFloat(stake.Balance),
 		jettonName,
 	)
 
 	if !stake.IsActive {
 		formatText += fmt.Sprintf(
-			"\n\n<b>Цена на момент закрытия стейка</b>: %.9f$ (%v%%)",
-			stake.JettonPriceClosed,
+			"\n\n<b>Цена на момент закрытия стейка</b>: %v$ (%v%%)",
+			util.RemoveZeroFloat(stake.JettonPriceClosed),
 			int(util.CalculateProcientEditPrice(stake.JettonPriceClosed, stake.DepositCreationPrice)),
 		)
 	}

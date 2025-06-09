@@ -21,12 +21,12 @@ func generateNamePool(pool *appModels.Pool, aws *services.AdminWalletService) st
 		return "Без названия"
 	}
 	return fmt.Sprintf(
-		"%v (%d %v / %v%% / резерв %.0f)",
+		"%v (%d %v / %v%% / резерв %v)",
 		jettonData.Name,
 		pool.Period,
 		SuffixDay(int(pool.Period)),
 		pool.Reward,
-		pool.Reserve,
+		RemoveZeroFloat(pool.Reserve),
 	)
 }
 
@@ -61,9 +61,9 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 	}
 
 	foramter := message.NewPrinter(language.English)
-	ut := foramter.Sprintf("%.2f", sumAmount)
-	reserve := foramter.Sprintf("%.2f", p.Reserve*0.1)
-	fullReserve := foramter.Sprintf("%.2f", p.Reserve)
+	ut := foramter.Sprintf("%v", RemoveZeroFloat(sumAmount))
+	reserve := foramter.Sprintf("%v", RemoveZeroFloat(p.Reserve*0.1))
+	fullReserve := foramter.Sprintf("%v", RemoveZeroFloat(p.Reserve))
 
 	var status string
 	if p.IsActive {
@@ -121,10 +121,10 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 <b> 📦 Описание пула %v: </b>
 
 <b>Статус</b>: %v
-<b>Текущая цена токена:</b> %.9f$
+<b>Текущая цена токена:</b> %v$
 
 <b>📈 Доходность: </b>
-%.1f%% в день начисляется на застейканую сумму.
+%v%% в день начисляется на застейканую сумму.
 
 <b>⏳Срок холда:</b>
 %v %v с возможностью досрочного вывода (но тогда без награды за стейкинг).
@@ -140,12 +140,12 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
  •	Доступно для новых стейков: %v токенов
  •  Общий резерв: %v
 
-🔐 <b>Надежность пула</b>: %v %.1f%% из 100%%
-Уровень: %v, резерв составляет %.0f из %.0f токенов`,
+🔐 <b>Надежность пула</b>: %v %v%% из 100%%
+Уровень: %v, резерв составляет %v из %v токенов`,
 		jettonInfo.DisplayName,
 		status,
-		price,
-		p.Reward,
+		RemoveZeroFloat(price),
+		RemoveZeroFloat(p.Reward),
 		p.Period,
 		SuffixDay(int(p.Period)),
 		p.InsuranceCoating,
@@ -155,8 +155,8 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 		emoj,
 		reliability,
 		level,
-		p.Reserve,
-		jettonData.TotalSupply/(10e+8),
+		RemoveZeroFloat(p.Reserve),
+		RemoveZeroFloat(jettonData.TotalSupply/(10e+8)),
 	)
 	return res
 }

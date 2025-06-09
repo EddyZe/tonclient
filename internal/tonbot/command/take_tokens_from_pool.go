@@ -142,25 +142,37 @@ func (c *TakeTokens) Execute(ctx context.Context, callback *models.CallbackQuery
 		return
 	}
 
+	var lastDate string
+	noPaymentSum := 0.
+	sumStakes := c.ss.GetPoolStakes(uint64(poolId))
+	for i, s := range *sumStakes {
+		if i == 0 {
+			lastDate = s.EndDate.Format("15:04 02.01.2006")
+		}
+		if !s.IsRewardPaid && !s.IsInsurancePaid {
+			editPriceProcient := util.CalculateProcientEditPrice(s.JettonPriceClosed, s.DepositCreationPrice)
+			if editPriceProcient < float64(p.InsuranceCoating)*-1 {
+				insurance := util.CalculateInsurance(p, &s)
+				amount := s.Balance + insurance
+				noPaymentSum += amount
+				continue
+			}
+			noPaymentSum += s.Balance
+		}
+	}
+
 	stakes := c.ss.CountStakesPoolIdAndStatus(uint64(poolId), true)
 	if stakes > 0 {
 		text := fmt.Sprintf(
-			"❌ Нельзя вывести токены пока есть активные стейки. Вывод будет доступен, когда стейки будут закрыты! Активных стейков: %d",
+			"❌ Нельзя вывести токены пока есть активные стейки. Вывод будет доступен, когда стейки будут закрыты! Активных стейков: %d. Дата завершения последнего стейка: %v",
 			stakes,
+			lastDate,
 		)
 		if _, err := util.SendTextMessage(
 			c.b,
 			uint64(chatId),
 			text,
 		); err != nil {
-			log.Error(err)
-		}
-		return
-	}
-
-	w, err := c.ws.GetByUserId(uint64(u.Id.Int64))
-	if err != nil {
-		if _, err := util.SendTextMessage(c.b, uint64(chatId), "❌ У вас не привязан кошелек!"); err != nil {
 			log.Error(err)
 		}
 		return
@@ -175,11 +187,42 @@ func (c *TakeTokens) Execute(ctx context.Context, callback *models.CallbackQuery
 		return
 	}
 
+	log.Infoln(noPaymentSum)
+	log.Infoln(p.Reserve)
+
+	if noPaymentSum > p.Reserve {
+		if _, err := util.SendTextMessage(
+			c.b,
+			uint64(chatId),
+			fmt.Sprintf(
+				"❌ Недостаточно резерва для выплаты стейкерам. Нужно выплатить %v %v стейкерам",
+				util.RemoveZeroFloat(noPaymentSum),
+				jettonData.Name,
+			),
+		); err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	w, err := c.ws.GetByUserId(uint64(u.Id.Int64))
+	if err != nil {
+		if _, err := util.SendTextMessage(c.b, uint64(chatId), "❌ У вас не привязан кошелек!"); err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	log.Infoln(p.Reserve)
+	oldPrice := p.Reserve
+	currentReserve := p.Reserve - noPaymentSum
+	log.Println(currentReserve)
+
 	hash, err := c.aws.SendJetton(
 		p.JettonMaster,
 		w.Addr,
 		"",
-		p.Reserve,
+		currentReserve,
 		jettonData.Decimals,
 	)
 	if err != nil {
@@ -193,15 +236,25 @@ func (c *TakeTokens) Execute(ctx context.Context, callback *models.CallbackQuery
 		}
 		return
 	}
-
-	currentReserve := p.Reserve
 	p.Reserve = 0
 	if err := c.ps.Update(p); err != nil {
 		log.Error(err)
 		return
 	}
 
-	resp := fmt.Sprintf("✅ Снятие средст прошло успешно! Снято: %v %v", currentReserve, jettonData.Name)
+	resp := fmt.Sprintf(
+		"✅ Снятие средст прошло успешно! Снято: %v %v.",
+		util.RemoveZeroFloat(currentReserve),
+		jettonData.Name,
+	)
+
+	if oldPrice > currentReserve {
+		resp += fmt.Sprintf(
+			"\n\nСумма может быть меньше, так как с резерва зарезервировано %v %v стейкерам",
+			util.RemoveZeroFloat(noPaymentSum),
+			jettonData.Name,
+		)
+	}
 
 	if _, err := util.SendTextMessage(c.b, uint64(chatId), resp); err != nil {
 		log.Error(err)

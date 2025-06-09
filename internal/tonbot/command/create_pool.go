@@ -115,6 +115,9 @@ func (c *CreatePool[T]) executeMessage(ctx context.Context, msg *models.Message)
 	case userstate.EnterAmountTokens:
 		c.enterAmountToken(msg, w)
 		break
+	case userstate.EnterMinAmountStake:
+		c.enterMinAmountStake(msg)
+		break
 	default:
 		if _, err := util.SendTextMessage(c.b, uint64(chatId), "❌ Что-то пошло не так! Повторите команду!"); err != nil {
 			log.Error(err)
@@ -213,20 +216,25 @@ func (c *CreatePool[T]) enterAmountToken(msg *models.Message, w *appModels.Walle
 		return
 	}
 
-	if num < 1 {
-		if _, err := util.SendTextMessage(
-			c.b,
-			uint64(chatId),
-			"❌ Сумма не может быть меньше чем 1!",
-		); err != nil {
+	pool, ok := currentCreatingPool[chatId]
+	if !ok {
+		if _, err := util.SendTextMessage(c.b, uint64(chatId), "❌ Что-то пошло не так! Повторите операцию!"); err != nil {
 			log.Error(err)
 		}
 		return
 	}
+	minPoolReserve := pool.MinStakeAmount * 100 / 10
 
-	pool, ok := currentCreatingPool[chatId]
-	if !ok {
-		if _, err := util.SendTextMessage(c.b, uint64(chatId), "❌ Что-то пошло не так! Повторите операцию!"); err != nil {
+	if num < minPoolReserve || num > 30_000_000 {
+		if _, err := util.SendTextMessage(
+			c.b,
+			uint64(chatId),
+			fmt.Sprintf(
+				"❌ Вы указали минимальный стейк %v. Минимальная сумма пула должна быть %v",
+				util.RemoveZeroFloat(pool.MinStakeAmount),
+				util.RemoveZeroFloat(minPoolReserve),
+			),
+		); err != nil {
 			log.Error(err)
 		}
 		return
@@ -263,6 +271,55 @@ func (c *CreatePool[T]) enterAmountToken(msg *models.Message, w *appModels.Walle
 	}
 }
 
+func (c *CreatePool[T]) enterMinAmountStake(msg *models.Message) {
+	chatId := msg.Chat.ID
+	text := msg.Text
+	num, err := strconv.ParseFloat(text, 64)
+	if err != nil {
+		if _, err := util.SendTextMessage(
+			c.b,
+			uint64(chatId),
+			"❌ Укажите страховое покрытие в цифрах! Например: 1",
+		); err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	if num < 1 {
+		if _, err := util.SendTextMessage(
+			c.b,
+			uint64(chatId),
+			"❌ Минимальный стейк не может чем 1",
+		); err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	pool, ok := currentCreatingPool[chatId]
+	if !ok {
+		if _, err := util.SendTextMessage(c.b, uint64(chatId), "❌ Что-то пошло не так! Повторите операцию!"); err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	resp := fmt.Sprintf("✅ Отлично! Вы указали %v минимальный стейк.\n\nУкажите сумму которая будет зарезервирована:", num)
+	if _, err := util.SendTextMessage(
+		c.b,
+		uint64(chatId),
+		resp,
+	); err != nil {
+		log.Error(err)
+		return
+	}
+
+	pool.MinStakeAmount = num
+	currentCreatingPool[chatId] = pool
+	userstate.CurrentState[chatId] = userstate.EnterAmountTokens
+}
+
 func (c *CreatePool[T]) enterInsuranceCoating(msg *models.Message) {
 	chatId := msg.Chat.ID
 	text := msg.Text
@@ -297,7 +354,7 @@ func (c *CreatePool[T]) enterInsuranceCoating(msg *models.Message) {
 		return
 	}
 
-	resp := fmt.Sprintf("✅ Отлично! Вы указали %v%% за страховое покрытие.\n\nУкажите кол-во токенов, которое будет заморожены для резерва:", num)
+	resp := fmt.Sprintf("✅ Отлично! Вы указали %v%% за страховое покрытие.\n\nУкажите сумму минимального стейка:", num)
 	if _, err := util.SendTextMessage(
 		c.b,
 		uint64(chatId),
@@ -309,7 +366,7 @@ func (c *CreatePool[T]) enterInsuranceCoating(msg *models.Message) {
 
 	pool.InsuranceCoating = uint(num)
 	currentCreatingPool[chatId] = pool
-	userstate.CurrentState[chatId] = userstate.EnterAmountTokens
+	userstate.CurrentState[chatId] = userstate.EnterMinAmountStake
 }
 
 func (c *CreatePool[T]) enterProfit(msg *models.Message) {

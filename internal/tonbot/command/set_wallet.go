@@ -56,6 +56,7 @@ func (s *SetWalletCommand[T]) executeCallback(ctx context.Context, callback *mod
 
 	msg := callback.Message.Message
 	chatId := msg.Chat.ID
+
 	btnClose := util.CreateDefaultButton(buttons.DefCloseId, buttons.DefCloseText)
 	markup := util.CreateInlineMarup(1, btnClose)
 
@@ -88,7 +89,6 @@ func (s *SetWalletCommand[T]) executeMessage(ctx context.Context, msg *models.Me
 		}
 		return
 	}
-
 	switch state {
 	case userstate.EnterWalletAddr:
 		s.enterAddrWallet(uint64(chatId), text)
