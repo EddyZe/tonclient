@@ -119,14 +119,14 @@ func (c *OpenStakeInfo) generateInfo(stake *appModels.Stake, jettonName string, 
 
 	<b>Сумма стейка:</b> %v
 	<b>Цена на момент стейка:</b> %v $
-	<b>Текущая цена:</b> %v $ (%v%%)
+	<b>Текущая цена:</b> %.10f $ (%v%%)
 
 	<b>Старт:</b> %v
 	<b>Стоп:</b> %v
 
 	<b>Осталось дней:</b> %v %v
 
-	<b>Заработано:</b> %v %v
+	<b>Заработано:</b> %.2f %v
 	<b>Итого баланс:</b> %v %v
 	`
 	profit := stake.Balance - stake.Amount
@@ -147,13 +147,13 @@ func (c *OpenStakeInfo) generateInfo(stake *appModels.Stake, jettonName string, 
 		pool.InsuranceCoating,
 		util.RemoveZeroFloat(stake.Amount),
 		util.RemoveZeroFloat(stake.DepositCreationPrice),
-		util.RemoveZeroFloat(currentPrice),
+		currentPrice,
 		procientPriceEdit,
 		stake.StartDate.Format(timeFormat),
 		stake.StartDate.Add(time.Duration(pool.Period)*24*time.Hour).Format(timeFormat),
 		leftdays,
 		util.SuffixDay(int(leftDay.Hours()/24)),
-		util.RemoveZeroFloat(profit),
+		profit,
 		jettonName,
 		util.RemoveZeroFloat(stake.Balance),
 		jettonName,

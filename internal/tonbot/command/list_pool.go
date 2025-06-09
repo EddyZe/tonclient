@@ -16,17 +16,19 @@ type ListPoolCommand struct {
 	b   *bot.Bot
 	ps  *services.PoolService
 	aws *services.AdminWalletService
+	ss  *services.StakeService
 }
 
 var numberElementPage = 5
 
 var currentPageAllPools = make(map[int64]int)
 
-func NewListPoolCommand(b *bot.Bot, ps *services.PoolService, aws *services.AdminWalletService) *ListPoolCommand {
+func NewListPoolCommand(b *bot.Bot, ps *services.PoolService, aws *services.AdminWalletService, ss *services.StakeService) *ListPoolCommand {
 	return &ListPoolCommand{
 		b:   b,
 		ps:  ps,
 		aws: aws,
+		ss:  ss,
 	}
 }
 
@@ -49,7 +51,7 @@ func (c *ListPoolCommand) Execute(ctx context.Context, msg *models.Message) {
 		buttons.NextPagePool,
 		buttons.BackPagePool,
 		buttons.CloseListPool,
-		util.GeneratePoolButtons(pools, c.aws, callbacksuf.All)...,
+		util.GeneratePoolButtons(pools, c.aws, callbacksuf.All, c.ss)...,
 	)
 
 	if err := util.EditMessageMarkup(ctx, c.b, uint64(chatId), msg.ID, markup); err != nil {

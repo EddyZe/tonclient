@@ -19,15 +19,17 @@ type MyPools struct {
 	us  *services.UserService
 	ps  *services.PoolService
 	aws *services.AdminWalletService
+	ss  *services.StakeService
 }
 
 func NewMyPoolsCommand(b *bot.Bot, us *services.UserService, ps *services.PoolService,
-	aws *services.AdminWalletService) *MyPools {
+	aws *services.AdminWalletService, ss *services.StakeService) *MyPools {
 	return &MyPools{
 		b:   b,
 		us:  us,
 		ps:  ps,
 		aws: aws,
+		ss:  ss,
 	}
 }
 
@@ -57,7 +59,7 @@ func (c *MyPools) Execute(ctx context.Context, msg *models.Message) {
 		buttons.NextPageMyPool,
 		buttons.BackPageMyPool,
 		buttons.CloseListPool,
-		util.GeneratePoolButtons(pools, c.aws, callbacksuf.My)...,
+		util.GeneratePoolButtons(pools, c.aws, callbacksuf.My, c.ss)...,
 	)
 
 	if err := util.EditMessageMarkup(ctx, c.b, uint64(chatId), msg.ID, markup); err != nil {

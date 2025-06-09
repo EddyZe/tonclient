@@ -202,13 +202,13 @@ func (t *TgBot) handleMessage(ctx context.Context, b *bot.Bot, msg *models.Messa
 
 		if text == buttons.MyPools {
 			userstate.ResetState(chatId)
-			command.NewMyPoolsCommand(b, t.us, t.ps, t.aws).Execute(ctx, msg)
+			command.NewMyPoolsCommand(b, t.us, t.ps, t.aws, t.ss).Execute(ctx, msg)
 			return
 		}
 
 		if text == buttons.SelectPool {
 			userstate.ResetState(chatId)
-			command.NewListPoolCommand(b, t.ps, t.aws).Execute(ctx, msg)
+			command.NewListPoolCommand(b, t.ps, t.aws, t.ss).Execute(ctx, msg)
 			return
 		}
 
@@ -306,6 +306,7 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 
 	if data == buttons.AcceptUserAgreementId {
 		command.NewAcceptAgreementCommand(b, t.us).Execute(ctx, callback)
+		command.NewProfileCommand(b, t.us, t.ws, t.aws, t.ps, t.ss).Execute(ctx, callback.Message.Message)
 		return
 	}
 
@@ -439,27 +440,27 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 	}
 
 	if strings.HasPrefix(data, buttons.NextPagePool) {
-		command.NewListPoolCommand(b, t.ps, t.aws).NextPage(ctx, callback)
+		command.NewListPoolCommand(b, t.ps, t.aws, t.ss).NextPage(ctx, callback)
 		return
 	}
 
 	if strings.HasPrefix(data, buttons.BackPagePool) {
-		command.NewListPoolCommand(b, t.ps, t.aws).BackPage(ctx, callback)
+		command.NewListPoolCommand(b, t.ps, t.aws, t.ss).BackPage(ctx, callback)
 		return
 	}
 
 	if strings.HasPrefix(data, buttons.NextPageMyPool) {
-		command.NewMyPoolsCommand(b, t.us, t.ps, t.aws).NextPage(ctx, callback)
+		command.NewMyPoolsCommand(b, t.us, t.ps, t.aws, t.ss).NextPage(ctx, callback)
 		return
 	}
 
 	if strings.HasPrefix(data, buttons.BackPageMyPool) {
-		command.NewMyPoolsCommand(b, t.us, t.ps, t.aws).BackPage(ctx, callback)
+		command.NewMyPoolsCommand(b, t.us, t.ps, t.aws, t.ss).BackPage(ctx, callback)
 		return
 	}
 
 	if data == buttons.CloseListPool {
-		command.NewListPoolCommand(b, t.ps, t.aws).CloseList(ctx, callback)
+		command.NewListPoolCommand(b, t.ps, t.aws, t.ss).CloseList(ctx, callback)
 		return
 	}
 
@@ -483,7 +484,7 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 			log.Error("CheckTypeMessage: ", err)
 			return
 		}
-		command.NewListPoolCommand(b, t.ps, t.aws).Execute(ctx, callback.Message.Message)
+		command.NewListPoolCommand(b, t.ps, t.aws, t.ss).Execute(ctx, callback.Message.Message)
 	}
 
 	if data == buttons.SevenDaysId || data == buttons.ThirtyDaysId || data == buttons.SixtyDaysId || data == buttons.EnterCustomPeriodId || data == buttons.RepeatCreatePoolId {
@@ -517,7 +518,7 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 			return
 		}
 
-		command.NewMyPoolsCommand(b, t.us, t.ps, t.aws).Execute(ctx, callback.Message.Message)
+		command.NewMyPoolsCommand(b, t.us, t.ps, t.aws, t.ss).Execute(ctx, callback.Message.Message)
 		return
 	}
 

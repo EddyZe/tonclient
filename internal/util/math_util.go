@@ -39,3 +39,24 @@ func RemoveZeroFloat(number float64) string {
 	str := strconv.FormatFloat(number, 'f', -1, 64)
 	return str
 }
+
+func CalculateSumStakesFromPool(stakes *[]appModels.Stake, p *appModels.Pool) float64 {
+	res := 0.
+	for _, stake := range *stakes {
+		if !stake.IsActive && !stake.IsRewardPaid && !stake.IsInsurancePaid {
+			if CalculateProcientEditPrice(stake.JettonPriceClosed, stake.DepositCreationPrice) < float64(p.InsuranceCoating)*-1 {
+				am := CalculateInsurance(p, &stake)
+				profit := stake.Balance - stake.Amount
+				res += am + profit
+			} else {
+				res += stake.Balance - stake.Amount
+			}
+		}
+	}
+
+	if res < 0 {
+		return 0
+	}
+
+	return res
+}

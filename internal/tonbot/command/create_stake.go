@@ -116,19 +116,13 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 		return
 	}
 
-	stakes := c.ss.GetPoolStakesIsActive(pooldId, false)
+	stakes := c.ss.GetPoolStakes(pooldId)
 	if stakes != nil {
-		sumStakes := c.calculateSumStakesFromPool(stakes)
-		newSum := sumStakes + tokens
-		if err := c.checkSumStakes(newSum, p, uint64(chatId)); err != nil {
+		sumStakes := util.CalculateSumStakesFromPool(stakes, p)
+		if err := c.checkSumStakes(tokens, sumStakes, p, uint64(chatId)); err != nil {
 			log.Error(err)
 			return
 		}
-	}
-
-	if err := c.checkSumStakes(tokens, p, uint64(chatId)); err != nil {
-		log.Error(err)
-		return
 	}
 
 	u, err := c.us.GetByTelegramChatId(uint64(chatId))
@@ -302,15 +296,6 @@ func (c *CreateStakeCommand[T]) executeCallback(callback *models.CallbackQuery) 
 		return
 	}
 
-	currentStakesFromPool := c.ss.GetPoolStakesIsActive(uint64(poolId), false)
-	if currentStakesFromPool != nil {
-		currentSumStakes := c.calculateSumStakesFromPool(currentStakesFromPool)
-		if err := c.checkSumStakes(currentSumStakes, pool, uint64(chatId)); err != nil {
-			log.Error(err)
-			return
-		}
-	}
-
 	if pool.Reserve == 0 {
 		if _, err := util.SendTextMessage(
 			c.b,
@@ -339,22 +324,14 @@ func (c *CreateStakeCommand[T]) executeCallback(callback *models.CallbackQuery) 
 	userstate.CurrentState[chatId] = userstate.CreateStake
 }
 
-func (c *CreateStakeCommand[T]) calculateSumStakesFromPool(stakes *[]appModels.Stake) float64 {
-	res := 0.
-	for _, stake := range *stakes {
-		res += stake.Amount
-	}
-
-	return res
-}
-
 func (c *CreateStakeCommand[T]) checkSumStakes(
+	currentAmountStake float64,
 	currentSumStakes float64,
 	pool *appModels.Pool,
 	chatId uint64,
 ) error {
-	tenProcientFromSum := pool.Reserve * 0.1
-	if tenProcientFromSum <= currentSumStakes {
+	tenProcientFromSum := (pool.Reserve - currentSumStakes) * 0.1
+	if tenProcientFromSum <= currentAmountStake {
 		if _, err := util.SendTextMessage(
 			c.b,
 			chatId,
@@ -386,7 +363,7 @@ func (c *CreateStakeCommand[T]) checkSumStakes(
 		if _, err := util.SendTextMessageMarkup(
 			c.b,
 			tgOwner.TelegramId,
-			fmt.Sprintf("❌ В пуле %v недостаточно резерва. Пользователи не могут делать стейки на текущий момент. Пополните резерв!\n\nТекущий резерв: %v\n\nПул был закрыт автоматически. Вы сможете его сново открыть, после пополнения резерва!", jettonaData.Name, pool.Reserve),
+			fmt.Sprintf("❌ В пуле %v недостаточно резерва. Пользователи не могут делать стейки на текущий момент. Пополните резерв!\n\nТекущий резерв: %v\n\nПул был закрыт автоматически. Вы сможете его сново открыть, после пополнения резерва!", jettonaData.Name, util.RemoveZeroFloat(pool.Reserve-currentSumStakes+currentAmountStake)),
 			markup,
 		); err != nil {
 			log.Error(err)

@@ -279,7 +279,7 @@ func (c *CreatePool[T]) enterMinAmountStake(msg *models.Message) {
 		if _, err := util.SendTextMessage(
 			c.b,
 			uint64(chatId),
-			"❌ Укажите страховое покрытие в цифрах! Например: 1",
+			"❌ Укажите минимальный размер стейка в цифрах! Например: 1",
 		); err != nil {
 			log.Error(err)
 		}
@@ -354,7 +354,7 @@ func (c *CreatePool[T]) enterInsuranceCoating(msg *models.Message) {
 		return
 	}
 
-	resp := fmt.Sprintf("✅ Отлично! Вы указали %v%% за страховое покрытие.\n\nУкажите сумму минимального стейка:", num)
+	resp := fmt.Sprintf("✅ Отлично! Вы указали %v%% за страховое покрытие.\n\nУкажите размер минимального стейка:", num)
 	if _, err := util.SendTextMessage(
 		c.b,
 		uint64(chatId),

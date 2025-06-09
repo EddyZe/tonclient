@@ -15,8 +15,12 @@ import (
 	"golang.org/x/text/message"
 )
 
-func generateNamePool(pool *appModels.Pool, aws *services.AdminWalletService) string {
+func generateNamePool(pool *appModels.Pool, aws *services.AdminWalletService, subSum float64) string {
 	jettonData, err := aws.DataJetton(pool.JettonMaster)
+	currentReserve := pool.Reserve - subSum
+	if currentReserve < 0 {
+		currentReserve = 0
+	}
 	if err != nil {
 		return "Без названия"
 	}
@@ -26,22 +30,25 @@ func generateNamePool(pool *appModels.Pool, aws *services.AdminWalletService) st
 		pool.Period,
 		SuffixDay(int(pool.Period)),
 		pool.Reward,
-		RemoveZeroFloat(pool.Reserve),
+		RemoveZeroFloat(currentReserve),
 	)
 }
 
-func GeneratePoolButtons(pool *[]appModels.Pool, aws *services.AdminWalletService, suf string) []models.InlineKeyboardButton {
+func GeneratePoolButtons(pool *[]appModels.Pool, aws *services.AdminWalletService, suf string, ss *services.StakeService) []models.InlineKeyboardButton {
 	res := make([]models.InlineKeyboardButton, 0, len(*pool))
 	for _, p := range *pool {
 		if !p.Id.Valid {
 			continue
 		}
 		poolId := p.Id.Int64
+		subSubStake := 0.
+		stakes := ss.GetPoolStakes(uint64(poolId))
+		subSubStake = CalculateSumStakesFromPool(stakes, &p)
 		res = append(
 			res,
 			CreateDefaultButton(
 				fmt.Sprintf("%v:%d:%v", buttons.PoolDataButton, poolId, suf),
-				generateNamePool(&p, aws),
+				generateNamePool(&p, aws, subSubStake),
 			),
 		)
 	}
@@ -51,19 +58,31 @@ func GeneratePoolButtons(pool *[]appModels.Pool, aws *services.AdminWalletServic
 func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModels.JettonData) string {
 	allStakesPool := ss.GetPoolStakes(uint64(p.Id.Int64))
 	var sumAmount float64
+	subReserve := 0.
 
 	if allStakesPool != nil {
 		for _, stake := range *allStakesPool {
-			if stake.IsActive {
+			if stake.IsActive && stake.IsRewardPaid {
 				sumAmount += stake.Amount
 			}
 		}
+		subReserve = CalculateSumStakesFromPool(allStakesPool, p)
+	}
+
+	tenProcientReserve := (p.Reserve - subReserve) * 0.1
+	if tenProcientReserve < 0 {
+		tenProcientReserve = 0
+	}
+
+	currentReserve := p.Reserve - subReserve
+	if currentReserve < 0 {
+		currentReserve = 0
 	}
 
 	foramter := message.NewPrinter(language.English)
 	ut := foramter.Sprintf("%v", RemoveZeroFloat(sumAmount))
-	reserve := foramter.Sprintf("%v", RemoveZeroFloat(p.Reserve*0.1))
-	fullReserve := foramter.Sprintf("%v", RemoveZeroFloat(p.Reserve))
+	reserve := foramter.Sprintf("%v", RemoveZeroFloat(tenProcientReserve))
+	fullReserve := foramter.Sprintf("%v", RemoveZeroFloat(currentReserve))
 
 	var status string
 	if p.IsActive {
@@ -129,6 +148,9 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 <b>⏳Срок холда:</b>
 %v %v с возможностью досрочного вывода (но тогда без награды за стейкинг).
 
+<b>💵 Минимальный размер стейка </b>
+%v %v
+
 <b>🛡️ Страховка:</b>
 Если цена токена упадет более чем на %v%% к моменту окончания стейкинга, вам будет выплачена компенсация
 
@@ -140,7 +162,7 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
  •	Доступно для новых стейков: %v токенов
  •  Общий резерв: %v
 
-🔐 <b>Надежность пула</b>: %v %v%% из 100%%
+🔐 <b>Надежность пула</b>: %v %.5f%% из 100%%
 Уровень: %v, резерв составляет %v из %v токенов`,
 		jettonInfo.DisplayName,
 		status,
@@ -148,6 +170,8 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 		RemoveZeroFloat(p.Reward),
 		p.Period,
 		SuffixDay(int(p.Period)),
+		RemoveZeroFloat(p.MinStakeAmount),
+		p.JettonName,
 		p.InsuranceCoating,
 		ut,
 		reserve,
@@ -155,7 +179,7 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 		emoj,
 		reliability,
 		level,
-		RemoveZeroFloat(p.Reserve),
+		RemoveZeroFloat(currentReserve),
 		RemoveZeroFloat(jettonData.TotalSupply/(10e+8)),
 	)
 	return res
