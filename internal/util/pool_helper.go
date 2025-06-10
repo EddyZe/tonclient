@@ -62,7 +62,7 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 
 	if allStakesPool != nil {
 		for _, stake := range *allStakesPool {
-			if stake.IsActive && stake.IsRewardPaid {
+			if stake.IsActive {
 				sumAmount += stake.Amount
 			}
 		}
@@ -162,7 +162,7 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
  •	Доступно для новых стейков: %v токенов
  •  Общий резерв: %v
 
-🔐 <b>Надежность пула</b>: %v %.5f%% из 100%%
+🔐 <b>Надежность пула</b>: %v %v%% из 100%%
 Уровень: %v, резерв составляет %v из %v токенов`,
 		jettonInfo.DisplayName,
 		status,
@@ -177,7 +177,7 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 		reserve,
 		fullReserve,
 		emoj,
-		reliability,
+		RemoveZeroFloat(reliability),
 		level,
 		RemoveZeroFloat(currentReserve),
 		RemoveZeroFloat(jettonData.TotalSupply/(10e+8)),

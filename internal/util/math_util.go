@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"math"
 	"strconv"
 	appModels "tonclient/internal/models"
@@ -36,7 +37,8 @@ func CalculateInsurance(pool *appModels.Pool, stake *appModels.Stake) float64 {
 }
 
 func RemoveZeroFloat(number float64) string {
-	str := strconv.FormatFloat(number, 'f', -1, 64)
+	num, _ := strconv.ParseFloat(fmt.Sprintf("%.6f", number), 64)
+	str := strconv.FormatFloat(num, 'f', -1, 64)
 	return str
 }
 
@@ -51,6 +53,10 @@ func CalculateSumStakesFromPool(stakes *[]appModels.Stake, p *appModels.Pool) fl
 			} else {
 				res += stake.Balance - stake.Amount
 			}
+		}
+
+		if stake.IsActive {
+			res += stake.Amount * 10
 		}
 	}
 
