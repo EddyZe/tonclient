@@ -24,6 +24,7 @@ type Pool struct {
 	Reward           float64       `db:"reward" json:"reward"`
 	Period           uint          `db:"period" json:"period"`
 	InsuranceCoating uint          `db:"insurance_coating" json:"insurance_coating"`
+	TempReserve      float64       `db:"temp_reserve" json:"temp_reserve"`
 	CreatedAt        time.Time     `db:"created_at" json:"created_at"`
 	IsActive         bool          `db:"is_active" json:"is_active"`
 	IsCommissionPaid bool          `db:"is_commission_paid" json:"is_commission_paid"`
@@ -44,6 +45,7 @@ type Stake struct {
 	PoolId               uint64        `db:"pool_id" json:"pool_id"`
 	Amount               float64       `db:"amount" json:"amount"`
 	Balance              float64       `db:"balance" json:"balance"`
+	StartPoolDeposit     float64       `db:"start_pool_deposit" json:"start_pool_deposit"`
 	StartDate            time.Time     `db:"start_date" json:"start_date"`
 	IsActive             bool          `db:"is_active" json:"is_active"`
 	EndDate              time.Time     `db:"end_date" json:"end_date"`

@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -110,31 +111,30 @@ func (c *OpenStakeInfo) Execute(ctx context.Context, callback *models.CallbackQu
 
 func (c *OpenStakeInfo) generateInfo(stake *appModels.Stake, jettonName string, pool *appModels.Pool) string {
 	currentPrice := util.GetCurrentPriceJettonAddr(pool.JettonMaster)
+	status := "⌛ Активен"
+	if !stake.IsActive {
+		if !stake.IsCommissionPaid && !stake.IsRewardPaid {
+			status = "✅ Выплачен"
+		} else {
+			status = "✅ Завершен"
+		}
+	}
 
 	text := `
-	<b>Стейк с токеном %v</b>
+	<b> 📦 Стейк с токеном [%v]</b>
+	<b>💰 Ставка:</b> +%v%% за %v %v
+	<b>🛡 Компенсация:</b> При снижении цены %v более чем на %v%%
 
-	<b>Ставка:</b> +%v%% за %v %v
-	<b>Гарантия:</b> Компенсация при снижении цены %v более чем на %v%%
-
-	<b>Сумма стейка:</b> %v
-	<b>Цена на момент стейка:</b> %v $
-	<b>Текущая цена:</b> %.10f $ (%v%%)
-
-	<b>Старт:</b> %v
-	<b>Стоп:</b> %v
-
-	<b>Осталось дней:</b> %v %v
-
-	<b>Заработано:</b> %.2f %v
-	<b>Итого баланс:</b> %v %v
+	<b>💰 Вложено:</b> %v
+	<b>💵 Цена на входе:</b> %v $
+	<b>📉 Текущая цена:</b> %v $ (%v%%)
+	<b>📅Старт:</b> %v
+	<b>📅Финиш:</b> %v
+	<b>⏳ Статус:</b> %v
+	<b>🎁 Доход</b> +%v %v
 	`
 	profit := stake.Balance - stake.Amount
-	leftDay := stake.StartDate.Add(time.Duration(pool.Period) * 24 * time.Hour).Sub(time.Now())
-	leftdays := int(leftDay.Hours() / 24)
-	if leftdays < 0 {
-		leftdays = 0
-	}
+	//leftDay := stake.StartDate.Add(time.Duration(pool.Period) * 24 * time.Hour).Sub(time.Now())
 	procientPriceEdit := int(util.CalculateProcientEditPrice(currentPrice, stake.DepositCreationPrice))
 	timeFormat := "02 January 2006 15:04:05"
 	formatText := fmt.Sprintf(
@@ -147,28 +147,45 @@ func (c *OpenStakeInfo) generateInfo(stake *appModels.Stake, jettonName string, 
 		pool.InsuranceCoating,
 		util.RemoveZeroFloat(stake.Amount),
 		util.RemoveZeroFloat(stake.DepositCreationPrice),
-		currentPrice,
+		util.RemoveZeroFloat(currentPrice),
 		procientPriceEdit,
 		stake.StartDate.Format(timeFormat),
 		stake.StartDate.Add(time.Duration(pool.Period)*24*time.Hour).Format(timeFormat),
-		leftdays,
-		util.SuffixDay(int(leftDay.Hours()/24)),
-		profit,
-		jettonName,
-		util.RemoveZeroFloat(stake.Balance),
-		jettonName,
+		status,
+		util.RemoveZeroFloat(profit),
+		pool.JettonName,
 	)
 
 	if !stake.IsActive {
 		formatText += fmt.Sprintf(
-			"\n\n<b>Цена на момент закрытия стейка</b>: %v$ (%v%%)",
+			"\n\n<b>📉 Цена на момент закрытия стейка</b>: %v$ (%v%%)",
 			util.RemoveZeroFloat(stake.JettonPriceClosed),
 			int(util.CalculateProcientEditPrice(stake.JettonPriceClosed, stake.DepositCreationPrice)),
 		)
-	}
-
-	if stake.IsRewardPaid || stake.IsInsurancePaid {
-		formatText += "\n\nВыплачено ✅"
+		if !stake.IsInsurancePaid && !stake.IsRewardPaid {
+			paid := 0.
+			precientEdit := util.CalculateProcientEditPrice(stake.JettonPriceClosed, stake.DepositCreationPrice)
+			if precientEdit < float64(pool.InsuranceCoating)*-1 {
+				insurance := util.CalculateInsurance(pool, stake)
+				paid += insurance + stake.Balance
+				formatText += fmt.Sprintf(
+					"\n<b>💥 Компенсация за падение на %.0f%%</b>: %v %v",
+					math.Ceil(precientEdit),
+					util.RemoveZeroFloat(insurance),
+					pool.JettonName,
+				)
+			} else {
+				paid += stake.Balance
+				formatText += fmt.Sprintf(
+					"\n<b>💥 Выплата с процентами(%.0f%%)</b>: %v %v",
+					math.Ceil(precientEdit),
+					util.RemoveZeroFloat(paid),
+					pool.JettonName,
+				)
+			}
+			formatText += fmt.Sprintf(
+				"\n<b>💎 К выплате</b>: %v %v", util.RemoveZeroFloat(paid), pool.JettonName)
+		}
 	}
 
 	return formatText

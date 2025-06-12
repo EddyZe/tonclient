@@ -2,13 +2,18 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
+	"time"
 	"tonclient/internal/config"
 	"tonclient/internal/database"
+	"tonclient/internal/handlers"
 	"tonclient/internal/models"
 	"tonclient/internal/repositories"
 	"tonclient/internal/services"
 	"tonclient/internal/tonbot"
+
+	"github.com/gorilla/mux"
 )
 
 func main() {
@@ -94,6 +99,20 @@ func run() {
 	transaction := make(chan models.SubmitTransaction)
 
 	go aws.StartSubscribeTransaction(transaction)
+
+	r := mux.NewRouter()
+	r.HandleFunc("/manifest", handlers.ManifestHandler)
+	srv := &http.Server{
+		Handler:      r,
+		Addr:         "127.0.0.1:8000",
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
+	}
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			logger.Fatal(err)
+		}
+	}()
 
 	if err := tgbot.StartBot(transaction); err != nil {
 		logger.Fatalf("Failed to start bot: %v", err)

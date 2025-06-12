@@ -330,8 +330,8 @@ func (c *CreateStakeCommand[T]) checkSumStakes(
 	pool *appModels.Pool,
 	chatId uint64,
 ) error {
-	tenProcientFromSum := (pool.Reserve - currentSumStakes) * 0.1
-	if tenProcientFromSum <= currentAmountStake {
+	tenProcientFromSum := (pool.Reserve - currentSumStakes) * 0.05
+	if tenProcientFromSum < currentAmountStake {
 		if _, err := util.SendTextMessage(
 			c.b,
 			chatId,

@@ -237,6 +237,7 @@ func (c *TakeTokens) Execute(ctx context.Context, callback *models.CallbackQuery
 		return
 	}
 	p.Reserve = 0
+	p.TempReserve = p.Reserve
 	if err := c.ps.Update(p); err != nil {
 		log.Error(err)
 		return

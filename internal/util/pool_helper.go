@@ -30,7 +30,7 @@ func generateNamePool(pool *appModels.Pool, aws *services.AdminWalletService, su
 		pool.Period,
 		SuffixDay(int(pool.Period)),
 		pool.Reward,
-		RemoveZeroFloat(currentReserve),
+		math.Floor(currentReserve),
 	)
 }
 
@@ -69,7 +69,7 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 		subReserve = CalculateSumStakesFromPool(allStakesPool, p)
 	}
 
-	tenProcientReserve := (p.Reserve - subReserve) * 0.1
+	tenProcientReserve := (p.Reserve - subReserve) * 0.05
 	if tenProcientReserve < 0 {
 		tenProcientReserve = 0
 	}
@@ -78,6 +78,8 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 	if currentReserve < 0 {
 		currentReserve = 0
 	}
+
+	log.Println(currentReserve)
 
 	foramter := message.NewPrinter(language.English)
 	ut := foramter.Sprintf("%v", RemoveZeroFloat(sumAmount))
@@ -155,7 +157,7 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 Если цена токена упадет более чем на %v%% к моменту окончания стейкинга, вам будет выплачена компенсация
 
 <b>💸 Максимальная компенсация:</b>
-До 50%% от вашей стейкнутой суммы.
+До 90%% от суммы стейка.
 
 🔒 Резерв пула:
  •	Заблокировано участниками: %v токенов

@@ -68,8 +68,7 @@ func (c *ProfileCommand) Execute(ctx context.Context, msg *models.Message) {
 		tonAddr = w.Addr
 	}
 
-	activeStakes := c.ss.GetStakesUserIdStatus(uint64(user.Id.Int64), true)
-	text := c.generateMessage(user, tonAddr, activeStakes)
+	text := c.generateMessage(user, tonAddr)
 	setWalAddrBtn := util.CreateDefaultButton(buttons.SetNumberWalletId, buttons.SetNumberWallet)
 	conTonW := util.CreateDefaultButton(buttons.LinkTonConnectId, buttons.LinkTonConnect)
 
@@ -81,30 +80,18 @@ func (c *ProfileCommand) Execute(ctx context.Context, msg *models.Message) {
 	}
 }
 
-func (c *ProfileCommand) generateMessage(u *appModels.User, tonAddr string, stakes *[]appModels.Stake) string {
-	stakesTokenSum := 0.
-
-	for _, s := range *stakes {
-		stakesTokenSum += s.Amount
-	}
-
-	countActiveStake := len(*stakes)
+func (c *ProfileCommand) generateMessage(u *appModels.User, tonAddr string) string {
 
 	text := `
 <b>👤 Ваш профиль NESTRAH</b>
 
 <b>TON-адрес</b>: %v
 <b>Дата регистрации</b>: %v
-<b>Стейкнутые токены</b>: %v %v
-<b>Общий застейканый объем</b>: %v токенов
 `
 	res := fmt.Sprintf(
 		text,
 		tonAddr,
 		u.CreatedAt.Format("02 Jan 2006"),
-		countActiveStake,
-		util.SuffixPol(countActiveStake),
-		stakesTokenSum,
 	)
 
 	return res

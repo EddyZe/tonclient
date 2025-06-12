@@ -822,6 +822,13 @@ func (t *TgBot) stake(payload *appModels.Payload, b *bot.Bot) {
 		log.Error("Failed to get user wall:", err)
 	}
 
+	pool.TempReserve -= stake.Amount * 20
+	log.Println(pool.TempReserve)
+	if err := t.ps.Update(pool); err != nil {
+		log.Error("Failed to update pool:", err)
+	}
+	stake.StartPoolDeposit = stake.Amount * 20
+
 	log.Infoln("Сохранение стейка")
 	_, err = t.ss.CreateStake(&stake)
 	if err != nil {

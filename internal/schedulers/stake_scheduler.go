@@ -79,14 +79,14 @@ func (s *StakeScheduler) AddStakeBonusActiveStakes() func() {
 							Stake: &stake,
 							Msg: fmt.Sprintf("✅ Стейк с токеном %v был закрыт.\n\n Заработано: %v %v.\n Общий баланс: %v %v\n Теперь вы можете вывести токены или получить компенсацию, если она полагается.",
 								jettonData.DisplayName,
-								profit,
+								util.RemoveZeroFloat(profit),
 								jettonData.DisplayName,
-								stake.Balance,
+								util.RemoveZeroFloat(stake.Balance),
 								jettonData.DisplayName,
 							),
 						}
 					}
-					log.Println("проверка кол-во стейкаов")
+					log.Println("проверка кол-во стейков")
 					stakesCountUser := s.ss.CountUser(stake.UserId)
 					tgStaker, err := s.ts.GetByUserId(stake.UserId)
 					if err != nil {

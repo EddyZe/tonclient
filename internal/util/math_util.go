@@ -26,18 +26,15 @@ func CalculateProcientEditPrice(currentPrice, oldPrice float64) float64 {
 }
 
 func CalculateInsurance(pool *appModels.Pool, stake *appModels.Stake) float64 {
-	tenProcientFromReserve := pool.Reserve * 0.1
-	ninetyProcientFromReserve := pool.Reserve * 0.9
-
-	share := stake.Amount / tenProcientFromReserve
-
-	insurance := ninetyProcientFromReserve * share
-	insurance = math.Ceil(insurance)
-	return insurance
+	internalValue := stake.Amount * stake.DepositCreationPrice
+	currentValue := stake.Amount * stake.JettonPriceClosed
+	loss := internalValue - currentValue
+	insurance := loss / stake.JettonPriceClosed
+	return math.Min(stake.StartPoolDeposit*0.9, insurance)
 }
 
 func RemoveZeroFloat(number float64) string {
-	num, _ := strconv.ParseFloat(fmt.Sprintf("%.6f", number), 64)
+	num, _ := strconv.ParseFloat(fmt.Sprintf("%.9f", number), 64)
 	str := strconv.FormatFloat(num, 'f', -1, 64)
 	return str
 }
@@ -56,7 +53,7 @@ func CalculateSumStakesFromPool(stakes *[]appModels.Stake, p *appModels.Pool) fl
 		}
 
 		if stake.IsActive {
-			res += stake.Amount * 10
+			res += stake.Amount * 20
 		}
 	}
 

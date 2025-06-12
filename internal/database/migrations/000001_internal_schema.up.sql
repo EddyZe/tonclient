@@ -35,6 +35,7 @@ create table if not exists pool
     reward             double precision check ( reward > 0 ) not null,
     period             int check (period > 0)                not null,
     insurance_coating  int check ( insurance_coating > 0 )   not null,
+    temp_reserve       numeric(28, 9),
     created_at         timestamp default now(),
     is_active          bool      default false,
     is_commission_paid bool      default false
@@ -53,6 +54,7 @@ create table if not exists stake
     start_date             timestamp                                                                    default now(),
     end_date               timestamp                                                                    default now(),
     is_active              bool                                                                         default true,
+    start_pool_deposit     numeric(28, 9),
     is_insurance_paid      bool                                                                         default false,
     is_reward_paid         bool                                                                         default false,
     is_commission_paid     bool                                                                         default false

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"math"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -22,8 +23,6 @@ import (
 )
 
 var log = config.InitLogger()
-
-const TON_MANIFEST_URL = "https://raw.githubusercontent.com/EddyZe/tonclient/refs/heads/master/tonconnect-manifest.json"
 
 type TonConnectService struct {
 	redisCli        *redis.Client
@@ -89,7 +88,7 @@ func (s *TonConnectService) GenerateConnectUrls(session *tonconnect.Session) (co
 		return nil, err
 	}
 	connreq, err := tonconnect.NewConnectRequest(
-		TON_MANIFEST_URL,
+		os.Getenv("MANIFEST_URL"),
 		tonconnect.WithProofRequest(base32.StdEncoding.EncodeToString(data)),
 	)
 	if err != nil {
@@ -123,7 +122,7 @@ func (s *TonConnectService) GenerateConnectUrls(session *tonconnect.Session) (co
 func (s *TonConnectService) GetTonConnector() (*tonconnect.ConnectRequest, error) {
 	data := make([]byte, 32)
 	connreq, err := tonconnect.NewConnectRequest(
-		TON_MANIFEST_URL,
+		os.Getenv("MANIFEST_URL"),
 		tonconnect.WithProofRequest(base32.StdEncoding.EncodeToString(data)),
 	)
 	if err != nil {

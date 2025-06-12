@@ -31,8 +31,8 @@ func (r *StakeRepository) Save(stake *models.Stake) error {
 	query, args, err := tx.BindNamed(
 		`
 insert into
-stake(user_id, pool_id, amount, start_date, is_active, deposit_creation_price, balance, is_insurance_paid, is_reward_paid, jetton_price_closed, is_commission_paid, end_date, close_date ) 
-values (:user_id, :pool_id, :amount, :start_date, :is_active, :deposit_creation_price, :balance, :is_insurance_paid, :is_reward_paid, :jetton_price_closed, :is_commission_paid, :end_date, :close_date)
+stake(user_id, pool_id, amount, start_date, is_active, deposit_creation_price, balance, is_insurance_paid, is_reward_paid, jetton_price_closed, is_commission_paid, end_date, close_date, start_pool_deposit) 
+values (:user_id, :pool_id, :amount, :start_date, :is_active, :deposit_creation_price, :balance, :is_insurance_paid, :is_reward_paid, :jetton_price_closed, :is_commission_paid, :end_date, :close_date, :start_pool_deposit)
 returning id`,
 		stake,
 	)
@@ -85,7 +85,8 @@ set user_id = :user_id,
     jetton_price_closed = :jetton_price_closed,
     is_commission_paid=:is_commission_paid,
     end_date =:end_date,
-    close_date =:close_date
+    close_date =:close_date,
+    start_pool_deposit =:start_pool_deposit
 where id=:id`,
 		stake,
 	); err != nil {

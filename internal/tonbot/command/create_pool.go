@@ -247,6 +247,7 @@ func (c *CreatePool[T]) enterAmountToken(msg *models.Message, w *appModels.Walle
 	}
 	pool.JettonWallet = jettonWallet.Address().String()
 	pool.Reserve = num
+	pool.TempReserve = num
 	pool.IsCommissionPaid = false
 	pool.CreatedAt = time.Now()
 	pool.IsActive = false
@@ -380,11 +381,11 @@ func (c *CreatePool[T]) enterProfit(msg *models.Message) {
 		return
 	}
 
-	if num < 0.1 || num > 3 {
+	if num < 0.1 || num > 1 {
 		if _, err := util.SendTextMessage(
 			c.b,
 			uint64(chatId),
-			"❌ Доходность не может быть меньше чем 0.1 и больше чем 3!",
+			"❌ Доходность не может быть меньше чем 0.1 и больше чем 1!",
 		); err != nil {
 			log.Error(err)
 		}
@@ -420,11 +421,11 @@ func (c *CreatePool[T]) enterCustomPeriodHold(msg *models.Message) {
 		return
 	}
 
-	if numPeriod < 7 {
+	if numPeriod < 7 || numPeriod > 356 {
 		if _, err := util.SendTextMessage(
 			c.b,
 			uint64(chatId),
-			"❌ Срок холда не может быть меньше чем 7!",
+			"❌ Срок холда не может быть меньше чем 7 и не больше 356 дней!",
 		); err != nil {
 			log.Error(err)
 		}

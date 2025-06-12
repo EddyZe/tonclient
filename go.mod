@@ -7,6 +7,7 @@ toolchain go1.23.5
 require (
 	github.com/cameo-engineering/tonconnect v0.0.0-20240716124134-616a6473b195
 	github.com/go-telegram/bot v1.15.0
+	github.com/gorilla/mux v1.8.1
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
