@@ -334,7 +334,7 @@ func (c *CreateStakeCommand[T]) checkSumStakes(
 			c.b,
 			chatId,
 			fmt.Sprintf(
-				"❌ Нельзя сделать стейк на текущий момент! Недостаточно резерва. Максимальная сумма стейка не должна быть больше: %v",
+				"❌ Недостаточно резерва. Максимальная сумма стейка не должна быть больше: %v",
 				util.RemoveZeroFloat(tenProcientFromSum),
 			),
 		); err != nil {
