@@ -12,8 +12,6 @@ import (
 	"tonclient/internal/messages"
 	appModels "tonclient/internal/models"
 	"tonclient/internal/services"
-	"tonclient/internal/tonbot/buttons"
-	"tonclient/internal/tonbot/callbacksuf"
 	"tonclient/internal/tonbot/userstate"
 	"tonclient/internal/util"
 
@@ -335,39 +333,46 @@ func (c *CreateStakeCommand[T]) checkSumStakes(
 		if _, err := util.SendTextMessage(
 			c.b,
 			chatId,
-			"❌ Нельзя сделать стейк на текущий момент! Недостаточно резерва",
+			fmt.Sprintf(
+				"❌ Нельзя сделать стейк на текущий момент! Недостаточно резерва. Максимальная сумма стейка не должна быть больше: %v",
+				util.RemoveZeroFloat(tenProcientFromSum),
+			),
 		); err != nil {
 			log.Error(err)
 		}
 
-		tgOwner, err := c.ts.GetByUserId(pool.OwnerId)
-		if err != nil {
-			log.Error(err)
-			return err
-		}
-
-		jettonaData, err := c.aws.DataJetton(pool.JettonMaster)
-		if err != nil {
-			log.Error(err)
-			return err
-		}
-		idButton := fmt.Sprintf("%v:%v:%v", buttons.PoolDataButton, pool.Id.Int64, callbacksuf.My)
-		btn := util.CreateDefaultButton(idButton, "Открыть пул")
-		markup := util.CreateInlineMarup(1, btn)
-		pool.IsActive = false
-
-		if err := c.ps.Update(pool); err != nil {
-			log.Error(err)
-		}
-
-		if _, err := util.SendTextMessageMarkup(
-			c.b,
-			tgOwner.TelegramId,
-			fmt.Sprintf("❌ В пуле %v недостаточно резерва. Пользователи не могут делать стейки на текущий момент. Пополните резерв!\n\nТекущий резерв: %v\n\nПул был закрыт автоматически. Вы сможете его сново открыть, после пополнения резерва!", jettonaData.Name, util.RemoveZeroFloat(pool.Reserve-currentSumStakes+currentAmountStake)),
-			markup,
-		); err != nil {
-			log.Error(err)
-		}
+		//tgOwner, err := c.ts.GetByUserId(pool.OwnerId)
+		//if err != nil {
+		//	log.Error(err)
+		//	return err
+		//}
+		//
+		//jettonaData, err := c.aws.DataJetton(pool.JettonMaster)
+		//if err != nil {
+		//	log.Error(err)
+		//	return err
+		//}
+		//idButton := fmt.Sprintf("%v:%v:%v", buttons.PoolDataButton, pool.Id.Int64, callbacksuf.My)
+		//btn := util.CreateDefaultButton(idButton, "Открыть пул")
+		//markup := util.CreateInlineMarup(1, btn)
+		//pool.IsActive = false
+		//
+		//if err := c.ps.Update(pool); err != nil {
+		//	log.Error(err)
+		//}
+		//
+		//if _, err := util.SendTextMessageMarkup(
+		//	c.b,
+		//	tgOwner.TelegramId,
+		//	fmt.Sprintf(
+		//		"❌ В пуле %v недостаточно резерва. Пользователи не могут делать стейки на текущий момент. Пополните резерв!\n\nТекущий резерв: %v\n\nПул был закрыт автоматически. Вы сможете его сново открыть, после пополнения резерва!",
+		//		jettonaData.Name,
+		//		util.RemoveZeroFloat(pool.Reserve),
+		//	),
+		//	markup,
+		//); err != nil {
+		//	log.Error(err)
+		//}
 		return errors.New("недостаточная сумма для стейка")
 	}
 	return nil
