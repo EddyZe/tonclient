@@ -68,6 +68,9 @@ func NewAdminWalletService(config *config.TonClientConfig, ps *PoolService, ts *
 		return nil, err
 	}
 
+	log.Infoln(wall.WalletAddress().String())
+	log.Infoln(wall.WalletAddress().String() == os.Getenv("WALLET_ADDR"))
+
 	wallAddr := wall.WalletAddress()
 	treasuryAddress, err := address.ParseAddr(wallAddr.String())
 	if err != nil {
@@ -367,7 +370,10 @@ func initApi(ctx context.Context) (*ton.APIClient, error) {
 }
 
 func getWalletFromSeed(api *ton.APIClient, seed []string) (*wallet.Wallet, error) {
-	return wallet.FromSeed(api, seed, wallet.HighloadV2Verified)
+	return wallet.FromSeed(api, seed, wallet.ConfigV5R1Final{
+		NetworkGlobalID: -239,
+		Workchain:       0,
+	})
 }
 
 func (s *AdminWalletService) GetAdminWalletAddr() *address.Address {

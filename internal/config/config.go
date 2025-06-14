@@ -14,7 +14,6 @@ const (
 )
 
 var WALLET_SEED []string
-var JETTON_WALLET_MAIN_COIN string
 var COMMISSION_AMOUNT float64
 
 var log = InitLogger()
@@ -36,7 +35,6 @@ type RedisConfig struct {
 type TonClientConfig struct {
 	Seed                []string
 	WalletAddr          string
-	JettonAddr          string
 	JettonAdminContract string
 }
 
@@ -51,8 +49,6 @@ func InitConfig() error {
 		log.Error("Error parsing COMMISSION_AMOUNT")
 		COMMISSION_AMOUNT = 5
 	}
-
-	JETTON_WALLET_MAIN_COIN = os.Getenv("JETTON_WALLET_MAIN_COIN")
 
 	return nil
 }
@@ -70,13 +66,11 @@ func LoadPostgresConfig() *PostgresConfig {
 func LoadTonConfig() *TonClientConfig {
 	seed := strings.Split(os.Getenv("WALLET_SEED"), " ")
 	walletAddr := os.Getenv("WALLET_ADDR")
-	jettonAddr := os.Getenv("JETTON_WALLET_MAIN_COIN")
 	contract := os.Getenv("JETTON_CONTRACT_ADMIN_JETTON")
 
 	return &TonClientConfig{
 		Seed:                seed,
 		WalletAddr:          walletAddr,
-		JettonAddr:          jettonAddr,
 		JettonAdminContract: contract,
 	}
 }

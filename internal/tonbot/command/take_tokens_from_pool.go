@@ -145,7 +145,7 @@ func (c *TakeTokens) Execute(ctx context.Context, callback *models.CallbackQuery
 	var lastDate string
 	noPaymentSum := 0.
 	sumStakes := c.ss.GetPoolStakes(uint64(poolId))
-	for i, s := range *sumStakes {
+	for i, s := range sumStakes {
 		if i == 0 {
 			lastDate = s.EndDate.Format("15:04 02.01.2006")
 		}

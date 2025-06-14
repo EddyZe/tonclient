@@ -1,15 +1,21 @@
 package tests
 
 import (
+	"context"
 	"log"
 	"strings"
 	"testing"
+	"time"
 	"tonclient/internal/config"
 	"tonclient/internal/database"
 	"tonclient/internal/models"
 	"tonclient/internal/repositories"
 	"tonclient/internal/services"
 	"tonclient/internal/tonbot"
+
+	"github.com/xssnick/tonutils-go/liteclient"
+	"github.com/xssnick/tonutils-go/ton"
+	"github.com/xssnick/tonutils-go/ton/wallet"
 )
 
 func TestAdminWalletService_StartSubscribeTransaction(t *testing.T) {
@@ -43,6 +49,29 @@ func TestSendJetton(t *testing.T) {
 		log.Fatalln("Error getting jetton data", err)
 		return
 	}
+}
+
+func TestWallet(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	defer cancel()
+	client := liteclient.NewConnectionPool()
+	cfg, err := liteclient.GetConfigFromUrl(ctx, config.CONFIG_TON_MAINNET_URL)
+	if err != nil {
+		log.Fatalln("get config err: ", err.Error())
+	}
+	if err := client.AddConnectionsFromConfig(ctx, cfg); err != nil {
+		log.Fatal("Failed to add connections to config server:", err)
+	}
+	api := ton.NewAPIClient(client)
+	api.SetTrustedBlockFromConfig(cfg)
+	w := wallet.NewSeedWithPassword("qwe123")
+	log.Println(w)
+
+	wall, err := wallet.FromSeedWithPassword(api, w, "qwe123", wallet.V4R1)
+	if err != nil {
+		log.Fatalln("Error getting wallet", err)
+	}
+	log.Println(wall.WalletAddress().String())
 }
 
 func InitDBDefault() (*database.Postgres, error) {
@@ -79,7 +108,6 @@ func InitAdminService() *services.AdminWalletService {
 	s, err := services.NewAdminWalletService(&config.TonClientConfig{
 		Seed:                seeds,
 		WalletAddr:          "UQD6A01mB8tAKJVekRrMjoA3l188LSCF2zrIHoH94tWhZGAO",
-		JettonAddr:          "UQD6A01mB8tAKJVekRrMjoA3l188LSCF2zrIHoH94tWhZGAO",
 		JettonAdminContract: "UQD6A01mB8tAKJVekRrMjoA3l188LSCF2zrIHoH94tWhZGAO",
 	},
 		ps,

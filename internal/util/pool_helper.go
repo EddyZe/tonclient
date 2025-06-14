@@ -43,7 +43,7 @@ func GeneratePoolButtons(pool *[]appModels.Pool, aws *services.AdminWalletServic
 		poolId := p.Id.Int64
 		subSubStake := 0.
 		stakes := ss.GetPoolStakes(uint64(poolId))
-		subSubStake = CalculateSumStakesFromPool(stakes, &p)
+		subSubStake = CalculateSumStakesFromPool(&stakes, &p)
 		res = append(
 			res,
 			CreateDefaultButton(
@@ -61,12 +61,12 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 	subReserve := 0.
 
 	if allStakesPool != nil {
-		for _, stake := range *allStakesPool {
+		for _, stake := range allStakesPool {
 			if stake.IsActive {
 				sumAmount += stake.Amount
 			}
 		}
-		subReserve = CalculateSumStakesFromPool(allStakesPool, p)
+		subReserve = CalculateSumStakesFromPool(&allStakesPool, p)
 	}
 
 	tenProcientReserve := (p.Reserve - subReserve) * 0.05

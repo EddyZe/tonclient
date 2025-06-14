@@ -20,11 +20,12 @@ type DeletePool struct {
 	ss  *services.StakeService
 }
 
-func NewDeletePool(b *bot.Bot, ps *services.PoolService, ops *services.OperationService) *DeletePool {
+func NewDeletePool(b *bot.Bot, ps *services.PoolService, ops *services.OperationService, ss *services.StakeService) *DeletePool {
 	return &DeletePool{
 		b:   b,
 		ps:  ps,
 		ops: ops,
+		ss:  ss,
 	}
 }
 
@@ -72,7 +73,7 @@ func (c *DeletePool) Execute(ctx context.Context, callback *models.CallbackQuery
 
 	count := 0
 	stakeNoPayment := c.ss.GetPoolStakes(uint64(p.Id.Int64))
-	for _, s := range *stakeNoPayment {
+	for _, s := range stakeNoPayment {
 		if !s.IsRewardPaid && s.IsInsurancePaid {
 			count++
 		}

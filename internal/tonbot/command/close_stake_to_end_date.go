@@ -115,7 +115,7 @@ func (c *CloseStake) Execute(ctx context.Context, callback *models.CallbackQuery
 	adminAmount := stake.Balance - stake.Amount
 	p.Reserve -= adminAmount
 	stakes := c.ss.GetPoolStakes(stake.PoolId)
-	p.TempReserve = p.Reserve - util.CalculateSumStakesFromPool(stakes, p)
+	p.TempReserve = p.Reserve - util.CalculateSumStakesFromPool(&stakes, p)
 
 	if err := c.ps.Update(p); err != nil {
 		log.Println(err)

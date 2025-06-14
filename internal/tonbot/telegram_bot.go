@@ -102,8 +102,8 @@ func (t *TgBot) createCron(b *bot.Bot) {
 	)
 
 	c := cron.New()
-	//TODO изменить на каждый день!
-	_, err := c.AddFunc("* * * * *", sch.AddStakeBonusActiveStakes())
+
+	_, err := c.AddFunc("* 0 * * *", sch.AddStakeBonusActiveStakes())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -562,6 +562,7 @@ func (t *TgBot) handleCallback(ctx context.Context, b *bot.Bot, callback *models
 			b,
 			t.ps,
 			t.opS,
+			t.ss,
 		).Execute(ctx, callback)
 		return
 	}

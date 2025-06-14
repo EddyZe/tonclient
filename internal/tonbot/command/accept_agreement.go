@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 	"tonclient/internal/services"
+	"tonclient/internal/tonbot/buttons"
 	"tonclient/internal/util"
 
 	"github.com/go-telegram/bot"
@@ -52,10 +53,23 @@ func (c *AcceptAgreementCommand) Execute(ctx context.Context, callback *models.C
 		return
 	}
 
-	if _, err := util.SendTextMessage(
+	keys := util.CreateDefaultButtonsReplay(
+		2,
+		buttons.SelectPool,
+		buttons.Profile,
+		buttons.MyStakes,
+		buttons.HistoryOperation,
+		buttons.Payments,
+		buttons.InviteFriend,
+		buttons.LearnMore,
+		buttons.Setting,
+	)
+
+	if _, err := util.SendTextMessageMarkup(
 		c.b,
 		uint64(chatId),
 		"✅ Вы приняли пользовательское соглашение!",
+		keys,
 	); err != nil {
 		log.Println(err)
 		return

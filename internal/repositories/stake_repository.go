@@ -159,24 +159,24 @@ func (r *StakeRepository) FindAll() *[]models.Stake {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	var stakes []models.Stake
+	stakes := make([]models.Stake, 0)
 	tx, err := r.db.Beginx()
 	if err != nil {
 		log.Error("Error starting transaction:", err)
-		return nil
+		return &stakes
 	}
 	if err := tx.SelectContext(ctx, &stakes, "select * from stake"); err != nil {
 		log.Error("Failed to get stake: ", err)
-		return nil
+		return &stakes
 	}
 
 	if err := tx.Commit(); err != nil {
 		log.Error("Failed to commit transaction: ", err)
 		if er := tx.Rollback(); er != nil {
 			log.Error("Failed to rollback transaction: ", err)
-			return nil
+			return &stakes
 		}
-		return nil
+		return &stakes
 	}
 	return &stakes
 }
@@ -185,11 +185,11 @@ func (r *StakeRepository) FindAllLimit(offset, limit int) *[]models.Stake {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	var stakes []models.Stake
+	stakes := make([]models.Stake, 0)
 	tx, err := r.db.Beginx()
 	if err != nil {
 		log.Error("Error starting transaction:", err)
-		return nil
+		return &stakes
 	}
 	if err := tx.SelectContext(
 		ctx,
@@ -198,16 +198,16 @@ func (r *StakeRepository) FindAllLimit(offset, limit int) *[]models.Stake {
 		offset,
 		limit); err != nil {
 		log.Error("Failed to get stake: ", err)
-		return nil
+		return &stakes
 	}
 
 	if err := tx.Commit(); err != nil {
 		log.Error("Failed to commit transaction: ", err)
 		if er := tx.Rollback(); er != nil {
 			log.Error("Failed to rollback transaction: ", err)
-			return nil
+			return &stakes
 		}
-		return nil
+		return &stakes
 	}
 
 	return &stakes
@@ -217,7 +217,7 @@ func (r *StakeRepository) GetUserStakes(userId uint64) *[]models.Stake {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	var stakes []models.Stake
+	stakes := make([]models.Stake, 0)
 	tx, err := r.db.Beginx()
 	if err != nil {
 		log.Error("Error starting transaction:", err)
@@ -229,16 +229,16 @@ func (r *StakeRepository) GetUserStakes(userId uint64) *[]models.Stake {
 		&stakes,
 		"select s.* from stake as s join usr as u on s.user_id = u.id where u.id=$1", userId); err != nil {
 		log.Error("Failed to get stake: ", err)
-		return nil
+		return &stakes
 	}
 
 	if err := tx.Commit(); err != nil {
 		log.Error("Failed to commit transaction: ", err)
 		if er := tx.Rollback(); er != nil {
 			log.Error("Failed to rollback transaction: ", err)
-			return nil
+			return &stakes
 		}
-		return nil
+		return &stakes
 	}
 
 	return &stakes
@@ -248,11 +248,11 @@ func (r *StakeRepository) GetUserStakesLimit(offset, limit int, userId int64) *[
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	var stakes []models.Stake
+	stakes := make([]models.Stake, 0)
 	tx, err := r.db.Beginx()
 	if err != nil {
 		log.Error("Error starting transaction:", err)
-		return nil
+		return &stakes
 	}
 
 	if err := tx.SelectContext(
@@ -263,30 +263,30 @@ func (r *StakeRepository) GetUserStakesLimit(offset, limit int, userId int64) *[
 		offset,
 		limit); err != nil {
 		log.Error("Failed to get stake: ", err)
-		return nil
+		return &stakes
 	}
 
 	if err := tx.Commit(); err != nil {
 		log.Error("Failed to commit transaction: ", err)
 		if er := tx.Rollback(); er != nil {
 			log.Error("Failed to rollback transaction: ", err)
-			return nil
+			return &stakes
 		}
-		return nil
+		return &stakes
 	}
 
 	return &stakes
 }
 
-func (r *StakeRepository) FindStakesByPoolId(poolId uint64) *[]models.Stake {
+func (r *StakeRepository) FindStakesByPoolId(poolId uint64) ([]models.Stake, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	var stakes []models.Stake
+	stakes := make([]models.Stake, 0)
 
 	tx, err := r.db.Beginx()
 	if err != nil {
 		log.Error("Error starting transaction:", err)
-		return nil
+		return nil, err
 	}
 	if err := tx.SelectContext(
 		ctx,
@@ -294,30 +294,30 @@ func (r *StakeRepository) FindStakesByPoolId(poolId uint64) *[]models.Stake {
 		"select s.* from stake as s join pool as p on s.pool_id = p.id where p.id=$1 order by end_date desc ",
 		poolId); err != nil {
 		log.Error("Failed to get stakes: ", err)
-		return nil
+		return nil, err
 	}
 
 	if err := tx.Commit(); err != nil {
 		log.Error("Failed to commit transaction: ", err)
 		if er := tx.Rollback(); er != nil {
 			log.Error("Failed to rollback transaction: ", err)
-			return nil
+			return nil, err
 		}
-		return nil
+		return nil, err
 	}
 
-	return &stakes
+	return stakes, nil
 }
 
 func (r *StakeRepository) FindStakesByPoolIdIsActive(poolId uint64, status bool) *[]models.Stake {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	var stakes []models.Stake
+	stakes := make([]models.Stake, 0)
 
 	tx, err := r.db.Beginx()
 	if err != nil {
 		log.Error("Error starting transaction:", err)
-		return nil
+		return &stakes
 	}
 	if err := tx.SelectContext(
 		ctx,
@@ -334,16 +334,16 @@ where p.id=$1
 		status,
 	); err != nil {
 		log.Error("Failed to get stakes: ", err)
-		return nil
+		return &stakes
 	}
 
 	if err := tx.Commit(); err != nil {
 		log.Error("Failed to commit transaction: ", err)
 		if er := tx.Rollback(); er != nil {
 			log.Error("Failed to rollback transaction: ", err)
-			return nil
+			return &stakes
 		}
-		return nil
+		return &stakes
 	}
 
 	return &stakes

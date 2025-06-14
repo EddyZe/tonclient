@@ -225,7 +225,45 @@ func (c *CreatePool[T]) enterAmountToken(msg *models.Message, w *appModels.Walle
 	}
 	minPoolReserve := pool.MinStakeAmount * 100 / 10
 
-	if num < minPoolReserve || num > 30_000_000 {
+	maxPool, err := strconv.ParseFloat(os.Getenv("MAX_POOL_LIMIT"), 64)
+	if err != nil {
+		maxPool = 30_000_000.
+	}
+
+	if num > maxPool {
+		if _, err := util.SendTextMessage(
+			c.b,
+			uint64(chatId),
+			fmt.Sprintf(
+				"❌ Максимальный объем пула не должен привышать %v",
+				util.RemoveZeroFloat(maxPool),
+			),
+		); err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	minPool, err := strconv.ParseFloat(os.Getenv("MIN_POOL_LIMIT"), 64)
+	if err != nil {
+		minPool = 100_000.
+	}
+
+	if num < minPool {
+		if _, err := util.SendTextMessage(
+			c.b,
+			uint64(chatId),
+			fmt.Sprintf(
+				"❌ Минимальный объем пула должен быть больше %v",
+				util.RemoveZeroFloat(minPool),
+			),
+		); err != nil {
+			log.Error(err)
+		}
+		return
+	}
+
+	if num < minPoolReserve {
 		if _, err := util.SendTextMessage(
 			c.b,
 			uint64(chatId),

@@ -189,7 +189,7 @@ func (c *TakeInsuranceFromStake) Execute(ctx context.Context, callback *models.C
 
 	pool.Reserve -= profit + insurance
 	stakes := c.ss.GetPoolStakes(stake.PoolId)
-	pool.TempReserve = pool.Reserve - util.CalculateSumStakesFromPool(stakes, pool)
+	pool.TempReserve = pool.Reserve - util.CalculateSumStakesFromPool(&stakes, pool)
 	if err := c.ps.Update(pool); err != nil {
 		log.Error(err)
 		return

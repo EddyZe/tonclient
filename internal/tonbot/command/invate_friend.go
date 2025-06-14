@@ -61,8 +61,9 @@ func generateMessage() string {
 	if referalBonus == "" {
 		referalBonus = "2"
 	}
+
 	return fmt.Sprintf(
-		"Пригласи друга и получи <b>%v%% %v</b> коинов за его первый стейк!\n\n",
+		"Пригласи друга и получи <b>%v%%</b> от суммы его первого стейка.!\n\nНачислим в %v коинах",
 		referalBonus,
 		coinName,
 	)

@@ -1,19 +1,19 @@
 package main
 
 import (
+	"errors"
 	"log"
-	"net/http"
 	"os"
-	"time"
 	"tonclient/internal/config"
 	"tonclient/internal/database"
-	"tonclient/internal/handlers"
 	"tonclient/internal/models"
 	"tonclient/internal/repositories"
 	"tonclient/internal/services"
 	"tonclient/internal/tonbot"
 
-	"github.com/gorilla/mux"
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 func main() {
@@ -27,8 +27,9 @@ func run() {
 	}
 
 	logger.Infoln("Config initialized")
+	psqlConfig := config.LoadPostgresConfig()
 
-	db := connectPostgres()
+	db := connectPostgres(psqlConfig)
 	defer func(db *database.Postgres) {
 		err := db.Close()
 		if err != nil {
@@ -36,6 +37,20 @@ func run() {
 		}
 	}(db)
 	logger.Infoln("Database initialized")
+
+	m, err := migrate.New(
+		"file://migrations",
+		database.GetConUrl(psqlConfig),
+	)
+
+	if err != nil {
+		log.Fatalf("Ошибка создания миграции: %v", err)
+	}
+
+	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		log.Fatalf("Ошибка применения миграции: %v", err)
+	}
+	log.Println("Миграции успешно применены.")
 
 	redis, err := database.NewRedisDb(config.LoadRedisConfig())
 	if err != nil {
@@ -100,28 +115,13 @@ func run() {
 
 	go aws.StartSubscribeTransaction(transaction)
 
-	r := mux.NewRouter()
-	r.HandleFunc("/manifest", handlers.ManifestHandler)
-	srv := &http.Server{
-		Handler:      r,
-		Addr:         "127.0.0.1:8000",
-		WriteTimeout: 15 * time.Second,
-		ReadTimeout:  15 * time.Second,
-	}
-	go func() {
-		if err := srv.ListenAndServe(); err != nil {
-			logger.Fatal(err)
-		}
-	}()
-
 	if err := tgbot.StartBot(transaction); err != nil {
 		logger.Fatalf("Failed to start bot: %v", err)
 	}
 
 }
 
-func connectPostgres() *database.Postgres {
-	psqlConfig := config.LoadPostgresConfig()
+func connectPostgres(psqlConfig *config.PostgresConfig) *database.Postgres {
 	psql, err := database.NewPostgres(psqlConfig)
 	if err != nil {
 		log.Fatal("Failed to connect to database")

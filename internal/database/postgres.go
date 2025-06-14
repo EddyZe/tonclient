@@ -15,14 +15,7 @@ type Postgres struct {
 }
 
 func NewPostgres(config *config.PostgresConfig) (*Postgres, error) {
-	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable&client_encoding=%s",
-		config.User,
-		config.Password,
-		config.Host,
-		config.Port,
-		config.DBName,
-		"UTF8",
-	)
+	connStr := GetConUrl(config)
 
 	db, err := sqlx.Connect("postgres", connStr)
 	if err != nil {
@@ -32,6 +25,19 @@ func NewPostgres(config *config.PostgresConfig) (*Postgres, error) {
 	return &Postgres{
 		Db: db,
 	}, nil
+}
+
+func GetConUrl(config *config.PostgresConfig) string {
+	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable&client_encoding=%s",
+		config.User,
+		config.Password,
+		config.Host,
+		config.Port,
+		config.DBName,
+		"UTF8",
+	)
+
+	return connStr
 }
 
 //	func NewPostgres(config *config.PostgresConfig) (*Postgres, error) {

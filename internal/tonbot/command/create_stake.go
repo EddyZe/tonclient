@@ -118,7 +118,7 @@ func (c *CreateStakeCommand[T]) executeMessage(msg *models.Message) {
 
 	stakes := c.ss.GetPoolStakes(pooldId)
 	if stakes != nil {
-		sumStakes := util.CalculateSumStakesFromPool(stakes, p)
+		sumStakes := util.CalculateSumStakesFromPool(&stakes, p)
 		if err := c.checkSumStakes(tokens, sumStakes, p, uint64(chatId)); err != nil {
 			log.Error(err)
 			return

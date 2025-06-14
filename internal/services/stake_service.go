@@ -54,8 +54,12 @@ func (s *StakeService) CountByUserIdIsActive(userId uint64, b bool) int {
 	return s.stakeRepo.CountUserAndStatusStake(userId, b)
 }
 
-func (s *StakeService) GetPoolStakes(poolId uint64) *[]models.Stake {
-	return s.stakeRepo.FindStakesByPoolId(poolId)
+func (s *StakeService) GetPoolStakes(poolId uint64) []models.Stake {
+	stakes, err := s.stakeRepo.FindStakesByPoolId(poolId)
+	if err != nil {
+		return make([]models.Stake, 0)
+	}
+	return stakes
 }
 
 func (s *StakeService) GetPoolStakesIsActive(poolId uint64, isActive bool) *[]models.Stake {
