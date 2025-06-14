@@ -30,7 +30,7 @@ func generateNamePool(pool *appModels.Pool, aws *services.AdminWalletService, su
 		pool.Period,
 		SuffixDay(int(pool.Period)),
 		pool.Reward,
-		math.Floor(currentReserve),
+		RemoveZeroFloat(math.Floor(currentReserve)),
 	)
 }
 
@@ -123,19 +123,19 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 	reliability := (p.Reserve / (jettonData.TotalSupply / (10e+8))) / 0.72 * 100
 	reliability = math.Min(reliability, 100)
 
-	var emoj string
-	var level string
+	//var emoj string
+	//var level string
 
-	if reliability < 5 {
-		emoj = "🟥"
-		level = "низкий"
-	} else if reliability < 20 {
-		emoj = "🟨"
-		level = "средний"
-	} else {
-		emoj = "🟩"
-		level = "высокий"
-	}
+	//if reliability < 5 {
+	//	emoj = "🟥"
+	//	level = "низкий"
+	//} else if reliability < 20 {
+	//	emoj = "🟨"
+	//	level = "средний"
+	//} else {
+	//	emoj = "🟩"
+	//	level = "высокий"
+	//}
 
 	res := fmt.Sprintf(
 		`
@@ -163,9 +163,7 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
  •	Заблокировано участниками: %v токенов
  •	Доступно для новых стейков: %v токенов
  •  Общий резерв: %v
-
-🔐 <b>Надежность пула</b>: %v %v%% из 100%%
-Уровень: %v, резерв составляет %v из %v токенов`,
+`,
 		jettonInfo.DisplayName,
 		status,
 		RemoveZeroFloat(price),
@@ -178,12 +176,16 @@ func PoolInfo(p *appModels.Pool, ss *services.StakeService, jettonData *appModel
 		ut,
 		reserve,
 		fullReserve,
-		emoj,
-		RemoveZeroFloat(reliability),
-		level,
-		RemoveZeroFloat(currentReserve),
-		RemoveZeroFloat(jettonData.TotalSupply/(10e+8)),
+		//emoj,
+		//RemoveZeroFloat(reliability),
+		//level,
+		//RemoveZeroFloat(currentReserve),
+		//RemoveZeroFloat(jettonData.TotalSupply/(10e+8)),
 	)
+
+	//
+	//🔐 <b>Надежность пула</b>: %v %v%% из 100%%
+	//	Уровень: %v, резерв составляет %v из %v токенов
 	return res
 }
 
