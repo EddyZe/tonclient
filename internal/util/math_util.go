@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 	appModels "tonclient/internal/models"
 )
 
@@ -62,4 +63,20 @@ func CalculateSumStakesFromPool(stakes *[]appModels.Stake, p *appModels.Pool) fl
 	}
 
 	return res
+}
+
+func ReplaceThreeZerosToK(num int64) string {
+	kCount := 0
+	n := float64(num)
+
+	for n >= 1000 {
+		n /= 1000
+		kCount++
+	}
+
+	// Формат: до одного знака после запятой, без лишних нулей
+	nStr := strconv.FormatFloat(n, 'f', 1, 64)
+	nStr = strings.TrimSuffix(nStr, ".0")
+
+	return nStr + strings.Repeat("k", kCount)
 }

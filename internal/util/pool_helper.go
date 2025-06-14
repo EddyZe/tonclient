@@ -30,7 +30,7 @@ func generateNamePool(pool *appModels.Pool, aws *services.AdminWalletService, su
 		pool.Period,
 		SuffixDay(int(pool.Period)),
 		pool.Reward,
-		RemoveZeroFloat(math.Floor(currentReserve)),
+		ReplaceThreeZerosToK(int64(math.Floor(currentReserve))),
 	)
 }
 

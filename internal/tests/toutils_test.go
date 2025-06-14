@@ -6,6 +6,7 @@ import (
 	"log"
 	"testing"
 	"tonclient/internal/config"
+	"tonclient/internal/util"
 
 	"github.com/xssnick/tonutils-go/address"
 	"github.com/xssnick/tonutils-go/liteclient"
@@ -39,4 +40,10 @@ func TestApi(t *testing.T) {
 	}
 
 	fmt.Println(acc.State.Balance)
+}
+
+func TestZerosToK(t *testing.T) {
+	num := 30_000_000
+
+	fmt.Println(util.ReplaceThreeZerosToK(int64(num)))
 }
