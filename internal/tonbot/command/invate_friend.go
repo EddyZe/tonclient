@@ -40,7 +40,7 @@ func (c *InviteFriendCommand) Execute(ctx context.Context, msg *models.Message) 
 
 	referalCode := util.GenerateReferralTelegramCode(fmt.Sprint(chatId))
 
-	url := fmt.Sprint("https://t.me/insuranceton_bot?start=", referalCode)
+	url := fmt.Sprint("https://t.me/StakeNestrahBot?start=", referalCode)
 
 	if _, err := util.SendTextMessage(
 		c.b,
