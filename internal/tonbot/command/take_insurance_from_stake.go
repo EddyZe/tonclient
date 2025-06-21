@@ -165,7 +165,7 @@ func (c *TakeInsuranceFromStake) Execute(ctx context.Context, callback *models.C
 		pool.JettonMaster,
 		w.Addr,
 		"",
-		amount,
+		util.RemoveZeroFloat(amount),
 		jettonData.Decimals,
 	)
 	if err != nil {

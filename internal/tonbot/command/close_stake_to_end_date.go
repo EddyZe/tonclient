@@ -131,7 +131,7 @@ func (c *CloseStake) Execute(ctx context.Context, callback *models.CallbackQuery
 		p.JettonMaster,
 		w.Addr,
 		"",
-		stake.Amount,
+		util.RemoveZeroFloat(stake.Amount),
 		jettonData.Decimals,
 	)
 	if err != nil {
@@ -180,7 +180,7 @@ func (c *CloseStake) Execute(ctx context.Context, callback *models.CallbackQuery
 		p.JettonMaster,
 		c.aws.GetUserAdminAddr(),
 		"",
-		adminAmount,
+		util.RemoveZeroFloat(adminAmount),
 		jettonData.Decimals,
 	); err != nil {
 		log.Println(err)

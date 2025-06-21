@@ -153,7 +153,7 @@ func (c *TakeProfitFromStake) Execute(ctx context.Context, callback *models.Call
 		return
 	}
 
-	boc, err := c.aws.SendJetton(jettonMaster, w.Addr, "", stake.Balance, jettonaData.Decimals)
+	boc, err := c.aws.SendJetton(jettonMaster, w.Addr, "", util.RemoveZeroFloat(stake.Balance), jettonaData.Decimals)
 	if err != nil {
 		if _, err := util.SendTextMessage(
 			c.b,

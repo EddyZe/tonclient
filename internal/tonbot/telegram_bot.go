@@ -103,7 +103,7 @@ func (t *TgBot) createCron(b *bot.Bot) {
 
 	c := cron.New()
 
-	_, err := c.AddFunc("* 0 * * *", sch.AddStakeBonusActiveStakes())
+	_, err := c.AddFunc("* * * * *", sch.AddStakeBonusActiveStakes())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -905,7 +905,7 @@ func (t *TgBot) sendBonus(b *bot.Bot, referalId uint64, stake *appModels.Stake, 
 		jettonAdminAddr,
 		w.Addr,
 		"",
-		bonusAmount,
+		util.RemoveZeroFloat(bonusAmount),
 		decimalNum,
 	); err != nil {
 		log.Error("Failed to send bonus:", err)
@@ -1152,7 +1152,7 @@ func (t *TgBot) returnTokens(userId uint64, jettonMaster string, amount float64)
 		jettonMaster,
 		userWall.Addr,
 		"",
-		amount,
+		util.RemoveZeroFloat(amount),
 		jetData.Decimals,
 	)
 	if err != nil {

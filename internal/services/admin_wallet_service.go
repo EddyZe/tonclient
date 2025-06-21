@@ -4,16 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"fmt"
-	"math"
-	"math/big"
-	"os"
-	"os/signal"
-	"strconv"
-	"time"
-	"tonclient/internal/config"
-	"tonclient/internal/models"
-
 	"github.com/go-telegram/bot"
 	"github.com/xssnick/tonutils-go/address"
 	"github.com/xssnick/tonutils-go/liteclient"
@@ -23,6 +13,14 @@ import (
 	"github.com/xssnick/tonutils-go/ton/nft"
 	"github.com/xssnick/tonutils-go/ton/wallet"
 	"github.com/xssnick/tonutils-go/tvm/cell"
+	"math"
+	"math/big"
+	"os"
+	"os/signal"
+	"strconv"
+	"time"
+	"tonclient/internal/config"
+	"tonclient/internal/models"
 )
 
 type AdminWalletService struct {
@@ -137,7 +135,10 @@ func (s *AdminWalletService) StartSubscribeTransaction(ch chan models.SubmitTran
 
 				src = transfer.Sender
 				payload := transfer.ForwardPayload.BeginParse()
-				op := payload.MustLoadUInt(32)
+				op, err := payload.LoadUInt(32)
+				if err != nil {
+					continue
+				}
 				payloadDataBase64, err := payload.LoadStringSnake()
 				if err != nil {
 					log.Fatalln("load payload err: ", err.Error())
@@ -178,13 +179,13 @@ func (s *AdminWalletService) processOperation(op uint64, amount float64, senderA
 	log.Infoln("запись добавлена")
 }
 
-func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment string, amount float64, decimal int) ([]byte, error) {
+func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment string, amount string, decimal int) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
 
-	amountTok, err := tlb.FromDecimal(fmt.Sprint(amount), decimal)
+	amountTok, err := tlb.FromDecimal(amount, decimal)
 	if err != nil {
-		log.Error(err)
+		log.Error("Error get demical ", err)
 		return nil, err
 	}
 
@@ -201,8 +202,14 @@ func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment stri
 	}
 	pow := math.Pow10(decimal)
 
+	amountNum, err := strconv.ParseFloat(amount, 64)
+	if err != nil {
+		log.Errorf("Failed to convert amount to float: %v", err)
+		return nil, err
+	}
+
 	log.Infoln(float64(balance.Int64()) / pow)
-	if float64(balance.Int64())/pow < amount {
+	if float64(balance.Int64())/pow < amountNum {
 		return nil, errors.New("balance is insufficient")
 	}
 
@@ -212,7 +219,7 @@ func (s *AdminWalletService) SendJetton(jettonMaster, receiverAddr, comment stri
 		return nil, err
 	}
 
-	commission := tlb.MustFromTON("0.05")
+	commission := tlb.MustFromTON("0.09")
 	balanceTon, err := s.wallet.GetBalance(ctx, block)
 	if err != nil {
 		log.Fatalln("get balance err: ", err.Error())

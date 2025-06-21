@@ -222,7 +222,7 @@ func (c *TakeTokens) Execute(ctx context.Context, callback *models.CallbackQuery
 		p.JettonMaster,
 		w.Addr,
 		"",
-		currentReserve,
+		util.RemoveZeroFloat(currentReserve),
 		jettonData.Decimals,
 	)
 	if err != nil {

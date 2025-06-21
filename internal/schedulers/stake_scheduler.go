@@ -54,12 +54,13 @@ func NewStakScheduler(
 func (s *StakeScheduler) AddStakeBonusActiveStakes() func() {
 	return func() {
 		stakes := s.ss.GetAllIsStatus(true)
+		currentTime := time.Now()
 		for _, stake := range *stakes {
 			pool, err := s.ps.GetId(stake.PoolId)
 			if err != nil {
 				continue
 			}
-			if stake.EndDate.Before(time.Now()) {
+			if stake.EndDate.Before(currentTime) {
 				if stake.IsActive {
 					jettonData, err := tonfi.GetAssetByAddr(pool.JettonMaster)
 					if err != nil {
@@ -114,14 +115,16 @@ func (s *StakeScheduler) AddStakeBonusActiveStakes() func() {
 				}
 				continue
 			}
-			bonusPercent := float64(pool.Reward) / 100
-			amountBonus := stake.Amount * bonusPercent
-			rewardAllTime := amountBonus * float64(pool.Period)
-			if stake.Balance < rewardAllTime+stake.Amount {
-				stake.Balance += amountBonus
-			}
-			if err := s.ss.Update(&stake); err != nil {
-				continue
+			if currentTime.Hour() == stake.EndDate.Hour() && currentTime.Minute() == stake.EndDate.Minute() {
+				bonusPercent := float64(pool.Reward) / 100
+				amountBonus := stake.Amount * bonusPercent
+				rewardAllTime := amountBonus * float64(pool.Period)
+				if stake.Balance < rewardAllTime+stake.Amount {
+					stake.Balance += amountBonus
+				}
+				if err := s.ss.Update(&stake); err != nil {
+					continue
+				}
 			}
 		}
 	}
@@ -165,7 +168,7 @@ func (s *StakeScheduler) sendBonus(b *bot.Bot, referalId uint64, stake *models.S
 		jettonAdminAddr,
 		w.Addr,
 		"",
-		bonusAmount,
+		util.RemoveZeroFloat(bonusAmount),
 		decimalNum,
 	); err != nil {
 		log.Println("Failed to send bonus:", err)
